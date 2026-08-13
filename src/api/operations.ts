@@ -1,0 +1,46 @@
+import { api } from './client'
+import type { ApiEnvelope } from '../types/accounting'
+import type { APIKey, Approval, ApprovalPolicy, BusinessDocument, DocumentSequence, InventoryBalance, InventoryReservation, Invitation, Item, Onboarding, OrganizationMember, SecuritySettings, Unit, Warehouse, Webhook } from '../types/operations'
+
+const data = async <T>(request: Promise<{ data: ApiEnvelope<T> }>) => (await request).data.data
+
+export const listUnits = () => data<Unit[]>(api.get('/units'))
+export const createUnit = (input: { code: string; name: string; precision: number }) => data<Unit>(api.post('/units', input))
+export const listItems = () => data<Item[]>(api.get('/items'))
+export const createItem = (input: Record<string, unknown>) => data<Item>(api.post('/items', input))
+export const listWarehouses = () => data<Warehouse[]>(api.get('/warehouses'))
+export const createWarehouse = (input: { code: string; name: string; address: string }) => data<Warehouse>(api.post('/warehouses', input))
+export const listDocuments = (type = '') => data<BusinessDocument[]>(api.get('/documents', { params: type ? { type } : undefined }))
+export const createDocument = (input: Record<string, unknown>) => data<BusinessDocument>(api.post('/documents', input))
+export const transitionDocument = (id: string, status: string) => data<BusinessDocument>(api.post(`/documents/${id}/transition`, { status }))
+export const listInventoryBalances = () => data<InventoryBalance[]>(api.get('/inventory/balances'))
+export const adjustInventory = (input: Record<string, unknown>) => data(api.post('/inventory/adjustments', input))
+export const transferInventory = (input: Record<string, unknown>) => data(api.post('/inventory/transfers', input))
+export const stockOpname = (input: Record<string, unknown>) => data(api.post('/inventory/stock-opname', input))
+export const listReservations = () => data<InventoryReservation[]>(api.get('/inventory/reservations'))
+export const reserveInventory = (input: Record<string, unknown>) => data<InventoryReservation>(api.post('/inventory/reservations', input))
+export const releaseReservation = (id: string) => data(api.post(`/inventory/reservations/${id}/release`))
+
+export const getSecurity = () => data<SecuritySettings>(api.get('/organization/security'))
+export const saveSecurity = (input: Record<string, unknown>) => data<SecuritySettings>(api.put('/organization/security', input))
+export const listInvitations = () => data<Invitation[]>(api.get('/organization/invitations'))
+export const createInvitation = (input: { email: string; role_code: string }) => data<{ invitation: Invitation; invitation_token: string }>(api.post('/organization/invitations', input))
+export const listMembers = () => data<OrganizationMember[]>(api.get('/organization/members'))
+export const setMemberActive = (id: string, active: boolean) => data(api.patch(`/organization/members/${id}/status`, { active }))
+export const setupMFA = (email: string) => data<{ secret: string; otpauth_url: string }>(api.post('/auth/mfa/setup', { email }))
+export const confirmMFA = (code: string) => data<{ recovery_codes: string[] }>(api.post('/auth/mfa/confirm', { code }))
+export const disableMFA = (code: string) => data(api.delete('/auth/mfa', { data: { code } }))
+export const listApprovals = () => data<Approval[]>(api.get('/approvals'))
+export const decideApproval = (id: string, decision: string) => data(api.post(`/approvals/${id}/decision`, { decision }))
+export const listSequences = () => data<DocumentSequence[]>(api.get('/document-sequences'))
+export const saveSequence = (input: Record<string, unknown>) => data<DocumentSequence>(api.put('/document-sequences', input))
+export const listAPIKeys = () => data<APIKey[]>(api.get('/api-keys'))
+export const createAPIKey = (input: Record<string, unknown>) => data<{ api_key: APIKey; secret: string }>(api.post('/api-keys', input))
+export const revokeAPIKey = (id: string) => data(api.post(`/api-keys/${id}/revoke`))
+export const listWebhooks = () => data<Webhook[]>(api.get('/webhooks'))
+export const createWebhook = (input: Record<string, unknown>) => data<{ endpoint: Webhook; signing_secret: string }>(api.post('/webhooks', input))
+export const getOnboarding = () => data<Onboarding>(api.get('/onboarding'))
+export const saveOnboarding = (input: Record<string, unknown>) => data<Onboarding>(api.put('/onboarding', input))
+export const listApprovalPolicies = () => data<ApprovalPolicy[]>(api.get('/approval-policies'))
+export const saveApprovalPolicy = (input: Record<string, unknown>) => data<ApprovalPolicy>(api.put('/approval-policies', input))
+export async function downloadReport(type: string, format: 'csv' | 'xlsx' | 'pdf', startDate: string, endDate: string) { const response = await api.get(`/reports/${type}/export/${format}`, { params: { start_date: startDate, end_date: endDate }, responseType: 'blob' }); const url = URL.createObjectURL(response.data); const link = document.createElement('a'); link.href = url; link.download = `${type}.${format}`; link.click(); URL.revokeObjectURL(url) }

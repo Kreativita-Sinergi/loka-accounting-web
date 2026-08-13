@@ -1,0 +1,19 @@
+import { type FormEvent, useEffect, useState } from 'react'
+import { createBankAccount, createDimension, downloadExport, listBankAccounts, listMappings } from '../api/accounting'
+import type { Account, AccountMapping, BankAccount } from '../types/accounting'
+import { Badge, Button, EmptyState, PageHeader } from '../components/ui'
+
+export function AdvancedPage({ accounts, onNotice }: { accounts: Account[]; onNotice: (value: string) => void }) {
+  const [banks, setBanks] = useState<BankAccount[]>([])
+  const [mappings, setMappings] = useState<AccountMapping[]>([])
+  async function refresh() { const [bankRows, mappingRows] = await Promise.all([listBankAccounts(), listMappings()]); setBanks(bankRows); setMappings(mappingRows) }
+  useEffect(() => { void refresh() }, [])
+  async function addBank(event: FormEvent<HTMLFormElement>) { event.preventDefault(); const form = new FormData(event.currentTarget); await createBankAccount({ account_id: String(form.get('account')), name: String(form.get('name')) }); event.currentTarget.reset(); await refresh(); onNotice('Akun bank berhasil dibuat.') }
+  async function addDimension(event: FormEvent<HTMLFormElement>) { event.preventDefault(); const form = new FormData(event.currentTarget); await createDimension({ code: String(form.get('code')), name: String(form.get('name')) }); event.currentTarget.reset(); onNotice('Dimensi laporan berhasil dibuat.') }
+  return <section><PageHeader eyebrow="ADVANCED & DATA" title="Kas, dimensi, dan portabilitas data" description="Bank register, mapping sumber, dimensi analitik, serta ekspor data accountant." action={<Button variant="secondary" icon="download" onClick={() => void downloadExport('accounts')}>Export COA</Button>} />
+    <div className="split-grid"><form className="panel form-panel" onSubmit={(e) => void addBank(e)}><h2>Akun bank</h2><label>Nama<input name="name" required /></label><label>Akun COA<select name="account">{accounts.filter((a) => a.type === 'ASSET').map((a) => <option value={a.id} key={a.id}>{a.code} · {a.name}</option>)}</select></label><Button>Tambah bank</Button><small>{banks.length} akun bank terdaftar</small></form>
+      <form className="panel form-panel" onSubmit={(e) => void addDimension(e)}><h2>Dimensi laporan</h2><label>Kode<input name="code" placeholder="PROJECT" required /></label><label>Nama<input name="name" placeholder="Project" required /></label><Button>Tambah dimensi</Button></form></div>
+    <div className="split-grid records-grid"><div className="panel"><div className="panel-heading"><div><h2>Bank register</h2><p>Akun kas dan bank operasional.</p></div><Badge>{banks.length} bank</Badge></div>{banks.length === 0 ? <EmptyState>Belum ada akun bank.</EmptyState> : <div className="table-wrap"><table><thead><tr><th>Nama</th><th>Mata uang</th><th>Status</th></tr></thead><tbody>{banks.map((bank) => <tr key={bank.id}><td><strong>{bank.name}</strong><small className="block">{bank.bank_name ?? 'Bank belum diisi'}</small></td><td>{bank.currency_code}</td><td><span className={bank.is_active ? 'status active' : 'status'}>{bank.is_active ? 'Aktif' : 'Nonaktif'}</span></td></tr>)}</tbody></table></div>}</div>
+      <div className="panel"><div className="panel-heading"><div><h2>Mapping sumber</h2><p>Aturan akun untuk dokumen terintegrasi.</p></div><Badge>{mappings.length} mapping</Badge></div>{mappings.length === 0 ? <EmptyState>Belum ada mapping sumber.</EmptyState> : <div className="table-wrap"><table><thead><tr><th>Sumber</th><th>Mapping</th><th>Akun</th></tr></thead><tbody>{mappings.map((mapping) => <tr key={mapping.id}><td>{mapping.source_system}</td><td className="mono">{mapping.mapping_key}</td><td className="mono">{accounts.find((account) => account.id === mapping.account_id)?.code ?? mapping.account_id}</td></tr>)}</tbody></table></div>}</div></div>
+  </section>
+}

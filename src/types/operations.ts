@@ -1,0 +1,17 @@
+export type Unit = { id: string; code: string; name: string; precision: number; is_active: boolean }
+export type Item = { id: string; sku: string; name: string; item_type: 'INVENTORY' | 'NON_INVENTORY' | 'SERVICE'; base_unit_id: string; track_lots: boolean; track_serials: boolean; is_active: boolean }
+export type Warehouse = { id: string; code: string; name: string; address?: string; is_active: boolean }
+export type BusinessDocument = { id: string; document_type: string; number: string; document_date: string; currency_code: string; status: string; total_minor: number; lines?: BusinessDocumentLine[] }
+export type BusinessDocumentLine = { id: string; description: string; quantity: string; unit_price_minor: number; line_total_minor: number }
+export type InventoryBalance = { item_id: string; warehouse_id: string; sku: string; item_name: string; warehouse_code: string; warehouse_name: string; quantity: string; value_minor: number }
+
+export type SecuritySettings = { require_2fa: boolean; approval_threshold_minor: number; session_ttl_minutes: number }
+export type Invitation = { id: string; email: string; role_code: string; status: string; expires_at: string }
+export type Approval = { id: string; entity_type: string; entity_id: string; amount_minor: number; status: string; requested_at: string }
+export type DocumentSequence = { id: string; document_type: string; prefix: string; next_number: number; padding: number; reset_policy: string }
+export type APIKey = { id: string; name: string; key_prefix: string; permissions: string[]; is_active: boolean; created_at: string }
+export type Webhook = { id: string; name: string; endpoint_url: string; subscribed_events: string[]; is_active: boolean }
+export type Onboarding = { business_id: string; business_type: 'SERVICE' | 'RETAIL' | 'DISTRIBUTION' | 'MANUFACTURING' | 'OTHER'; enabled_workflows: string[]; completed_steps: string[]; skipped_steps: string[]; current_step: number; started_at: string; completed_at: string | null; dismissed_at: string | null; updated_at: string }
+export type ApprovalPolicy = { id: string; document_type: string; minimum_amount_minor: number; minimum_discount_basis_points: number; condition_mode: 'AND' | 'OR'; approver_role: string; is_active: boolean }
+export type InventoryReservation = { id: string; item_id: string; warehouse_id: string; document_id: string; quantity: string; status: string; expires_at: string | null }
+export type OrganizationMember = { user_id: string; email: string; full_name: string; role_code: string; is_active: boolean; created_at: string }
