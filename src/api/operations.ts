@@ -1,6 +1,6 @@
 import { api } from './client'
 import type { ApiEnvelope } from '../types/accounting'
-import type { APIKey, Approval, ApprovalPolicy, BusinessDocument, CompanyProfile, DocumentSequence, InventoryBalance, InventoryReservation, Invitation, Item, Onboarding, OrganizationBranch, OrganizationMember, SecuritySettings, Unit, Warehouse, Webhook } from '../types/operations'
+import type { APIKey, Approval, ApprovalPolicy, BusinessDocument, DocumentSequence, InventoryBalance, InventoryReservation, Invitation, Item, Onboarding, OrganizationMember, SecuritySettings, Unit, Warehouse, Webhook } from '../types/operations'
 
 const data = async <T>(request: Promise<{ data: ApiEnvelope<T> }>) => (await request).data.data
 
@@ -41,10 +41,6 @@ export const listWebhooks = () => data<Webhook[]>(api.get('/webhooks'))
 export const createWebhook = (input: Record<string, unknown>) => data<{ endpoint: Webhook; signing_secret: string }>(api.post('/webhooks', input))
 export const getOnboarding = () => data<Onboarding>(api.get('/onboarding'))
 export const saveOnboarding = (input: Record<string, unknown>) => data<Onboarding>(api.put('/onboarding', input))
-export const getCompanyProfile = () => data<CompanyProfile>(api.get('/organization/profile'))
-export const saveCompanyProfile = (input: Record<string, unknown>) => data<CompanyProfile>(api.put('/organization/profile', input))
-export const listBranches = () => data<OrganizationBranch[]>(api.get('/organization/branches'))
-export const createBranch = (input: Record<string, unknown>) => data<OrganizationBranch>(api.post('/organization/branches', input))
 export const listApprovalPolicies = () => data<ApprovalPolicy[]>(api.get('/approval-policies'))
 export const saveApprovalPolicy = (input: Record<string, unknown>) => data<ApprovalPolicy>(api.put('/approval-policies', input))
 export async function downloadReport(type: string, format: 'csv' | 'xlsx' | 'pdf', startDate: string, endDate: string) { const response = await api.get(`/reports/${type}/export/${format}`, { params: { start_date: startDate, end_date: endDate }, responseType: 'blob' }); const url = URL.createObjectURL(response.data); const link = document.createElement('a'); link.href = url; link.download = `${type}.${format}`; link.click(); URL.revokeObjectURL(url) }

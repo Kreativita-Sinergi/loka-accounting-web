@@ -2,19 +2,21 @@ import type { ReactNode } from 'react'
 import type { IdentityProfile } from '../api/auth'
 import { Icon, type IconName } from './Icon'
 
-export type PageKey = 'overview' | 'get-started' | 'company' | 'general-ledger' | 'cash-bank' | 'sales' | 'purchases' | 'inventory' | 'assets' | 'accounts' | 'journal' | 'ledger' | 'operations' | 'products' | 'documents' | 'controls' | 'advanced' | 'compliance' | 'payroll' | 'manufacturing' | 'currency' | 'reports'
+export type PageKey = 'overview' | 'get-started' | 'accounts' | 'journal' | 'ledger' | 'operations' | 'products' | 'documents' | 'controls' | 'advanced' | 'compliance' | 'payroll' | 'manufacturing' | 'currency' | 'reports'
 
 const groups: Array<{ label: string; items: Array<{ key: PageKey; label: string; icon: IconName }> }> = [
-  { label: 'Utama', items: [
-    { key: 'overview', label: 'Ringkasan', icon: 'home' }, { key: 'get-started', label: 'Mulai setup', icon: 'check' }, { key: 'company', label: 'Perusahaan', icon: 'settings' },
+  { label: 'Workspace', items: [
+    { key: 'overview', label: 'Ringkasan', icon: 'home' }, { key: 'get-started', label: 'Mulai setup', icon: 'check' }, { key: 'journal', label: 'Jurnal', icon: 'journal' },
+    { key: 'ledger', label: 'Buku besar', icon: 'ledger' }, { key: 'accounts', label: 'Daftar akun', icon: 'accounts' },
   ]},
-  { label: 'Modul', items: [
-    { key: 'general-ledger', label: 'Buku besar', icon: 'ledger' }, { key: 'cash-bank', label: 'Kas & bank', icon: 'currency' }, { key: 'sales', label: 'Penjualan', icon: 'operations' },
-    { key: 'purchases', label: 'Pembelian', icon: 'operations' }, { key: 'inventory', label: 'Persediaan', icon: 'accounts' }, { key: 'assets', label: 'Aset tetap', icon: 'manufacturing' },
-    { key: 'compliance', label: 'Pajak', icon: 'compliance' }, { key: 'reports', label: 'Laporan', icon: 'reports' },
+  { label: 'Operasional', items: [
+    { key: 'products', label: 'Produk & gudang', icon: 'accounts' }, { key: 'documents', label: 'Penjualan & beli', icon: 'operations' },
+    { key: 'operations', label: 'Piutang & utang', icon: 'operations' }, { key: 'payroll', label: 'Payroll', icon: 'payroll' },
+    { key: 'manufacturing', label: 'Manufaktur', icon: 'manufacturing' }, { key: 'currency', label: 'Multi-currency', icon: 'currency' },
   ]},
   { label: 'Kontrol', items: [
-    { key: 'controls', label: 'Pengguna & integrasi', icon: 'settings' }, { key: 'advanced', label: 'Pengaturan lanjut', icon: 'settings' },
+    { key: 'reports', label: 'Laporan', icon: 'reports' }, { key: 'compliance', label: 'Pajak Indonesia', icon: 'compliance' },
+    { key: 'controls', label: 'Organisasi', icon: 'settings' }, { key: 'advanced', label: 'Pengaturan lanjut', icon: 'settings' },
   ]},
 ]
 
