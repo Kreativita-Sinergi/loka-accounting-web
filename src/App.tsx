@@ -15,9 +15,11 @@ import { ProductsPage } from './pages/ProductsPage'
 import { DocumentsPage } from './pages/DocumentsPage'
 import { ControlsPage } from './pages/ControlsPage'
 import { GetStartedPage } from './pages/GetStartedPage'
+import { CompanyPage } from './pages/CompanyPage'
+import { FeatureDirectoryPage, type FeatureDomain } from './pages/FeatureDirectoryPage'
 import { getOnboarding } from './api/operations'
 import type { Onboarding } from './types/operations'
-import { clearSession, getStoredProfile, type AuthSession, type IdentityProfile } from './api/auth'
+import { clearSession, getStoredProfile, saveProfile, type AuthSession, type IdentityProfile } from './api/auth'
 import type { Account, AccountingSettings, ApiEnvelope } from './types/accounting'
 
 export default function App() {
@@ -70,6 +72,8 @@ export default function App() {
       {notice && <div className="toast" role="status"><span>{notice}</span><button onClick={() => setNotice(null)} aria-label="Tutup notifikasi">×</button></div>}
       {page === 'overview' && <OverviewPage settings={settings} onboarding={onboarding} loading={loading} onInitialize={initialize} onGetStarted={() => setPage('get-started')} />}
       {page === 'get-started' && settings && onboarding && <GetStartedPage settings={settings} onboarding={onboarding} accounts={accounts} onChanged={(value) => { setOnboarding(value); void getSettings().then(setSettings) }} onNavigate={setPage} onNotice={setNotice} />}
+      {page === 'company' && <CompanyPage onNotice={setNotice} onNavigate={setPage} onOrganizationRenamed={(name) => setProfile((current) => { if (!current) return current; const next = { ...current, organization_name: name }; saveProfile(next); return next })} />}
+      {(['general-ledger', 'cash-bank', 'sales', 'purchases', 'inventory', 'assets'] as FeatureDomain[]).includes(page as FeatureDomain) && <FeatureDirectoryPage domain={page as FeatureDomain} onNavigate={setPage} />}
       {page === 'accounts' && <AccountsPage accounts={accounts} />}
       {page === 'journal' && <JournalPage accounts={accounts} onSubmit={async (input) => { try { await createJournal(input); setNotice('Jurnal berhasil diposting.') } catch (error) { showError(error, setNotice); throw error } }} />}
       {page === 'ledger' && <LedgerPage />}
