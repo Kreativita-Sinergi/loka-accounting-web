@@ -34,8 +34,10 @@ export async function register(input: { organization_name: string; full_name: st
 
 export function saveSession(session: AuthSession) {
   localStorage.setItem('token', session.access_token)
-  localStorage.setItem('accounting_profile', JSON.stringify(session.profile))
+  saveProfile(session.profile)
 }
+
+export function saveProfile(profile: IdentityProfile) { localStorage.setItem('accounting_profile', JSON.stringify(profile)) }
 
 export function clearSession() {
   localStorage.removeItem('token')
