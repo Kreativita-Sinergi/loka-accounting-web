@@ -1,6 +1,6 @@
 import { api } from './client'
 import type { ApiEnvelope } from '../types/accounting'
-import type { APIKey, Approval, ApprovalPolicy, BusinessDocument, DocumentSequence, InventoryBalance, InventoryReservation, Invitation, Item, Onboarding, OrganizationMember, SecuritySettings, Unit, Warehouse, Webhook } from '../types/operations'
+import type { APIKey, Approval, ApprovalPolicy, BusinessDocument, DocumentSequence, InventoryBalance, InventoryReservation, Invitation, Item, Onboarding, OrganizationMember, SecuritySettings, Unit, UnitConversion, Warehouse, Webhook } from '../types/operations'
 
 const data = async <T>(request: Promise<{ data: ApiEnvelope<T> }>) => (await request).data.data
 
@@ -8,6 +8,8 @@ export const listUnits = () => data<Unit[]>(api.get('/units'))
 export const createUnit = (input: { code: string; name: string; precision: number }) => data<Unit>(api.post('/units', input))
 export const listItems = () => data<Item[]>(api.get('/items'))
 export const createItem = (input: Record<string, unknown>) => data<Item>(api.post('/items', input))
+export const listUnitConversions = (itemId: string) => data<UnitConversion[]>(api.get(`/items/${itemId}/unit-conversions`))
+export const saveUnitConversion = (itemId: string, input: { unit_id: string; numerator: number; denominator: number }) => data<UnitConversion>(api.put(`/items/${itemId}/unit-conversions`, input))
 export const listWarehouses = () => data<Warehouse[]>(api.get('/warehouses'))
 export const createWarehouse = (input: { code: string; name: string; address: string }) => data<Warehouse>(api.post('/warehouses', input))
 export const listDocuments = (type = '') => data<BusinessDocument[]>(api.get('/documents', { params: type ? { type } : undefined }))

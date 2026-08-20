@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import type { IdentityProfile } from '../api/auth'
 import { Icon, type IconName } from './Icon'
 
-export type PageKey = 'overview' | 'get-started' | 'accounts' | 'journal' | 'ledger' | 'operations' | 'products' | 'documents' | 'controls' | 'advanced' | 'compliance' | 'payroll' | 'manufacturing' | 'currency' | 'reports'
+export type PageKey = 'overview' | 'get-started' | 'accounts' | 'journal' | 'ledger' | 'operations' | 'products' | 'documents' | 'controls' | 'advanced' | 'compliance' | 'payroll' | 'manufacturing' | 'currency' | 'reports' | 'projects' | 'assets' | 'imports'
 
 const groups: Array<{ label: string; items: Array<{ key: PageKey; label: string; icon: IconName }> }> = [
   { label: 'Workspace', items: [
@@ -13,9 +13,11 @@ const groups: Array<{ label: string; items: Array<{ key: PageKey; label: string;
     { key: 'products', label: 'Produk & gudang', icon: 'accounts' }, { key: 'documents', label: 'Penjualan & beli', icon: 'operations' },
     { key: 'operations', label: 'Piutang & utang', icon: 'operations' }, { key: 'payroll', label: 'Payroll', icon: 'payroll' },
     { key: 'manufacturing', label: 'Manufaktur', icon: 'manufacturing' }, { key: 'currency', label: 'Multi-currency', icon: 'currency' },
+    { key: 'projects', label: 'Proyek', icon: 'project' }, { key: 'assets', label: 'Aset tetap', icon: 'asset' },
   ]},
   { label: 'Kontrol', items: [
     { key: 'reports', label: 'Laporan', icon: 'reports' }, { key: 'compliance', label: 'Pajak Indonesia', icon: 'compliance' },
+    { key: 'imports', label: 'Impor data', icon: 'upload' },
     { key: 'controls', label: 'Organisasi', icon: 'settings' }, { key: 'advanced', label: 'Pengaturan lanjut', icon: 'settings' },
   ]},
 ]

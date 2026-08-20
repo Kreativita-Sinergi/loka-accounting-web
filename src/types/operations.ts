@@ -1,8 +1,10 @@
 export type Unit = { id: string; code: string; name: string; precision: number; is_active: boolean }
-export type Item = { id: string; sku: string; name: string; item_type: 'INVENTORY' | 'NON_INVENTORY' | 'SERVICE'; base_unit_id: string; track_lots: boolean; track_serials: boolean; is_active: boolean }
+export type Item = { id: string; sku: string; name: string; item_type: 'INVENTORY' | 'NON_INVENTORY' | 'SERVICE'; base_unit_id: string; costing_method: 'MOVING_AVERAGE' | 'FIFO'; track_lots: boolean; track_serials: boolean; is_active: boolean }
+/** One alternate unit expressed as numerator/denominator of the item's base unit. */
+export type UnitConversion = { item_id: string; unit_id: string; numerator: number; denominator: number }
 export type Warehouse = { id: string; code: string; name: string; address?: string; is_active: boolean }
 export type BusinessDocument = { id: string; document_type: string; number: string; document_date: string; currency_code: string; status: string; total_minor: number; lines?: BusinessDocumentLine[] }
-export type BusinessDocumentLine = { id: string; description: string; quantity: string; unit_price_minor: number; line_total_minor: number }
+export type BusinessDocumentLine = { id: string; description: string; quantity: string; base_quantity: string; unit_price_minor: number; line_total_minor: number }
 export type InventoryBalance = { item_id: string; warehouse_id: string; sku: string; item_name: string; warehouse_code: string; warehouse_name: string; quantity: string; value_minor: number }
 
 export type SecuritySettings = { require_2fa: boolean; approval_threshold_minor: number; session_ttl_minutes: number }

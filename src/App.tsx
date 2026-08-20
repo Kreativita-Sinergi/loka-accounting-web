@@ -14,6 +14,9 @@ import { AuthPage } from './pages/AuthPage'
 import { ProductsPage } from './pages/ProductsPage'
 import { DocumentsPage } from './pages/DocumentsPage'
 import { ControlsPage } from './pages/ControlsPage'
+import { ProjectsPage } from './pages/ProjectsPage'
+import { AssetsPage } from './pages/AssetsPage'
+import { ImportPage } from './pages/ImportPage'
 import { GetStartedPage } from './pages/GetStartedPage'
 import { getOnboarding } from './api/operations'
 import type { Onboarding } from './types/operations'
@@ -82,6 +85,9 @@ export default function App() {
       {page === 'payroll' && <ModulePage kind="payroll" accounts={accounts} onNotice={setNotice} />}
       {page === 'manufacturing' && <ModulePage kind="manufacturing" accounts={accounts} onNotice={setNotice} />}
       {page === 'currency' && <ModulePage kind="currency" accounts={accounts} onNotice={setNotice} />}
+      {page === 'projects' && <ProjectsPage onNotice={setNotice} />}
+      {page === 'assets' && <AssetsPage accounts={accounts} onNotice={setNotice} />}
+      {page === 'imports' && <ImportPage onNotice={setNotice} />}
       {page === 'reports' && <ReportsPage />}
     </Layout>
   )

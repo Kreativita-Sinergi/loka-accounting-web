@@ -108,6 +108,12 @@ export interface OpenItem {
   original_minor: number
   outstanding_minor: number
   status: string
+  /** Set only for foreign-currency items; the *_minor fields stay in base currency. */
+  currency_code: string | null
+  foreign_original_minor: number | null
+  foreign_outstanding_minor: number | null
+  exchange_rate_numerator: number | null
+  exchange_rate_denominator: number | null
 }
 
 export interface AgingBucket { current_minor: number; days_1_30_minor: number; days_31_60_minor: number; days_61_90_minor: number; over_90_minor: number; total_minor: number }

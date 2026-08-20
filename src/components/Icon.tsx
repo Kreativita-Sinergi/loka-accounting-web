@@ -1,6 +1,6 @@
 import type { ReactNode, SVGProps } from 'react'
 
-export type IconName = 'home' | 'journal' | 'ledger' | 'accounts' | 'operations' | 'payroll' | 'manufacturing' | 'currency' | 'reports' | 'compliance' | 'settings' | 'logout' | 'plus' | 'download' | 'check' | 'empty'
+export type IconName = 'home' | 'journal' | 'ledger' | 'accounts' | 'operations' | 'payroll' | 'manufacturing' | 'currency' | 'reports' | 'compliance' | 'settings' | 'logout' | 'plus' | 'download' | 'check' | 'empty' | 'project' | 'asset' | 'upload' | 'printer'
 
 const paths: Record<IconName, ReactNode> = {
   home: <><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5M9 21v-7h6v7"/></>,
@@ -19,6 +19,10 @@ const paths: Record<IconName, ReactNode> = {
   download: <><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 19h16"/></>,
   check: <path d="m5 12 4 4L19 6"/>,
   empty: <><path d="M4 7h16v12H4z"/><path d="M8 7V4h8v3M9 12h6"/></>,
+  project: <><path d="M3 7h7l2 2h9v11H3z"/><path d="M7 13h8M7 16h5"/></>,
+  asset: <><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M8 8V5h8v3M12 12v4M10 14h4"/></>,
+  upload: <><path d="M12 20V8M7 13l5-5 5 5"/><path d="M4 20h16"/></>,
+  printer: <><path d="M7 8V3h10v5"/><rect x="4" y="8" width="16" height="8" rx="2"/><path d="M7 14h10v7H7z"/></>,
 }
 
 export function Icon({ name, ...props }: { name: IconName } & SVGProps<SVGSVGElement>) {
