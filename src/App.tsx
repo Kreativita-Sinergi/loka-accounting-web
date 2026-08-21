@@ -69,27 +69,28 @@ export default function App() {
     setAccounts((current) => current.map((item) => item.id === account.id ? account : item).sort((left, right) => left.code.localeCompare(right.code, 'id-ID', { numeric: true })))
   }
 
+  // The account handlers let failures propagate so the calling modal can show
+  // the reason inline; only successes raise a toast.
   async function accountCreate(input: { code: string; name: string; type: Account['type']; parent_id: string | null }) {
-    try {
-      const account = await createAccount(input)
-      setAccounts((current) => [...current, account].sort((left, right) => left.code.localeCompare(right.code, 'id-ID', { numeric: true })))
-      setNotice('Akun berhasil dibuat.')
-    } catch (error) { showError(error, setNotice); throw error }
+    const account = await createAccount(input)
+    setAccounts((current) => [...current, account].sort((left, right) => left.code.localeCompare(right.code, 'id-ID', { numeric: true })))
+    setNotice('Akun berhasil dibuat.')
   }
 
   async function accountUpdate(id: string, input: { code: string; name: string; type: Account['type']; normal_balance?: Account['normal_balance']; parent_id: string | null }) {
-    try { replaceAccount(await updateAccount(id, input)); setNotice('Akun berhasil diperbarui.') }
-    catch (error) { showError(error, setNotice); throw error }
+    replaceAccount(await updateAccount(id, input))
+    setNotice('Akun berhasil diperbarui.')
   }
 
   async function accountStatus(id: string, active: boolean) {
-    try { replaceAccount(await setAccountActive(id, active)); setNotice(active ? 'Akun diaktifkan kembali.' : 'Akun dinonaktifkan dan tetap tersimpan dalam histori.') }
-    catch (error) { showError(error, setNotice); throw error }
+    replaceAccount(await setAccountActive(id, active))
+    setNotice(active ? 'Akun diaktifkan kembali.' : 'Akun dinonaktifkan dan tetap tersimpan dalam histori.')
   }
 
   async function accountDelete(id: string) {
-    try { await deleteAccount(id); setAccounts((current) => current.filter((account) => account.id !== id)); setNotice('Akun berhasil dihapus permanen.') }
-    catch (error) { showError(error, setNotice); throw error }
+    await deleteAccount(id)
+    setAccounts((current) => current.filter((account) => account.id !== id))
+    setNotice('Akun berhasil dihapus permanen.')
   }
 
   function authenticated(session: AuthSession) { onboardingRouted.current = false; setLoading(true); setProfile(session.profile) }

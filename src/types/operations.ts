@@ -1,5 +1,5 @@
 export type Unit = { id: string; code: string; name: string; precision: number; is_active: boolean }
-export type Item = { id: string; sku: string; name: string; item_type: 'INVENTORY' | 'NON_INVENTORY' | 'SERVICE'; base_unit_id: string; costing_method: 'MOVING_AVERAGE' | 'FIFO'; track_lots: boolean; track_serials: boolean; is_active: boolean }
+export type Item = { id: string; sku: string; name: string; item_type: 'INVENTORY' | 'NON_INVENTORY' | 'SERVICE'; base_unit_id: string; costing_method: 'MOVING_AVERAGE' | 'FIFO'; sales_account_id: string | null; purchase_account_id: string | null; inventory_account_id: string | null; cogs_account_id: string | null; track_lots: boolean; track_serials: boolean; is_active: boolean }
 /** One alternate unit expressed as numerator/denominator of the item's base unit. */
 export type UnitConversion = { item_id: string; unit_id: string; numerator: number; denominator: number }
 export type Warehouse = { id: string; code: string; name: string; address?: string; is_active: boolean }

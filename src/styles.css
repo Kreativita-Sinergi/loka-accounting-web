@@ -248,11 +248,59 @@
   .balance-ok, .balance-error { @apply mt-4 mr-1 mb-0 text-right text-[11px] font-bold; }
   .balance-ok { @apply text-emerald-700; }
   .balance-error { @apply text-red-700; }
+
+  /* ---- Modal, confirm dialog, and row action menu ---- */
+  .modal-backdrop { @apply fixed inset-0 z-100 flex items-start justify-center overflow-y-auto bg-slate-950/45 p-4 backdrop-blur-[2px] sm:p-8; animation: modal-fade .14s ease-out; }
+  .modal-panel { @apply my-auto flex w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/25; animation: modal-rise .16s ease-out; }
+  .modal-head { @apply flex items-start justify-between gap-5 border-b border-slate-200 bg-slate-50 px-6 py-4.5 max-sm:px-4.5; }
+  .modal-head-danger { @apply border-red-200 bg-red-50; }
+  .modal-head h2 { @apply m-0 font-display text-lg font-extrabold tracking-[-.3px] text-slate-950; }
+  .modal-head-danger h2 { @apply text-red-950; }
+  .modal-eyebrow { @apply m-0 mb-1 font-display text-[9px] font-bold tracking-[.16em] text-brand uppercase; }
+  .modal-head-danger .modal-eyebrow { @apply text-red-700; }
+  .modal-description { @apply mt-1.5 mb-0 max-w-2xl text-[11px] leading-relaxed text-slate-500; }
+  .modal-close { @apply grid size-8 shrink-0 place-items-center rounded-lg border-0 bg-transparent text-slate-400 transition hover:bg-slate-200 hover:text-slate-700; }
+  .modal-body { @apply max-h-[70vh] overflow-y-auto px-6 py-5 max-sm:px-4.5; }
+  .modal-foot { @apply flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 px-6 py-3.5 max-sm:px-4.5; }
+  .modal-error { @apply mt-0 mb-4 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-[11px] leading-relaxed text-red-700; }
+  .modal-form { @apply grid gap-3.5; }
+  .modal-form .form-row { @apply gap-3; }
+  .modal-form fieldset { @apply m-0 grid gap-3 rounded-xl border border-slate-200 p-4; }
+  .modal-form legend { @apply px-2 text-[10px] font-bold text-slate-600; }
+  .modal-note { @apply rounded-lg border border-blue-200 bg-blue-50 px-3.5 py-2.5 text-[10px] leading-relaxed text-blue-800; }
+  .confirm-body { @apply grid grid-cols-[36px_minmax(0,1fr)] items-start gap-3.5 text-[12px] leading-relaxed text-slate-600; }
+  .confirm-body > span { @apply grid size-9 place-items-center rounded-xl bg-slate-100 text-slate-500; }
+  .confirm-body-danger { @apply text-red-900; }
+  .confirm-body-danger > span { @apply bg-red-100 text-red-700; }
+  .confirm-body strong { @apply text-slate-900; }
+  .confirm-body-danger strong { @apply text-red-950; }
+
+  .panel-heading-actions { @apply flex shrink-0 items-center gap-2.5; }
+  .panel-toolbar { @apply flex flex-wrap items-center gap-2.5 border-b border-slate-100 bg-slate-50/60 px-5 py-3; }
+  .search-field { @apply flex min-h-9.5 min-w-56 flex-1 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-slate-400 shadow-xs focus-within:border-blue-300 focus-within:ring-3 focus-within:ring-blue-100 max-sm:min-w-full; }
+  .search-field input { @apply min-h-8 border-0 bg-transparent p-0 shadow-none focus:border-0 focus:ring-0; }
+  .search-field > button { @apply grid size-5 shrink-0 place-items-center rounded-full border-0 bg-slate-100 p-0 text-slate-500 hover:bg-slate-200 hover:text-slate-700; }
+  .actions-head, .actions-cell { @apply w-12 text-right; }
+  .row-menu { @apply relative inline-flex; }
+  .row-menu-trigger { @apply grid size-8 place-items-center rounded-lg border border-transparent bg-transparent text-slate-400 transition hover:border-slate-300 hover:bg-white hover:text-slate-700 aria-expanded:border-slate-300 aria-expanded:bg-white aria-expanded:text-slate-800; }
+  .row-menu-list { @apply absolute top-full right-0 z-40 mt-1 grid min-w-46 gap-0.5 rounded-xl border border-slate-200 bg-white p-1.5 text-left shadow-xl shadow-slate-950/10; }
+  .row-menu-item { @apply flex min-h-9 w-full items-center gap-2.5 rounded-lg border-0 bg-transparent px-2.5 py-1.5 text-left text-[11px] font-bold whitespace-nowrap text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 disabled:pointer-events-none disabled:opacity-40; }
+  .row-menu-item-danger { @apply text-red-700 hover:bg-red-50 hover:text-red-800; }
+  .status-pill { @apply inline-flex min-h-6 items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold; }
+  .status-pill i { @apply size-1.5 rounded-full bg-current; }
+  .status-pill-active { @apply bg-emerald-50 text-emerald-700; }
+  .status-pill-inactive { @apply bg-slate-100 text-slate-500; }
+  .sr-only { @apply absolute size-px overflow-hidden whitespace-nowrap [clip:rect(0,0,0,0)]; }
+  .page-actions { @apply flex flex-wrap items-center gap-2; }
+  .stack { @apply grid gap-4.5; }
+
   .toast { @apply fixed top-4.5 right-5 z-50 flex min-h-11 max-w-md items-center justify-between gap-4.5 rounded-lg border border-blue-200 bg-blue-50 px-3.5 py-2.5 text-[11px] text-blue-800 shadow-xl max-sm:top-2.5 max-sm:right-3 max-sm:left-3; }
   .toast button { @apply grid size-6 shrink-0 place-items-center rounded-md border-0 bg-transparent p-0 text-lg text-blue-700 hover:bg-blue-100; }
 }
 
 @keyframes page-in { from { opacity: 0; transform: translateY(3px); } }
+@keyframes modal-fade { from { opacity: 0; } }
+@keyframes modal-rise { from { opacity: 0; transform: translateY(10px) scale(.985); } }
 
 @layer components {
   .connect-shell { @apply grid min-h-screen grid-cols-[minmax(440px,1.05fr)_minmax(420px,.95fr)] bg-white max-[800px]:grid-cols-1; }

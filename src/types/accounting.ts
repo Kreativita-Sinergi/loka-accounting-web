@@ -95,6 +95,8 @@ export interface Contact {
   name: string
   email: string | null
   phone: string | null
+  tax_identifier: string | null
+  external_reference: string | null
   is_active: boolean
 }
 

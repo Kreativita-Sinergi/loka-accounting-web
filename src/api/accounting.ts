@@ -46,8 +46,25 @@ export async function listContacts() {
   return data.data
 }
 
-export async function createContact(input: { type: string; name: string }) {
+export type ContactInput = { type: string; name: string; email?: string | null; phone?: string | null; tax_identifier?: string | null; external_reference?: string | null }
+
+export async function createContact(input: ContactInput) {
   const { data } = await api.post<ApiEnvelope<Contact>>('/contacts', input)
+  return data.data
+}
+
+export async function updateContact(id: string, input: ContactInput) {
+  const { data } = await api.put<ApiEnvelope<Contact>>(`/contacts/${id}`, input)
+  return data.data
+}
+
+export async function setContactActive(id: string, isActive: boolean) {
+  const { data } = await api.patch<ApiEnvelope<Contact>>(`/contacts/${id}/status`, { is_active: isActive })
+  return data.data
+}
+
+export async function deleteContact(id: string) {
+  const { data } = await api.delete<ApiEnvelope<Contact>>(`/contacts/${id}`)
   return data.data
 }
 
@@ -75,8 +92,25 @@ export async function listBankAccounts() {
   return data.data
 }
 
-export async function createBankAccount(input: { account_id: string; name: string }) {
+export type BankAccountInput = { account_id?: string; name: string; bank_name?: string | null; account_number?: string | null }
+
+export async function createBankAccount(input: BankAccountInput) {
   const { data } = await api.post<ApiEnvelope<BankAccount>>('/bank-accounts', input)
+  return data.data
+}
+
+export async function updateBankAccount(id: string, input: BankAccountInput) {
+  const { data } = await api.put<ApiEnvelope<BankAccount>>(`/bank-accounts/${id}`, input)
+  return data.data
+}
+
+export async function setBankAccountActive(id: string, isActive: boolean) {
+  const { data } = await api.patch<ApiEnvelope<BankAccount>>(`/bank-accounts/${id}/status`, { is_active: isActive })
+  return data.data
+}
+
+export async function deleteBankAccount(id: string) {
+  const { data } = await api.delete<ApiEnvelope<BankAccount>>(`/bank-accounts/${id}`)
   return data.data
 }
 
@@ -85,8 +119,31 @@ export async function listMappings() {
   return data.data
 }
 
-export async function createDimension(input: { code: string; name: string }) {
-  const { data } = await api.post<ApiEnvelope<unknown>>('/dimensions', input)
+export type Dimension = { id: string; code: string; name: string; is_active: boolean }
+export type DimensionInput = { code: string; name: string }
+
+export async function listDimensions() {
+  const { data } = await api.get<ApiEnvelope<Dimension[]>>('/dimensions')
+  return data.data
+}
+
+export async function createDimension(input: DimensionInput) {
+  const { data } = await api.post<ApiEnvelope<Dimension>>('/dimensions', input)
+  return data.data
+}
+
+export async function updateDimension(id: string, input: DimensionInput) {
+  const { data } = await api.put<ApiEnvelope<Dimension>>(`/dimensions/${id}`, input)
+  return data.data
+}
+
+export async function setDimensionActive(id: string, isActive: boolean) {
+  const { data } = await api.patch<ApiEnvelope<Dimension>>(`/dimensions/${id}/status`, { is_active: isActive })
+  return data.data
+}
+
+export async function deleteDimension(id: string) {
+  const { data } = await api.delete<ApiEnvelope<Dimension>>(`/dimensions/${id}`)
   return data.data
 }
 
