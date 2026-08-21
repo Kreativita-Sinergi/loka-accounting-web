@@ -3,7 +3,7 @@ import { createProject, getProjectProfitability, listProjects, updateProject } f
 import { listContacts } from '../api/accounting'
 import type { Contact } from '../types/accounting'
 import type { Project, ProjectProfitabilityReport } from '../types/reports'
-import { Badge, Button, EmptyState, PageHeader } from '../components/ui'
+import { Badge, Button, DataEntryGuide, EmptyState, PageHeader } from '../components/ui'
 import { amount } from './ReportsPage'
 
 const statuses: Project['status'][] = ['PLANNED', 'ACTIVE', 'ON_HOLD', 'COMPLETED', 'CANCELLED']
@@ -69,6 +69,7 @@ export function ProjectsPage({ onNotice }: { onNotice: (message: string) => void
   return (
     <section>
       <PageHeader eyebrow="JOB COSTING" title="Proyek" description="Tandai pendapatan dan biaya dengan proyek, lalu baca laba per proyek beserta selisih terhadap anggaran." />
+      <DataEntryGuide steps={['Isi kode proyek yang unik dan nama proyek.', 'Tentukan periode, status, nilai kontrak, anggaran biaya, serta pelanggan jika ada.', 'Klik “Buat proyek”. Setelah tersimpan, pilih proyek tersebut pada dokumen penjualan atau pembelian.', 'Atur periode laporan untuk melihat pendapatan, biaya, margin, dan selisih anggaran proyek.']} />
 
       <div className="split-grid">
         <form className="panel form-panel" onSubmit={(event) => void submit(event)} key={editing?.id ?? 'new'}>

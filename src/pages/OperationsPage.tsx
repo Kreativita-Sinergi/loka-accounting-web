@@ -1,7 +1,7 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { allocateOpenItem, createContact, createExpense, createOpenItem, getAging, listContacts, listPayables, listReceivables } from '../api/accounting'
 import type { Account, AgingReport, Contact, OpenItem } from '../types/accounting'
-import { Badge, Button, EmptyState, PageHeader } from '../components/ui'
+import { Badge, Button, DataEntryGuide, EmptyState, PageHeader } from '../components/ui'
 
 export function OperationsPage({ accounts, onNotice }: { accounts: Account[]; onNotice: (value: string) => void }) {
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -41,6 +41,7 @@ export function OperationsPage({ accounts, onNotice }: { accounts: Account[]; on
   }
   const fxAccounts = accounts.filter((a) => ['OTHER_INCOME', 'OTHER_EXPENSE', 'REVENUE', 'EXPENSE'].includes(a.type))
   return <section><PageHeader eyebrow="OPERATIONAL ACCOUNTING" title="Piutang, utang, dan beban" description="Workflow bisnis membentuk jurnal double-entry dalam satu transaksi database." />
+    <DataEntryGuide steps={['Buat kontak pelanggan atau supplier terlebih dahulu agar dapat dipilih pada transaksi.', 'Untuk pengeluaran langsung, isi tanggal, deskripsi, nominal, dan akun beban lalu klik “Posting beban”.', 'Untuk transaksi belum lunas, pilih Piutang atau Utang, kontak, tanggal, nominal, dan akun lawan lalu buat open item.', 'Saat pembayaran terjadi, klik “Bayar” pada open item dan isi metode serta nominal pembayarannya.']} note="Pembuatan beban, piutang, utang, dan pembayaran akan membentuk jurnal secara otomatis." />
     <div className="summary-grid"><article className="panel summary-card"><span>Kontak aktif</span><strong>{contacts.filter((item) => item.is_active).length}</strong></article><article className="panel summary-card"><span>Piutang terbuka</span><strong>{receivables.filter((item) => item.status !== 'PAID').length}</strong></article><article className="panel summary-card"><span>Utang terbuka</span><strong>{payables.filter((item) => item.status !== 'PAID').length}</strong></article></div>
     <div className="split-grid"><form className="panel form-panel" onSubmit={(e) => void addContact(e)}><h2>Kontak baru</h2><label>Nama<input name="name" required /></label><label>Tipe<select name="type"><option>CUSTOMER</option><option>SUPPLIER</option><option>BOTH</option></select></label><Button>Simpan kontak</Button></form>
       <form className="panel form-panel" onSubmit={(e) => void addExpense(e)}><h2>Catat beban tunai</h2><label>Tanggal<input name="date" type="date" required /></label><label>Deskripsi<input name="description" required /></label><label>Nominal<input name="amount" inputMode="numeric" required /></label><label>Akun beban<select name="account" required>{accounts.filter((a) => a.type === 'EXPENSE' || a.type === 'OTHER_EXPENSE').map((a) => <option value={a.id} key={a.id}>{a.code} · {a.name}</option>)}</select></label><Button>Posting beban</Button></form></div>

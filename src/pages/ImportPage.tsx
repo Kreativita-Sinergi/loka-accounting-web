@@ -1,7 +1,7 @@
 import { type FormEvent, useState } from 'react'
 import { downloadImportTemplate, IMPORT_KINDS, uploadImport, type ImportKind } from '../api/imports'
 import type { ImportResult } from '../types/reports'
-import { Badge, Button, PageHeader } from '../components/ui'
+import { Badge, Button, DataEntryGuide, PageHeader } from '../components/ui'
 
 const descriptions: Record<ImportKind, { label: string; help: string }> = {
   units: { label: 'Satuan', help: 'Kolom: code, name, precision. Impor satuan lebih dulu karena barang merujuk kodenya.' },
@@ -45,6 +45,7 @@ export function ImportPage({ onNotice }: { onNotice: (message: string) => void }
   return (
     <section>
       <PageHeader eyebrow="MIGRASI DATA" title="Impor data" description="Unduh template, isi di spreadsheet, lalu unggah. Satu baris bermasalah membatalkan seluruh berkas sehingga data tidak pernah masuk sebagian." />
+      <DataEntryGuide title="Cara mengimpor data" steps={['Pilih jenis data yang akan diimpor.', 'Klik “Unduh template”, lalu isi kolom tanpa mengubah nama header.', 'Simpan sebagai CSV, kembali ke halaman ini, pilih berkas dan tanggal efektif bila diminta.', 'Klik “Impor sekarang” dan periksa ringkasan hasil serta pesan kesalahan.']} note="Impor satuan sebelum produk, dan master data sebelum transaksi yang merujuknya." />
 
       <div className="tabs">
         {IMPORT_KINDS.map((candidate) => (

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Account, JournalLineInput } from '../types/accounting'
-import { Button, PageHeader } from '../components/ui'
+import { Button, DataEntryGuide, PageHeader } from '../components/ui'
 
 const emptyLine = (): JournalLineInput => ({ account_id: '', description: '', debit: '0', credit: '0' })
 
@@ -32,6 +32,7 @@ export function JournalPage({ accounts, onSubmit }: { accounts: Account[]; onSub
   return (
     <section>
       <PageHeader eyebrow="DOUBLE ENTRY" title="Jurnal manual" description="Pastikan debit dan kredit seimbang. Jurnal langsung diposting dan tidak dapat diedit setelahnya." />
+      <DataEntryGuide steps={['Pilih tanggal transaksi dan isi keterangan yang menjelaskan tujuan jurnal.', 'Pilih akun pada setiap baris, lalu isi nominal hanya di kolom Debit atau Kredit.', 'Pastikan total Debit sama dengan Kredit. Tambahkan baris bila diperlukan, lalu klik “Post jurnal”.']} note="Jurnal langsung diposting dan tidak dapat diedit; periksa akun dan nominal sebelum menyimpan." />
       <div className="panel form-panel">
         <div className="form-grid"><label>Tanggal<input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label><label>Keterangan<input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Contoh: Setoran modal awal" /></label></div>
         <div className="journal-table">

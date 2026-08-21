@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AxiosError } from 'axios'
-import { createJournal, getSettings, initializeAccounting, listAccounts } from './api/accounting'
+import { createAccount, createJournal, getSettings, initializeAccounting, listAccounts } from './api/accounting'
 import { Layout, type PageKey } from './components/Layout'
 import { AccountsPage } from './pages/AccountsPage'
 import { JournalPage } from './pages/JournalPage'
@@ -73,7 +73,7 @@ export default function App() {
       {notice && <div className="toast" role="status"><span>{notice}</span><button onClick={() => setNotice(null)} aria-label="Tutup notifikasi">×</button></div>}
       {page === 'overview' && <OverviewPage settings={settings} onboarding={onboarding} loading={loading} onInitialize={initialize} onGetStarted={() => setPage('get-started')} />}
       {page === 'get-started' && settings && onboarding && <GetStartedPage settings={settings} onboarding={onboarding} accounts={accounts} onChanged={(value) => { setOnboarding(value); void getSettings().then(setSettings) }} onNavigate={setPage} onNotice={setNotice} />}
-      {page === 'accounts' && <AccountsPage accounts={accounts} />}
+      {page === 'accounts' && <AccountsPage accounts={accounts} onCreate={async (input) => { try { const account = await createAccount(input); setAccounts((current) => [...current, account].sort((left, right) => left.code.localeCompare(right.code, 'id-ID', { numeric: true }))); setNotice('Akun berhasil dibuat.') } catch (error) { showError(error, setNotice); throw error } }} />}
       {page === 'journal' && <JournalPage accounts={accounts} onSubmit={async (input) => { try { await createJournal(input); setNotice('Jurnal berhasil diposting.') } catch (error) { showError(error, setNotice); throw error } }} />}
       {page === 'ledger' && <LedgerPage />}
       {page === 'operations' && <OperationsPage accounts={accounts} onNotice={setNotice} />}

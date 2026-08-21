@@ -3,7 +3,7 @@ import { createFixedAsset, depreciateAsset, disposeAsset, listDisposals, listFix
 import { getFixedAssetRegister } from '../api/analytics'
 import type { Account } from '../types/accounting'
 import type { AssetDisposal, FixedAsset, FixedAssetRegisterReport } from '../types/reports'
-import { Badge, Button, EmptyState, PageHeader } from '../components/ui'
+import { Badge, Button, DataEntryGuide, EmptyState, PageHeader } from '../components/ui'
 import { amount } from './ReportsPage'
 
 const paymentMethods = ['CASH', 'QRIS', 'DEBIT_CARD', 'CREDIT_CARD', 'E_WALLET']
@@ -96,6 +96,7 @@ export function AssetsPage({ accounts, onNotice }: { accounts: Account[]; onNoti
   return (
     <section>
       <PageHeader eyebrow="ASET TETAP" title="Aset tetap" description="Perolehan, penyusutan bulanan, penilaian ulang atau penurunan nilai, dan pelepasan aset — semuanya langsung membentuk jurnal." />
+      <DataEntryGuide steps={['Isi identitas aset, tanggal dan harga perolehan, nilai residu, serta umur manfaat.', 'Pilih metode penyusutan dan tiga akun: aset, akumulasi penyusutan, dan beban penyusutan.', 'Klik “Catat aset”. Gunakan daftar aset untuk menjalankan penyusutan setelah aset tersimpan.', 'Gunakan Penilaian ulang atau Pelepasan hanya ketika kejadian tersebut benar-benar terjadi.']} note="Semua tindakan aset membentuk jurnal. Periksa tanggal, nominal, dan akun sebelum menyimpan." />
 
       <div className="split-grid">
         <form className="panel form-panel" onSubmit={acquire}>

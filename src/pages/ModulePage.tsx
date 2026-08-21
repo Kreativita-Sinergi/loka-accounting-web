@@ -2,7 +2,7 @@ import { type FormEvent, useEffect, useState } from 'react'
 import { AxiosError } from 'axios'
 import { completeManufacturing, createTaxPeriod, getLocalization, listFXRates, listManufacturingOrders, listPayrollRuns, listTaxPeriods, postPayroll, remeasureFX, saveForeignBalance, saveFXRate, saveLocalization } from '../api/accounting'
 import type { Account, FXRate, LocalizationProfile, ManufacturingOrder, PayrollRun, StatutoryTaxPeriod } from '../types/accounting'
-import { Badge, EmptyState, PageHeader } from '../components/ui'
+import { Badge, DataEntryGuide, EmptyState, PageHeader } from '../components/ui'
 
 type Kind = 'compliance' | 'payroll' | 'manufacturing' | 'currency'
 const today = new Date().toISOString().slice(0, 10)
@@ -16,7 +16,13 @@ export function ModulePage({ kind, accounts, onNotice }: { kind: Kind; accounts:
   return <Currency accounts={accounts} onNotice={onNotice} />
 }
 
-function PageHead({ eyebrow, title, description, badge }: { eyebrow: string; title: string; description: string; badge: string }) { return <PageHeader eyebrow={eyebrow} title={title} description={description} action={<Badge tone="info">{badge}</Badge>} /> }
+const moduleGuides: Record<string, string[]> = {
+  'INDONESIA LOCALIZATION': ['Lengkapi identitas wajib pajak dan status PKP, lalu simpan profil.', 'Pilih jenis serta rentang periode pajak.', 'Isi pajak keluaran, pajak masukan, dan jumlah yang dipotong, lalu buat workpaper.', 'Periksa hasilnya di daftar periode statutory sebelum review dan filing.'],
+  'PAYROLL ACCOUNTING': ['Isi periode payroll dan tanggal pembayaran.', 'Masukkan identitas karyawan, gross, potongan, dan kontribusi perusahaan.', 'Pilih akun beban, utang payroll, dan akun pembayaran.', 'Periksa seluruh nilai lalu klik “Post payroll”.'],
+  'MANUFACTURING ACCOUNTING': ['Isi nomor order, produk, tanggal selesai, dan jumlah produksi.', 'Masukkan biaya material, tenaga kerja langsung, dan overhead.', 'Pilih akun barang jadi, bahan baku, serta akun absorpsi.', 'Periksa total biaya lalu klik “Selesaikan & post”.'],
+  'MULTI-CURRENCY': ['Simpan kurs penutupan beserta tanggal dan sumbernya.', 'Catat saldo valuta serta carrying amount dalam rupiah.', 'Pilih kurs dan akun gain/loss pada form Remeasure.', 'Post remeasurement untuk mencatat selisih kurs.'],
+}
+function PageHead({ eyebrow, title, description, badge }: { eyebrow: string; title: string; description: string; badge: string }) { return <><PageHeader eyebrow={eyebrow} title={title} description={description} action={<Badge tone="info">{badge}</Badge>} /><DataEntryGuide steps={moduleGuides[eyebrow]} /></> }
 function AccountSelect({ name, accounts, types }: { name: string; accounts: Account[]; types?: string[] }) { const rows = types ? accounts.filter(a => types.includes(a.type)) : accounts; return <select name={name} required defaultValue=""><option value="" disabled>Pilih akun</option>{rows.map(a => <option key={a.id} value={a.id}>{a.code} · {a.name}</option>)}</select> }
 function Empty({ text }: { text: string }) { return <EmptyState>{text}</EmptyState> }
 function errorMessage(error: unknown) { return error instanceof AxiosError ? String(error.response?.data?.error?.details ?? error.message) : 'Permintaan gagal.' }

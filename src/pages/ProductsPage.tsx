@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { createItem, createUnit, createWarehouse, listItems, listUnitConversions, listUnits, listWarehouses, saveUnitConversion } from '../api/operations'
-import { Badge, Button, EmptyState, PageHeader } from '../components/ui'
+import { Badge, Button, DataEntryGuide, EmptyState, PageHeader } from '../components/ui'
 import type { Account } from '../types/accounting'
 import type { Item, Unit, UnitConversion, Warehouse } from '../types/operations'
 
@@ -25,6 +25,7 @@ export function ProductsPage({ accounts, onNotice }: { accounts: Account[]; onNo
   }
   const inventoryAccounts = accounts.filter((a) => a.type === 'ASSET'); const cogsAccounts = accounts.filter((a) => a.type === 'EXPENSE' || a.type === 'OTHER_EXPENSE')
   return <section><PageHeader eyebrow="MASTER DATA" title="Produk dan gudang" description="Satuan, barang, jasa, serta lokasi stok terkelola sebagai master data mandiri." />
+    <DataEntryGuide steps={['Buat Satuan terlebih dahulu, misalnya PCS, KG, atau JAM.', 'Buat Gudang jika barang akan memiliki stok fisik.', 'Pada Barang atau jasa, isi SKU dan nama, pilih satuan dasar serta tipe produk, lalu simpan.', 'Jika produk dijual dalam satuan lain, pilih produk pada bagian Konversi satuan dan masukkan perbandingannya.']} note="Produk persediaan memerlukan akun persediaan dan akun HPP; jasa tidak memerlukan gudang." />
     <div className="three-grid">
       <form className="panel form-panel" onSubmit={(e) => void unit(e)}><h2>Satuan baru</h2><label>Kode<input name="code" placeholder="PCS" required /></label><label>Nama<input name="name" placeholder="Pieces" required /></label><label>Presisi<select name="precision" defaultValue="0"><option value="0">0 desimal</option><option value="2">2 desimal</option><option value="6">6 desimal</option></select></label><Button>Simpan satuan</Button></form>
       <form className="panel form-panel" onSubmit={(e) => void warehouse(e)}><h2>Gudang baru</h2><label>Kode<input name="code" placeholder="UTAMA" required /></label><label>Nama<input name="name" placeholder="Gudang Utama" required /></label><label>Alamat<input name="address" placeholder="Opsional" /></label><Button>Simpan gudang</Button></form>
