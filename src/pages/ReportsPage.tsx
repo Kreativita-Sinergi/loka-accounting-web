@@ -78,7 +78,7 @@ export function ReportsPage() {
   const [warehouseId, setWarehouseId] = useState('')
   const [items, setItems] = useState<Item[]>([])
   const [warehouses, setWarehouses] = useState<Warehouse[]>([])
-  const [payload, setPayload] = useState<unknown>(null)
+  const [payload, setPayload] = useState<{ key: ReportKey; data: unknown } | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -100,7 +100,8 @@ export function ReportsPage() {
     setLoading(true)
     setError(null)
     try {
-      setPayload(await fetchReport(report, filters))
+      const data = await fetchReport(report, filters)
+      setPayload({ key: report, data })
     } catch (caught) {
       setPayload(null)
       setError(messageOf(caught))
@@ -170,7 +171,7 @@ export function ReportsPage() {
         {blockedOnItem ? <EmptyState>Pilih produk untuk menampilkan kartu stok.</EmptyState>
           : loading ? <div className="loading" role="status">Menyusun laporan…</div>
           : error ? <EmptyState>{error}</EmptyState>
-          : <ReportBody report={report} payload={payload} />}
+          : <ReportBody report={report} payload={payload?.key === report ? payload.data : null} />}
       </div>
     </section>
   )
@@ -389,7 +390,8 @@ function DepreciationView({ report }: { report: AssetDepreciationReport }) {
 }
 
 /** Formats a plain decimal string with Indonesian digit grouping. */
-export function amount(value: string): string {
+export function amount(value: string | null | undefined): string {
+  if (value === null || value === undefined || value === '') return '—'
   const wrapped = value.startsWith('(') && value.endsWith(')')
   const inner = wrapped ? value.slice(1, -1) : value
   const sign = inner.startsWith('-') ? '-' : ''
