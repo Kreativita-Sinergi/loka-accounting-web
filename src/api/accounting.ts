@@ -127,6 +127,21 @@ export async function createAccount(input: { code: string; name: string; type: A
   return data.data
 }
 
+export async function updateAccount(id: string, input: { code: string; name: string; type: Account['type']; normal_balance?: Account['normal_balance']; parent_id: string | null }) {
+  const { data } = await api.put<ApiEnvelope<Account>>(`/accounts/${id}`, input)
+  return data.data
+}
+
+export async function setAccountActive(id: string, isActive: boolean) {
+  const { data } = await api.patch<ApiEnvelope<Account>>(`/accounts/${id}/status`, { is_active: isActive })
+  return data.data
+}
+
+export async function deleteAccount(id: string) {
+  const { data } = await api.delete<ApiEnvelope<Account>>(`/accounts/${id}`)
+  return data.data
+}
+
 export async function createJournal(input: {
   date: string
   description: string

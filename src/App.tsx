@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AxiosError } from 'axios'
-import { createAccount, createJournal, getSettings, initializeAccounting, listAccounts } from './api/accounting'
+import { createAccount, createJournal, deleteAccount, getSettings, initializeAccounting, listAccounts, setAccountActive, updateAccount } from './api/accounting'
 import { Layout, type PageKey } from './components/Layout'
 import { AccountsPage } from './pages/AccountsPage'
 import { JournalPage } from './pages/JournalPage'
@@ -65,28 +65,56 @@ export default function App() {
     }
   }
 
+  function replaceAccount(account: Account) {
+    setAccounts((current) => current.map((item) => item.id === account.id ? account : item).sort((left, right) => left.code.localeCompare(right.code, 'id-ID', { numeric: true })))
+  }
+
+  async function accountCreate(input: { code: string; name: string; type: Account['type']; parent_id: string | null }) {
+    try {
+      const account = await createAccount(input)
+      setAccounts((current) => [...current, account].sort((left, right) => left.code.localeCompare(right.code, 'id-ID', { numeric: true })))
+      setNotice('Akun berhasil dibuat.')
+    } catch (error) { showError(error, setNotice); throw error }
+  }
+
+  async function accountUpdate(id: string, input: { code: string; name: string; type: Account['type']; normal_balance?: Account['normal_balance']; parent_id: string | null }) {
+    try { replaceAccount(await updateAccount(id, input)); setNotice('Akun berhasil diperbarui.') }
+    catch (error) { showError(error, setNotice); throw error }
+  }
+
+  async function accountStatus(id: string, active: boolean) {
+    try { replaceAccount(await setAccountActive(id, active)); setNotice(active ? 'Akun diaktifkan kembali.' : 'Akun dinonaktifkan dan tetap tersimpan dalam histori.') }
+    catch (error) { showError(error, setNotice); throw error }
+  }
+
+  async function accountDelete(id: string) {
+    try { await deleteAccount(id); setAccounts((current) => current.filter((account) => account.id !== id)); setNotice('Akun berhasil dihapus permanen.') }
+    catch (error) { showError(error, setNotice); throw error }
+  }
+
   function authenticated(session: AuthSession) { onboardingRouted.current = false; setLoading(true); setProfile(session.profile) }
   function logout() { clearSession(); setSettings(null); setAccounts([]); setOnboarding(null); onboardingRouted.current = false; setProfile(null) }
   if (!profile) return <AuthPage onAuthenticated={authenticated} />
+  const activeAccounts = accounts.filter((account) => account.is_active)
   return (
     <Layout page={page} onNavigate={setPage} profile={profile} onLogout={logout}>
       {notice && <div className="toast" role="status"><span>{notice}</span><button onClick={() => setNotice(null)} aria-label="Tutup notifikasi">×</button></div>}
       {page === 'overview' && <OverviewPage settings={settings} onboarding={onboarding} loading={loading} onInitialize={initialize} onGetStarted={() => setPage('get-started')} />}
-      {page === 'get-started' && settings && onboarding && <GetStartedPage settings={settings} onboarding={onboarding} accounts={accounts} onChanged={(value) => { setOnboarding(value); void getSettings().then(setSettings) }} onNavigate={setPage} onNotice={setNotice} />}
-      {page === 'accounts' && <AccountsPage accounts={accounts} onCreate={async (input) => { try { const account = await createAccount(input); setAccounts((current) => [...current, account].sort((left, right) => left.code.localeCompare(right.code, 'id-ID', { numeric: true }))); setNotice('Akun berhasil dibuat.') } catch (error) { showError(error, setNotice); throw error } }} />}
-      {page === 'journal' && <JournalPage accounts={accounts} onSubmit={async (input) => { try { await createJournal(input); setNotice('Jurnal berhasil diposting.') } catch (error) { showError(error, setNotice); throw error } }} />}
+      {page === 'get-started' && settings && onboarding && <GetStartedPage settings={settings} onboarding={onboarding} accounts={activeAccounts} onChanged={(value) => { setOnboarding(value); void getSettings().then(setSettings) }} onNavigate={setPage} onNotice={setNotice} />}
+      {page === 'accounts' && <AccountsPage accounts={accounts} onCreate={accountCreate} onUpdate={accountUpdate} onStatusChange={accountStatus} onDelete={accountDelete} />}
+      {page === 'journal' && <JournalPage accounts={activeAccounts} onSubmit={async (input) => { try { await createJournal(input); setNotice('Jurnal berhasil diposting.') } catch (error) { showError(error, setNotice); throw error } }} />}
       {page === 'ledger' && <LedgerPage />}
-      {page === 'operations' && <OperationsPage accounts={accounts} onNotice={setNotice} />}
-      {page === 'products' && <ProductsPage accounts={accounts} onNotice={setNotice} />}
+      {page === 'operations' && <OperationsPage accounts={activeAccounts} onNotice={setNotice} />}
+      {page === 'products' && <ProductsPage accounts={activeAccounts} onNotice={setNotice} />}
       {page === 'documents' && <DocumentsPage onNotice={setNotice} />}
       {page === 'controls' && <ControlsPage profile={profile} onNotice={setNotice} />}
-      {page === 'advanced' && <AdvancedPage accounts={accounts} onNotice={setNotice} />}
-      {page === 'compliance' && <ModulePage kind="compliance" accounts={accounts} onNotice={setNotice} />}
-      {page === 'payroll' && <ModulePage kind="payroll" accounts={accounts} onNotice={setNotice} />}
-      {page === 'manufacturing' && <ModulePage kind="manufacturing" accounts={accounts} onNotice={setNotice} />}
-      {page === 'currency' && <ModulePage kind="currency" accounts={accounts} onNotice={setNotice} />}
+      {page === 'advanced' && <AdvancedPage accounts={activeAccounts} onNotice={setNotice} />}
+      {page === 'compliance' && <ModulePage kind="compliance" accounts={activeAccounts} onNotice={setNotice} />}
+      {page === 'payroll' && <ModulePage kind="payroll" accounts={activeAccounts} onNotice={setNotice} />}
+      {page === 'manufacturing' && <ModulePage kind="manufacturing" accounts={activeAccounts} onNotice={setNotice} />}
+      {page === 'currency' && <ModulePage kind="currency" accounts={activeAccounts} onNotice={setNotice} />}
       {page === 'projects' && <ProjectsPage onNotice={setNotice} />}
-      {page === 'assets' && <AssetsPage accounts={accounts} onNotice={setNotice} />}
+      {page === 'assets' && <AssetsPage accounts={activeAccounts} onNotice={setNotice} />}
       {page === 'imports' && <ImportPage onNotice={setNotice} />}
       {page === 'reports' && <ReportsPage />}
     </Layout>
