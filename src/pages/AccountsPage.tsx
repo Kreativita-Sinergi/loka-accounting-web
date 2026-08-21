@@ -81,7 +81,10 @@ export function AccountsPage({ accounts, onCreate, onUpdate, onStatusChange, onD
     { header: 'Kode', className: 'mono', width: '110px', cell: (account) => account.code },
     {
       header: 'Nama akun',
-      cell: (account) => <><strong>{account.name}</strong>{account.system_key && <small className="block">{account.system_key}</small>}</>,
+      cell: (account) => <>
+        <div className="flex items-center gap-2"><strong>{account.name}</strong>{account.is_system && <Badge tone="info">Sistem</Badge>}</div>
+        {account.system_key && <small className="block">{account.system_key}</small>}
+      </>,
     },
     { header: 'Tipe', cell: (account) => <span className="type-tag">{account.type.replaceAll('_', ' ')}</span> },
     { header: 'Saldo normal', cell: (account) => account.normal_balance },
@@ -103,7 +106,7 @@ export function AccountsPage({ accounts, onCreate, onUpdate, onStatusChange, onD
           'Nonaktifkan adalah pengganti hapus: akun tetap ada dalam histori tetapi tidak tersedia untuk transaksi baru.',
           'Hapus permanen hanya tersedia untuk akun nonaktif dan akan ditolak jika akun masih dipakai data lain.',
         ]}
-        note="Akun sistem hanya dapat diubah namanya dan tidak dapat dinonaktifkan maupun dihapus."
+        note="Akun bertanda “Sistem” dipakai otomatis oleh modul lain — penjualan, pembelian, kas, pajak, dan persediaan merujuknya saat memposting jurnal. Karena itu akun sistem hanya dapat diubah namanya, dan tidak dapat dinonaktifkan maupun dihapus. Akun yang Anda buat sendiri bebas dinonaktifkan."
       />
 
       <TablePanel

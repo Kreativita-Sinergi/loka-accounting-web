@@ -17,7 +17,7 @@ export type RowAction<T> = {
   onSelect: (row: T) => void
   /** Hide the entry entirely for rows it does not apply to. */
   when?: (row: T) => boolean
-  /** Show it but block it, with the reason surfaced as a tooltip. */
+  /** Show it but block it; the returned text is shown under the label. */
   disabled?: (row: T) => string | false
   danger?: boolean
 }
@@ -156,12 +156,13 @@ export function RowMenu<T>({ row, actions }: { row: T; actions: Array<RowAction<
                 key={index}
                 type="button"
                 role="menuitem"
-                className={cx('row-menu-item', action.danger && 'row-menu-item-danger')}
+                className={cx('row-menu-item', action.danger && 'row-menu-item-danger', blocked && 'row-menu-item-blocked')}
                 disabled={Boolean(blocked)}
                 title={blocked || undefined}
                 onClick={() => { setOpen(false); action.onSelect(row) }}
               >
-                {action.icon && <Icon name={action.icon} className="size-4" />}{label}
+                {action.icon && <Icon name={action.icon} className="size-4" />}
+                <span>{label}{blocked && <small className="row-menu-reason">{blocked}</small>}</span>
               </button>
             )
           })}

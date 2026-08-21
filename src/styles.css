@@ -286,6 +286,10 @@
   .row-menu-list { @apply absolute top-full right-0 z-40 mt-1 grid min-w-46 gap-0.5 rounded-xl border border-slate-200 bg-white p-1.5 text-left shadow-xl shadow-slate-950/10; }
   .row-menu-item { @apply flex min-h-9 w-full items-center gap-2.5 rounded-lg border-0 bg-transparent px-2.5 py-1.5 text-left text-[11px] font-bold whitespace-nowrap text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 disabled:pointer-events-none disabled:opacity-40; }
   .row-menu-item-danger { @apply text-red-700 hover:bg-red-50 hover:text-red-800; }
+  .row-menu-item > span { @apply block; }
+  .row-menu-item-blocked { @apply items-start; }
+  .row-menu-item-blocked > svg { @apply mt-0.5; }
+  .row-menu-reason { @apply mt-0.5 block max-w-52 text-[9px] leading-snug font-semibold whitespace-normal text-slate-400; }
   .status-pill { @apply inline-flex min-h-6 items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold; }
   .status-pill i { @apply size-1.5 rounded-full bg-current; }
   .status-pill-active { @apply bg-emerald-50 text-emerald-700; }
