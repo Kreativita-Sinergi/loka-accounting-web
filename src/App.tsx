@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AxiosError } from 'axios'
 import { createAccount, createJournal, deleteAccount, getSettings, initializeAccounting, listAccounts, setAccountActive, updateAccount } from './api/accounting'
-import { Layout, type PageKey } from './components/Layout'
+import { Shell } from './components/Shell'
+import { TabContext, useTabs } from './store/tabs'
+import type { PageKey } from './lib/menu'
 import { AccountsPage } from './pages/AccountsPage'
 import { JournalPage } from './pages/JournalPage'
 import { OverviewPage } from './pages/OverviewPage'
@@ -25,7 +27,7 @@ import type { Account, AccountingSettings, ApiEnvelope } from './types/accountin
 
 export default function App() {
   const [profile, setProfile] = useState<IdentityProfile | null>(() => getStoredProfile())
-  const [page, setPage] = useState<PageKey>('overview')
+  const { tabs, active, open, close, setActive, setDirty, rename } = useTabs()
   const [settings, setSettings] = useState<AccountingSettings | null>(null)
   const [accounts, setAccounts] = useState<Account[]>([])
   const [onboarding, setOnboarding] = useState<Onboarding | null>(null)
@@ -45,7 +47,12 @@ export default function App() {
   }, [])
 
   useEffect(() => { if (profile) void refresh() }, [refresh, profile])
-  useEffect(() => { if (onboarding && !onboardingRouted.current && !onboarding.completed_at && !onboarding.dismissed_at) { onboardingRouted.current = true; setPage('get-started') } }, [onboarding])
+  useEffect(() => { if (onboarding && !onboardingRouted.current && !onboarding.completed_at && !onboarding.dismissed_at) { onboardingRouted.current = true; open('get-started') } }, [onboarding, open])
+  useEffect(() => {
+    const openTab = (event: Event) => open((event as CustomEvent<PageKey>).detail)
+    window.addEventListener('loka:open-tab', openTab)
+    return () => window.removeEventListener('loka:open-tab', openTab)
+  }, [open])
   useEffect(() => {
     const disconnect = () => setProfile(null)
     window.addEventListener('loka:unauthorized', disconnect)
@@ -97,28 +104,41 @@ export default function App() {
   function logout() { clearSession(); setSettings(null); setAccounts([]); setOnboarding(null); onboardingRouted.current = false; setProfile(null) }
   if (!profile) return <AuthPage onAuthenticated={authenticated} />
   const activeAccounts = accounts.filter((account) => account.is_active)
+
+  // Keep-alive (§3.4): setiap tab yang pernah dibuka tetap ter-mount; yang tidak
+  // aktif hanya disembunyikan agar scroll, isi form, dan filter tidak hilang.
+  function render(key: PageKey) {
+    switch (key) {
+      case 'overview': return <OverviewPage settings={settings} onboarding={onboarding} loading={loading} onInitialize={initialize} onGetStarted={() => open('get-started')} />
+      case 'get-started': return settings && onboarding ? <GetStartedPage settings={settings} onboarding={onboarding} accounts={activeAccounts} onChanged={(value) => { setOnboarding(value); void getSettings().then(setSettings) }} onNavigate={open} onNotice={setNotice} /> : null
+      case 'accounts': return <AccountsPage accounts={accounts} onCreate={accountCreate} onUpdate={accountUpdate} onStatusChange={accountStatus} onDelete={accountDelete} />
+      case 'journal': return <JournalPage accounts={activeAccounts} onSubmit={async (input) => { try { await createJournal(input); setNotice('Jurnal berhasil diposting.') } catch (error) { showError(error, setNotice); throw error } }} />
+      case 'ledger': return <LedgerPage />
+      case 'operations': return <OperationsPage accounts={activeAccounts} onNotice={setNotice} />
+      case 'products': return <ProductsPage accounts={activeAccounts} onNotice={setNotice} />
+      case 'documents': return <DocumentsPage scale={settings?.currency_scale ?? 0} onNotice={setNotice} />
+      case 'controls': return <ControlsPage profile={profile!} onNotice={setNotice} />
+      case 'advanced': return <AdvancedPage accounts={activeAccounts} onNotice={setNotice} />
+      case 'compliance': return <ModulePage kind="compliance" accounts={activeAccounts} onNotice={setNotice} />
+      case 'payroll': return <ModulePage kind="payroll" accounts={activeAccounts} onNotice={setNotice} />
+      case 'manufacturing': return <ModulePage kind="manufacturing" accounts={activeAccounts} onNotice={setNotice} />
+      case 'currency': return <ModulePage kind="currency" accounts={activeAccounts} onNotice={setNotice} />
+      case 'projects': return <ProjectsPage onNotice={setNotice} />
+      case 'assets': return <AssetsPage accounts={activeAccounts} onNotice={setNotice} />
+      case 'imports': return <ImportPage onNotice={setNotice} />
+      case 'reports': return <ReportsPage />
+    }
+  }
+
   return (
-    <Layout page={page} onNavigate={setPage} profile={profile} onLogout={logout}>
+    <Shell tabs={tabs} active={active} onOpen={open} onClose={close} onActivate={setActive} profile={profile} onLogout={logout}>
       {notice && <div className="toast" role="status"><span>{notice}</span><button onClick={() => setNotice(null)} aria-label="Tutup notifikasi">×</button></div>}
-      {page === 'overview' && <OverviewPage settings={settings} onboarding={onboarding} loading={loading} onInitialize={initialize} onGetStarted={() => setPage('get-started')} />}
-      {page === 'get-started' && settings && onboarding && <GetStartedPage settings={settings} onboarding={onboarding} accounts={activeAccounts} onChanged={(value) => { setOnboarding(value); void getSettings().then(setSettings) }} onNavigate={setPage} onNotice={setNotice} />}
-      {page === 'accounts' && <AccountsPage accounts={accounts} onCreate={accountCreate} onUpdate={accountUpdate} onStatusChange={accountStatus} onDelete={accountDelete} />}
-      {page === 'journal' && <JournalPage accounts={activeAccounts} onSubmit={async (input) => { try { await createJournal(input); setNotice('Jurnal berhasil diposting.') } catch (error) { showError(error, setNotice); throw error } }} />}
-      {page === 'ledger' && <LedgerPage />}
-      {page === 'operations' && <OperationsPage accounts={activeAccounts} onNotice={setNotice} />}
-      {page === 'products' && <ProductsPage accounts={activeAccounts} onNotice={setNotice} />}
-      {page === 'documents' && <DocumentsPage onNotice={setNotice} />}
-      {page === 'controls' && <ControlsPage profile={profile} onNotice={setNotice} />}
-      {page === 'advanced' && <AdvancedPage accounts={activeAccounts} onNotice={setNotice} />}
-      {page === 'compliance' && <ModulePage kind="compliance" accounts={activeAccounts} onNotice={setNotice} />}
-      {page === 'payroll' && <ModulePage kind="payroll" accounts={activeAccounts} onNotice={setNotice} />}
-      {page === 'manufacturing' && <ModulePage kind="manufacturing" accounts={activeAccounts} onNotice={setNotice} />}
-      {page === 'currency' && <ModulePage kind="currency" accounts={activeAccounts} onNotice={setNotice} />}
-      {page === 'projects' && <ProjectsPage onNotice={setNotice} />}
-      {page === 'assets' && <AssetsPage accounts={activeAccounts} onNotice={setNotice} />}
-      {page === 'imports' && <ImportPage onNotice={setNotice} />}
-      {page === 'reports' && <ReportsPage />}
-    </Layout>
+      {tabs.map((tab) => (
+        <TabContext.Provider key={tab.key} value={{ setDirty: (dirty) => setDirty(tab.key, dirty), rename: (label) => rename(tab.key, label) }}>
+          <div className="tab-panel" hidden={tab.key !== active}>{render(tab.key)}</div>
+        </TabContext.Provider>
+      ))}
+    </Shell>
   )
 }
 

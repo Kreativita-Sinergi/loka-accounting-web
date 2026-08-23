@@ -7,15 +7,15 @@ export function cx(...values: Array<string | false | null | undefined>) {
 
 export function Button({ variant = 'primary', icon, className, children, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost'; icon?: IconName }) {
   const variants = {
-    primary: 'border-brand bg-brand text-white hover:border-brand-strong hover:bg-brand-strong',
+    primary: 'border-[color:var(--accent)] bg-[color:var(--accent)] text-white hover:brightness-110',
     secondary: 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50',
     ghost: 'border-transparent bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-800',
   }
-  return <button className={cx('inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border px-3.5 py-2 text-xs font-bold shadow-xs transition disabled:pointer-events-none disabled:opacity-45', variants[variant], className)} {...props}>{icon && <Icon name={icon} className="size-4" />}{children}</button>
+  return <button className={cx('inline-flex min-h-8.5 items-center justify-center gap-2 rounded-md border px-3 py-1.5 text-[12px] font-bold shadow-xs transition disabled:pointer-events-none disabled:opacity-45', variants[variant], className)} {...props}>{icon && <Icon name={icon} className="size-4" />}{children}</button>
 }
 
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cx('rounded-[14px] border border-slate-200 bg-white shadow-panel', className)} {...props} />
+  return <div className={cx('rounded-lg border border-[color:var(--border)] bg-white shadow-panel', className)} {...props} />
 }
 
 export function Badge({ tone = 'neutral', className, ...props }: HTMLAttributes<HTMLSpanElement> & { tone?: 'neutral' | 'success' | 'warning' | 'info' }) {
@@ -24,7 +24,7 @@ export function Badge({ tone = 'neutral', className, ...props }: HTMLAttributes<
 }
 
 export function PageHeader({ eyebrow, title, description, action, compact = true }: { eyebrow: string; title: string; description: string; action?: ReactNode; compact?: boolean }) {
-  return <header className={cx('mb-7 flex justify-between gap-7 max-sm:grid max-sm:gap-3.5', compact ? 'items-end' : 'items-start')}><div><p className="m-0 font-display text-[10px] font-bold tracking-[.16em] text-brand uppercase">{eyebrow}</p><h1 className={cx('mt-1 mb-2 max-w-4xl font-display font-extrabold leading-[1.12] tracking-[-1.2px] text-slate-950', compact ? 'text-[clamp(28px,2.5vw,34px)]' : 'text-[clamp(29px,3vw,40px)]')}>{title}</h1><p className="m-0 max-w-3xl text-sm leading-relaxed text-slate-500">{description}</p></div>{action}</header>
+  return <header className={cx('mb-4 flex justify-between gap-6 max-sm:grid max-sm:gap-3.5', compact ? 'items-end' : 'items-start')}><div><p className="m-0 text-[10px] font-bold tracking-[.16em] text-[color:var(--accent)] uppercase">{eyebrow}</p><h1 className={cx('mt-0.5 mb-1 max-w-4xl font-bold leading-tight tracking-tight text-slate-950', compact ? 'text-lg' : 'text-xl')}>{title}</h1><p className="m-0 max-w-3xl text-[12px] leading-relaxed text-[color:var(--fg-muted)]">{description}</p></div>{action}</header>
 }
 
 export function DataEntryGuide({ steps, note, title = 'Cara menambah data' }: { steps: string[]; note?: string; title?: string }) {

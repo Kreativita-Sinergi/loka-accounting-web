@@ -1,6 +1,6 @@
 import type { ReactNode, SVGProps } from 'react'
 
-export type IconName = 'home' | 'journal' | 'ledger' | 'accounts' | 'operations' | 'payroll' | 'manufacturing' | 'currency' | 'reports' | 'compliance' | 'settings' | 'logout' | 'plus' | 'download' | 'check' | 'empty' | 'project' | 'asset' | 'upload' | 'printer' | 'more' | 'edit' | 'trash' | 'power' | 'close' | 'search' | 'refresh' | 'warning' | 'chevron'
+export type IconName = 'home' | 'journal' | 'ledger' | 'accounts' | 'operations' | 'payroll' | 'manufacturing' | 'currency' | 'reports' | 'compliance' | 'settings' | 'logout' | 'plus' | 'download' | 'check' | 'empty' | 'project' | 'asset' | 'upload' | 'printer' | 'more' | 'edit' | 'trash' | 'power' | 'close' | 'search' | 'refresh' | 'warning' | 'chevron' | 'building' | 'bank' | 'tag' | 'cart' | 'boxes' | 'receipt' | 'help' | 'bell' | 'grid'
 
 const paths: Record<IconName, ReactNode> = {
   home: <><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5M9 21v-7h6v7"/></>,
@@ -31,6 +31,15 @@ const paths: Record<IconName, ReactNode> = {
   refresh: <><path d="M3 12a9 9 0 0 1 15.5-6.2M21 12a9 9 0 0 1-15.5 6.2"/><path d="M18 3v4h-4M6 21v-4h4"/></>,
   warning: <><path d="M12 4 2.8 20h18.4z"/><path d="M12 10v4M12 17.2v.2"/></>,
   chevron: <path d="m6 9 6 6 6-6"/>,
+  building: <><path d="M4 21V5l8-2v18M12 21V9l8 2v10M2 21h20"/><path d="M7 8v.01M7 12v.01M7 16v.01M16 14v.01M16 17v.01"/></>,
+  bank: <><path d="M3 10 12 4l9 6M4 10v9M20 10v9M8 10v9M16 10v9M2 21h20"/></>,
+  tag: <><path d="M3 12V4h8l9 9-8 8z"/><circle cx="7.5" cy="7.5" r="1.2"/></>,
+  cart: <><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M2 3h3l2.5 12h11L21 7H6"/></>,
+  boxes: <><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></>,
+  receipt: <><path d="M5 3h14v18l-2.5-1.5L14 21l-2-1.5L10 21l-2.5-1.5L5 21z"/><path d="M9 8h6M9 12h6"/></>,
+  help: <><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5A2.6 2.6 0 0 1 12 7.6c1.5 0 2.6 1 2.6 2.3 0 2-2.6 2-2.6 4M12 17v.01"/></>,
+  bell: <><path d="M6 9a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5H4.5S6 13 6 9Z"/><path d="M10 18a2 2 0 0 0 4 0"/></>,
+  grid: <><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></>,
   printer: <><path d="M7 8V3h10v5"/><rect x="4" y="8" width="16" height="8" rx="2"/><path d="M7 14h10v7H7z"/></>,
 }
 

@@ -1,4 +1,5 @@
 import { api } from './client'
+import { getPaged, type PageRequest } from './paging'
 import type {
   Account,
   AccountingSettings,
@@ -225,3 +226,6 @@ export async function getReport<T extends TrialBalance | ProfitLoss | BalanceShe
   })
   return data.data
 }
+
+/** Chart of accounts dengan paginasi, pengurutan, dan pencarian server-side. */
+export const listAccountsPaged = (request: PageRequest) => getPaged<Account>('/accounts', request)

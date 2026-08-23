@@ -1,11 +1,18 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
-  createItem, createUnit, createWarehouse, deleteItem, deleteUnit, deleteWarehouse,
+  createUnit, createWarehouse, deleteItem, deleteUnit, deleteWarehouse,
   listItems, listUnitConversions, listUnits, listWarehouses, saveUnitConversion,
-  setItemActive, setUnitActive, setWarehouseActive, updateItem, updateUnit, updateWarehouse,
+  setItemActive, setUnitActive, setWarehouseActive, updateUnit, updateWarehouse,
 } from '../api/operations'
 import { Badge, Button, DataEntryGuide, EmptyState, PageHeader } from '../components/ui'
-import { AddButton, DataTable, SearchInput, StatusPill, TablePanel, type Column } from '../components/DataTable'
+import { AddButton, DataTable, StatusPill, TablePanel, type Column } from '../components/DataTable'
+import { ListView, type ListColumn } from '../components/ListView'
+import { listItemsPaged } from '../api/operations'
+import { useServerList } from '../lib/serverList'
+import { downloadCsv, fetchAllPages } from '../lib/csv'
+import { requestTab } from '../lib/menu'
+import { usePersisted } from '../lib/persist'
+import { ItemForm } from './ItemForm'
 import { ConfirmDialog, FormModal, messageOf, useConfirm } from '../components/Modal'
 import type { Account } from '../types/accounting'
 import type { Item, Unit, UnitConversion, Warehouse } from '../types/operations'
@@ -23,13 +30,13 @@ export function ProductsPage({ accounts, onNotice }: { accounts: Account[]; onNo
   const [loading, setLoading] = useState(true)
   const [conversionItem, setConversionItem] = useState('')
   const [conversions, setConversions] = useState<UnitConversion[]>([])
-  const [search, setSearch] = useState('')
 
   const [unitEditor, setUnitEditor] = useState<{ unit: Unit | null } | null>(null)
   const [warehouseEditor, setWarehouseEditor] = useState<{ warehouse: Warehouse | null } | null>(null)
   const [itemEditor, setItemEditor] = useState<{ item: Item | null } | null>(null)
+  const [typeFilter, setTypeFilter] = usePersisted('filter.items.type', 'ALL')
+  const [statusFilter, setStatusFilter] = usePersisted('filter.items.status', 'ALL')
   const [conversionOpen, setConversionOpen] = useState(false)
-  const [itemType, setItemType] = useState<Item['item_type']>('INVENTORY')
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
@@ -59,6 +66,7 @@ export function ProductsPage({ accounts, onNotice }: { accounts: Account[]; onNo
     try {
       await action()
       await refresh()
+      await itemList.reload()
       done()
       onNotice(success)
     } catch (error) {
@@ -69,18 +77,16 @@ export function ProductsPage({ accounts, onNotice }: { accounts: Account[]; onNo
   }
 
   const activeUnits = units.filter((unit) => unit.is_active)
-  const inventoryAccounts = accounts.filter((account) => account.type === 'ASSET')
-  const cogsAccounts = accounts.filter((account) => account.type === 'EXPENSE' || account.type === 'OTHER_EXPENSE' || account.type === 'COGS')
-  const editingItem = itemEditor?.item ?? null
   const editingUnit = unitEditor?.unit ?? null
   const editingWarehouse = warehouseEditor?.warehouse ?? null
   const unitLabel = (id: string) => { const unit = units.find((candidate) => candidate.id === id); return unit ? `${unit.code} · ${unit.name}` : '—' }
 
-  const visibleItems = useMemo(() => {
-    const needle = search.trim().toLowerCase()
-    if (!needle) return items
-    return items.filter((item) => `${item.sku} ${item.name} ${item.item_type}`.toLowerCase().includes(needle))
-  }, [items, search])
+  // Katalog produk dipaginasi server-side; daftar penuh tetap dimuat untuk
+  // kebutuhan dropdown konversi satuan dan modal persediaan.
+  const itemList = useServerList('items', listItemsPaged, {
+    defaultSort: 'sku',
+    filters: { type: typeFilter, status: statusFilter },
+  })
 
   const unitColumns: Array<Column<Unit>> = [
     { header: 'Kode', className: 'mono', width: '110px', cell: (unit) => unit.code },
@@ -95,14 +101,47 @@ export function ProductsPage({ accounts, onNotice }: { accounts: Account[]; onNo
     { header: 'Status', cell: (warehouse) => <StatusPill active={warehouse.is_active} /> },
   ]
 
-  const itemColumns: Array<Column<Item>> = [
-    { header: 'SKU', className: 'mono', width: '130px', cell: (item) => item.sku },
-    { header: 'Nama', cell: (item) => <><strong>{item.name}</strong><small className="block">{unitLabel(item.base_unit_id)}</small></> },
-    { header: 'Tipe', cell: (item) => <span className="type-tag">{itemTypeLabels[item.item_type]}</span> },
-    { header: 'Biaya', cell: (item) => <span className="type-tag">{item.costing_method === 'FIFO' ? 'FIFO' : 'AVG'}</span> },
-    { header: 'Batch', cell: (item) => item.track_lots ? <Badge tone="info">Lot</Badge> : <span className="text-slate-400">—</span> },
-    { header: 'Status', cell: (item) => <StatusPill active={item.is_active} /> },
+  const itemColumns: Array<ListColumn<Item>> = [
+    { sortable: true, key: 'sku', header: 'SKU', className: 'mono', width: '130px', sortValue: (item) => item.sku, cell: (item) => item.sku },
+    { sortable: true, key: 'name', header: 'Nama', sortValue: (item) => item.name, cell: (item) => <><strong>{item.name}</strong><small className="block">{unitLabel(item.base_unit_id)}</small></> },
+    { sortable: true, key: 'type', header: 'Jenis', sortValue: (item) => item.item_type, cell: (item) => <span className="type-tag">{itemTypeLabels[item.item_type]}</span> },
+    { key: 'costing', header: 'Biaya', width: '90px', cell: (item) => <span className="type-tag">{item.costing_method === 'FIFO' ? 'FIFO' : 'AVG'}</span> },
+    { key: 'lots', header: 'Batch', width: '90px', optional: true, cell: (item) => item.track_lots ? <Badge tone="info">Lot</Badge> : <span className="text-slate-400">—</span> },
+    { key: 'serials', header: 'No. Seri', width: '90px', optional: true, cell: (item) => item.track_serials ? <Badge tone="info">Seri</Badge> : <span className="text-slate-400">—</span> },
+    { sortable: true, key: 'status', header: 'Status', width: '110px', sortValue: (item) => item.is_active ? 1 : 0, cell: (item) => <StatusPill active={item.is_active} /> },
   ]
+
+  /** Ekspor mengambil seluruh halaman dari server, bukan hanya yang tampil. */
+  async function exportItems() {
+    const rows = await fetchAllPages(listItemsPaged, { filters: { type: typeFilter, status: statusFilter }, search: itemList.search, sort: 'sku', order: 'asc' })
+    downloadCsv('barang-dan-jasa.csv', ['SKU', 'Nama', 'Jenis', 'Metode biaya', 'Lacak lot', 'Lacak seri', 'Aktif'],
+      rows.map((item) => [item.sku, item.name, itemTypeLabels[item.item_type], item.costing_method, item.track_lots ? 'Ya' : 'Tidak', item.track_serials ? 'Ya' : 'Tidak', item.is_active ? 'Ya' : 'Tidak']))
+    onNotice(`${rows.length} produk diekspor ke CSV.`)
+  }
+
+  function openItemForm(item: Item | null) {
+    setItemEditor({ item })
+    setFormError(null)
+  }
+
+  if (itemEditor) {
+    return (
+      <section>
+        <ItemForm
+          item={itemEditor.item}
+          units={units}
+          accounts={accounts}
+          onCancel={() => setItemEditor(null)}
+          onSaved={(message, again) => {
+            void refresh()
+            void itemList.reload()
+            onNotice(message)
+            if (!again) setItemEditor(null)
+          }}
+        />
+      </section>
+    )
+  }
 
   return (
     <section>
@@ -113,7 +152,7 @@ export function ProductsPage({ accounts, onNotice }: { accounts: Account[]; onNo
         action={<div className="page-actions">
           <Button variant="secondary" icon="plus" onClick={() => { setUnitEditor({ unit: null }); setFormError(null) }}>Satuan</Button>
           <Button variant="secondary" icon="plus" onClick={() => { setWarehouseEditor({ warehouse: null }); setFormError(null) }}>Gudang</Button>
-          <AddButton onClick={() => { setItemEditor({ item: null }); setItemType('INVENTORY'); setFormError(null) }} disabled={activeUnits.length === 0} title={activeUnits.length === 0 ? 'Buat satuan lebih dulu' : undefined}>Produk baru</AddButton>
+          <AddButton onClick={() => openItemForm(null)} disabled={activeUnits.length === 0} title={activeUnits.length === 0 ? 'Buat satuan lebih dulu' : undefined}>Produk baru</AddButton>
         </div>}
       />
       <DataEntryGuide
@@ -126,29 +165,49 @@ export function ProductsPage({ accounts, onNotice }: { accounts: Account[]; onNo
         note="Produk persediaan memerlukan akun persediaan dan akun HPP. Hapus permanen hanya tersedia untuk data nonaktif yang belum pernah dipakai transaksi."
       />
 
-      <TablePanel
-        title="Katalog produk"
-        description="Barang dan jasa beserta satuan dasar dan metode biayanya."
-        badge={`${visibleItems.length} dari ${items.length}`}
-        badgeTone="info"
-        className="!mt-0"
-        action={<AddButton onClick={() => { setItemEditor({ item: null }); setItemType('INVENTORY'); setFormError(null) }} disabled={activeUnits.length === 0}>Produk baru</AddButton>}
-        toolbar={<SearchInput value={search} onChange={setSearch} placeholder="Cari SKU, nama, atau tipe produk…" />}
-      >
-        <DataTable
-          columns={itemColumns}
-          rows={visibleItems}
-          keyOf={(item) => item.id}
-          loading={loading}
-          empty={items.length === 0 ? 'Belum ada produk. Buat satuan lebih dulu, lalu tambahkan produk.' : 'Tidak ada produk yang cocok dengan pencarian.'}
-          rowActions={[
-            { label: 'Ubah', icon: 'edit', onSelect: (item) => { setItemEditor({ item }); setItemType(item.item_type); setFormError(null) } },
-            { label: (item) => item.is_active ? 'Nonaktifkan' : 'Aktifkan', icon: 'power', onSelect: itemStatus.open },
-            { label: 'Atur konversi satuan', icon: 'refresh', onSelect: (item) => { void loadConversions(item.id); setConversionOpen(true); setFormError(null) } },
-            { label: 'Hapus permanen', icon: 'trash', danger: true, onSelect: itemRemoval.open, disabled: (item) => item.is_active && 'Nonaktifkan produk lebih dulu' },
-          ]}
-        />
-      </TablePanel>
+      <ListView
+        storageKey="items"
+        columns={itemColumns}
+        rows={itemList.rows}
+        keyOf={(item) => item.id}
+        loading={itemList.loading}
+        server={itemList.server}
+        search={itemList.search}
+        onSearch={itemList.setSearch}
+        searchPlaceholder="Cari SKU, nama, atau jenis produk"
+        onCreate={() => openItemForm(null)}
+        createLabel="Produk baru"
+        createDisabled={activeUnits.length === 0}
+        createTitle={activeUnits.length === 0 ? 'Buat satuan lebih dulu' : 'Produk baru'}
+        onRefresh={() => { void refresh(); void itemList.reload() }}
+        onImport={() => requestTab('imports')}
+        onExport={() => void exportItems()}
+        onPrint={() => window.print()}
+        empty={itemList.error ?? (items.length === 0 ? 'Belum ada produk. Buat satuan lebih dulu, lalu tambahkan produk.' : 'Tidak ada produk yang cocok dengan filter.')}
+        filters={[
+          {
+            key: 'type',
+            label: 'Jenis',
+            value: typeFilter,
+            onChange: setTypeFilter,
+            options: [{ value: 'ALL', label: 'Semua' }, ...(Object.keys(itemTypeLabels) as Array<Item['item_type']>).map((value) => ({ value, label: itemTypeLabels[value] }))],
+          },
+          {
+            key: 'status',
+            label: 'Aktif',
+            value: statusFilter,
+            onChange: setStatusFilter,
+            options: [{ value: 'ALL', label: 'Semua' }, { value: 'ACTIVE', label: 'Aktif' }, { value: 'INACTIVE', label: 'Nonaktif' }],
+          },
+        ]}
+        rowActions={[
+          { label: 'Ubah', icon: 'edit', onSelect: (item) => openItemForm(item) },
+          { label: (item) => item.is_active ? 'Nonaktifkan' : 'Aktifkan', icon: 'power', onSelect: itemStatus.open },
+          { label: 'Atur konversi satuan', icon: 'refresh', onSelect: (item) => { void loadConversions(item.id); setConversionOpen(true); setFormError(null) } },
+          { label: 'Hapus permanen', icon: 'trash', danger: true, onSelect: itemRemoval.open, disabled: (item) => item.is_active && 'Nonaktifkan produk lebih dulu' },
+        ]}
+        onRowOpen={(item) => openItemForm(item)}
+      />
 
       <div className="split-grid mt-4.5">
         <TablePanel
@@ -252,78 +311,6 @@ export function ProductsPage({ accounts, onNotice }: { accounts: Account[]; onNo
           <label>Nama<input name="name" placeholder="Gudang Utama" defaultValue={editingWarehouse?.name} required /></label>
         </div>
         <label>Alamat<input name="address" placeholder="Opsional" defaultValue={editingWarehouse?.address ?? ''} /></label>
-      </FormModal>
-
-      {/* ---- Item modal ---- */}
-      <FormModal
-        open={itemEditor !== null}
-        formKey={editingItem?.id ?? 'new-item'}
-        eyebrow="PRODUK"
-        title={editingItem ? `Ubah produk ${editingItem.sku}` : 'Produk baru'}
-        description="Produk persediaan wajib memiliki akun persediaan dan akun HPP; jasa tidak memerlukan gudang."
-        submitLabel={editingItem ? 'Simpan perubahan' : 'Simpan produk'}
-        busy={saving}
-        error={formError}
-        onClose={() => setItemEditor(null)}
-        onSubmit={(values) => save(
-          () => {
-            const inventory = itemType === 'INVENTORY'
-            const input = {
-              sku: String(values.get('sku')),
-              name: String(values.get('name')),
-              item_type: itemType,
-              base_unit_id: String(values.get('base_unit_id')),
-              costing_method: String(values.get('costing_method')),
-              inventory_account_id: inventory ? String(values.get('inventory_account_id')) || null : null,
-              cogs_account_id: inventory ? String(values.get('cogs_account_id')) || null : null,
-              track_lots: values.get('track_lots') === 'on',
-              track_serials: false,
-            }
-            return editingItem ? updateItem(editingItem.id, input) : createItem(input)
-          },
-          editingItem ? 'Produk berhasil diperbarui.' : 'Produk berhasil dibuat.',
-          () => setItemEditor(null),
-        )}
-      >
-        <div className="form-row">
-          <label>SKU<input name="sku" defaultValue={editingItem?.sku} required /></label>
-          <label>Tipe
-            <select value={itemType} onChange={(event) => setItemType(event.target.value as Item['item_type'])}>
-              {(Object.keys(itemTypeLabels) as Array<Item['item_type']>).map((value) => <option key={value} value={value}>{itemTypeLabels[value]}</option>)}
-            </select>
-          </label>
-        </div>
-        <label>Nama<input name="name" defaultValue={editingItem?.name} required /></label>
-        <div className="form-row">
-          <label>Satuan dasar
-            <select name="base_unit_id" defaultValue={editingItem?.base_unit_id ?? ''} required>
-              <option value="">Pilih satuan</option>
-              {activeUnits.map((unit) => <option key={unit.id} value={unit.id}>{unit.code} · {unit.name}</option>)}
-            </select>
-          </label>
-          <label>Metode biaya
-            <select name="costing_method" defaultValue={editingItem?.costing_method ?? 'MOVING_AVERAGE'}>
-              <option value="MOVING_AVERAGE">Rata-rata bergerak</option><option value="FIFO">FIFO</option>
-            </select>
-          </label>
-        </div>
-        {itemType === 'INVENTORY' && (
-          <div className="form-row">
-            <label>Akun persediaan
-              <select name="inventory_account_id" defaultValue={editingItem?.inventory_account_id ?? ''} required>
-                <option value="">Pilih akun</option>
-                {inventoryAccounts.map((account) => <option key={account.id} value={account.id}>{account.code} · {account.name}</option>)}
-              </select>
-            </label>
-            <label>Akun HPP
-              <select name="cogs_account_id" defaultValue={editingItem?.cogs_account_id ?? ''} required>
-                <option value="">Pilih akun</option>
-                {cogsAccounts.map((account) => <option key={account.id} value={account.id}>{account.code} · {account.name}</option>)}
-              </select>
-            </label>
-          </div>
-        )}
-        <label className="check-row text-[11px]"><input type="checkbox" name="track_lots" defaultChecked={editingItem?.track_lots} />Lacak nomor batch</label>
       </FormModal>
 
       {/* ---- Unit conversion modal ---- */}

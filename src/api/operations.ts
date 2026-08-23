@@ -1,5 +1,7 @@
 import { api } from './client'
+import { getPaged, type PageRequest } from './paging'
 import type { ApiEnvelope } from '../types/accounting'
+import type { Attachment, DocumentJournalRow } from '../types/operations'
 import type { APIKey, Approval, ApprovalPolicy, BusinessDocument, DocumentSequence, InventoryBalance, InventoryReservation, Invitation, Item, Onboarding, OrganizationMember, SecuritySettings, Unit, UnitConversion, Warehouse, Webhook } from '../types/operations'
 
 const data = async <T>(request: Promise<{ data: ApiEnvelope<T> }>) => (await request).data.data
@@ -63,3 +65,34 @@ export const listApprovalPolicies = () => data<ApprovalPolicy[]>(api.get('/appro
 export const saveApprovalPolicy = (input: Record<string, unknown>) => data<ApprovalPolicy>(api.put('/approval-policies', input))
 export const deleteApprovalPolicy = (id: string) => data<ApprovalPolicy>(api.delete(`/approval-policies/${id}`))
 export async function downloadReport(type: string, format: 'csv' | 'xlsx' | 'pdf', startDate: string, endDate: string) { const response = await api.get(`/reports/${type}/export/${format}`, { params: { start_date: startDate, end_date: endDate }, responseType: 'blob' }); const url = URL.createObjectURL(response.data); const link = document.createElement('a'); link.href = url; link.download = `${type}.${format}`; link.click(); URL.revokeObjectURL(url) }
+
+// ---- Daftar dengan paginasi server-side (§4.1) ----
+export const listItemsPaged = (request: PageRequest) => getPaged<Item>('/items', request)
+export const listDocumentsPaged = (request: PageRequest) => getPaged<BusinessDocument>('/documents', request)
+export const getDocument = (id: string) => data<BusinessDocument>(api.get(`/documents/${id}`))
+export const getDocumentJournal = (id: string) => data<DocumentJournalRow[]>(api.get(`/documents/${id}/journal`))
+
+// ---- Lampiran dokumen ----
+export const listAttachments = (entityType: string, entityId: string) =>
+  data<Attachment[]>(api.get('/attachments', { params: { entity_type: entityType, entity_id: entityId } }))
+
+export async function uploadAttachment(entityType: string, entityId: string, file: File) {
+  const form = new FormData()
+  form.append('entity_type', entityType)
+  form.append('entity_id', entityId)
+  form.append('file', file)
+  return data<Attachment>(api.post('/attachments/upload', form))
+}
+
+export const deleteAttachment = (id: string) => data(api.delete(`/attachments/${id}`))
+
+/** Mengunduh lampiran lewat axios agar header Authorization tetap terpasang. */
+export async function downloadAttachment(attachment: Attachment) {
+  const response = await api.get<Blob>(`/attachments/${attachment.id}/download`, { responseType: 'blob' })
+  const url = URL.createObjectURL(response.data)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = attachment.file_name
+  link.click()
+  URL.revokeObjectURL(url)
+}

@@ -1,7 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import type { Account, AccountType } from '../types/accounting'
+import { downloadExport, listAccountsPaged } from '../api/accounting'
+import { useServerList } from '../lib/serverList'
+import { requestTab } from '../lib/menu'
 import { Badge, DataEntryGuide, PageHeader } from '../components/ui'
-import { AddButton, DataTable, SearchInput, StatusPill, TablePanel, type Column } from '../components/DataTable'
+import { StatusPill } from '../components/DataTable'
+import { ListView, type ListColumn } from '../components/ListView'
+import { usePersisted } from '../lib/persist'
 import { ConfirmDialog, FormModal, messageOf, useConfirm } from '../components/Modal'
 
 const accountTypes: Array<{ value: AccountType; label: string }> = [
@@ -28,21 +33,24 @@ export function AccountsPage({ accounts, onCreate, onUpdate, onStatusChange, onD
   const [type, setType] = useState<AccountType>('ASSET')
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
-  const [search, setSearch] = useState('')
-  const [showInactive, setShowInactive] = useState(true)
+  const [typeFilter, setTypeFilter] = usePersisted('filter.accounts.type', 'ALL')
+  const [statusFilter, setStatusFilter] = usePersisted('filter.accounts.status', 'ALL')
   const status = useConfirm<Account>()
   const removal = useConfirm<Account>()
 
   const editing = editor?.account ?? null
 
-  const visible = useMemo(() => {
-    const needle = search.trim().toLowerCase()
-    return accounts.filter((account) => {
-      if (!showInactive && !account.is_active) return false
-      if (!needle) return true
-      return `${account.code} ${account.name} ${account.type}`.toLowerCase().includes(needle)
-    })
-  }, [accounts, search, showInactive])
+  // Daftar akun dipaginasi, diurutkan, dan dicari di database (§4.1).
+  const list = useServerList('accounts', listAccountsPaged, {
+    defaultSort: 'code',
+    filters: { type: typeFilter, status: statusFilter },
+  })
+
+  /** Mutasi memperbarui daftar global di App sekaligus halaman aktif. */
+  async function mutate(action: () => Promise<void>) {
+    await action()
+    await list.reload()
+  }
 
   function openCreate() {
     setEditor({ account: null })
@@ -67,8 +75,7 @@ export function AccountsPage({ accounts, onCreate, onUpdate, onStatusChange, onD
     setSaving(true)
     setFormError(null)
     try {
-      if (editing) await onUpdate(editing.id, input)
-      else await onCreate(input)
+      await mutate(() => editing ? onUpdate(editing.id, input) : onCreate(input))
       setEditor(null)
     } catch (error) {
       setFormError(messageOf(error, 'Akun gagal disimpan.'))
@@ -77,18 +84,39 @@ export function AccountsPage({ accounts, onCreate, onUpdate, onStatusChange, onD
     }
   }
 
-  const columns: Array<Column<Account>> = [
-    { header: 'Kode', className: 'mono', width: '110px', cell: (account) => account.code },
+  const columns: Array<ListColumn<Account>> = [
+    { sortable: true, key: 'code', header: 'Kode', className: 'mono', width: '110px', sortValue: (account) => account.code, cell: (account) => account.code },
     {
+      key: 'name',
       header: 'Nama akun',
+      sortValue: (account) => account.name,
       cell: (account) => <>
         <div className="flex items-center gap-2"><strong>{account.name}</strong>{account.is_system && <Badge tone="info">Sistem</Badge>}</div>
         {account.system_key && <small className="block">{account.system_key}</small>}
       </>,
     },
-    { header: 'Tipe', cell: (account) => <span className="type-tag">{account.type.replaceAll('_', ' ')}</span> },
-    { header: 'Saldo normal', cell: (account) => account.normal_balance },
-    { header: 'Status', cell: (account) => <StatusPill active={account.is_active} /> },
+    { sortable: true, key: 'type', header: 'Tipe', sortValue: (account) => account.type, cell: (account) => <span className="type-tag">{account.type.replaceAll('_', ' ')}</span> },
+    { sortable: true, key: 'normal_balance', header: 'Saldo normal', sortValue: (account) => account.normal_balance, cell: (account) => account.normal_balance },
+    { key: 'parent', header: 'Akun induk', optional: true, cell: (account) => accounts.find((candidate) => candidate.id === account.parent_id)?.code ?? '—' },
+    { sortable: true, key: 'status', header: 'Status', sortValue: (account) => account.is_active ? 1 : 0, cell: (account) => <StatusPill active={account.is_active} /> },
+  ]
+
+  const rowActions = [
+    { label: 'Ubah', icon: 'edit' as const, onSelect: openEdit },
+    {
+      label: (account: Account) => account.is_active ? 'Nonaktifkan' : 'Aktifkan',
+      icon: 'power' as const,
+      onSelect: status.open,
+      disabled: (account: Account) => account.is_system && 'Akun sistem tidak dapat dinonaktifkan',
+    },
+    {
+      label: 'Hapus permanen',
+      icon: 'trash' as const,
+      danger: true,
+      onSelect: removal.open,
+      when: (account: Account) => !account.is_system,
+      disabled: (account: Account) => account.is_active && 'Nonaktifkan akun lebih dulu',
+    },
   ]
 
   return (
@@ -97,7 +125,7 @@ export function AccountsPage({ accounts, onCreate, onUpdate, onStatusChange, onD
         eyebrow="CHART OF ACCOUNTS"
         title="Daftar akun"
         description="Struktur akun organisasi untuk pencatatan dan laporan keuangan."
-        action={<div className="page-actions"><Badge>{accounts.length} akun</Badge><AddButton onClick={openCreate}>Akun baru</AddButton></div>}
+        action={<div className="page-actions"><Badge>{accounts.length} akun</Badge></div>}
       />
       <DataEntryGuide
         steps={[
@@ -109,46 +137,42 @@ export function AccountsPage({ accounts, onCreate, onUpdate, onStatusChange, onD
         note="Akun bertanda “Sistem” dipakai otomatis oleh modul lain — penjualan, pembelian, kas, pajak, dan persediaan merujuknya saat memposting jurnal. Karena itu akun sistem hanya dapat diubah namanya, dan tidak dapat dinonaktifkan maupun dihapus. Akun yang Anda buat sendiri bebas dinonaktifkan."
       />
 
-      <TablePanel
-        title="Chart of accounts"
-        description="Semua akun beserta saldo normal dan statusnya."
-        badge={`${visible.length} dari ${accounts.length}`}
-        badgeTone="info"
-        className="!mt-0"
-        toolbar={
-          <>
-            <SearchInput value={search} onChange={setSearch} placeholder="Cari kode, nama, atau tipe akun…" />
-            <label className="check-row shrink-0 text-[10px]">
-              <input type="checkbox" checked={showInactive} onChange={(event) => setShowInactive(event.target.checked)} />
-              Tampilkan akun nonaktif
-            </label>
-          </>
-        }
-      >
-        <DataTable
-          columns={columns}
-          rows={visible}
-          keyOf={(account) => account.id}
-          empty={accounts.length === 0 ? 'Belum ada akun dalam chart of accounts.' : 'Tidak ada akun yang cocok dengan pencarian.'}
-          rowActions={[
-            { label: 'Ubah', icon: 'edit', onSelect: openEdit },
-            {
-              label: (account) => account.is_active ? 'Nonaktifkan' : 'Aktifkan',
-              icon: 'power',
-              onSelect: status.open,
-              disabled: (account) => account.is_system && 'Akun sistem tidak dapat dinonaktifkan',
-            },
-            {
-              label: 'Hapus permanen',
-              icon: 'trash',
-              danger: true,
-              onSelect: removal.open,
-              when: (account) => !account.is_system,
-              disabled: (account) => account.is_active && 'Nonaktifkan akun lebih dulu',
-            },
-          ]}
-        />
-      </TablePanel>
+      <ListView
+        storageKey="accounts"
+        columns={columns}
+        rows={list.rows}
+        loading={list.loading}
+        server={list.server}
+        keyOf={(account) => account.id}
+        search={list.search}
+        onSearch={list.setSearch}
+        searchPlaceholder="Cari kode, nama, atau tipe akun"
+        onCreate={openCreate}
+        createLabel="Akun baru"
+        onRefresh={() => void list.reload()}
+        onImport={() => requestTab('imports')}
+        onExport={() => void downloadExport('accounts')}
+        onPrint={() => window.print()}
+        rowActions={rowActions}
+        onRowOpen={openEdit}
+        empty={list.error ?? (accounts.length === 0 ? 'Belum ada akun dalam chart of accounts.' : 'Tidak ada akun yang cocok dengan filter.')}
+        filters={[
+          {
+            key: 'type',
+            label: 'Tipe',
+            value: typeFilter,
+            onChange: setTypeFilter,
+            options: [{ value: 'ALL', label: 'Semua' }, ...accountTypes.map((option) => ({ value: option.value, label: option.label }))],
+          },
+          {
+            key: 'status',
+            label: 'Status',
+            value: statusFilter,
+            onChange: setStatusFilter,
+            options: [{ value: 'ALL', label: 'Semua' }, { value: 'ACTIVE', label: 'Aktif' }, { value: 'INACTIVE', label: 'Nonaktif' }],
+          },
+        ]}
+      />
 
       <FormModal
         open={editor !== null}
@@ -193,7 +217,7 @@ export function AccountsPage({ accounts, onCreate, onUpdate, onStatusChange, onD
         busy={status.busy}
         error={status.error}
         onClose={status.close}
-        onConfirm={() => status.run((account) => onStatusChange(account.id, !account.is_active))}
+        onConfirm={() => status.run((account) => mutate(() => onStatusChange(account.id, !account.is_active)))}
         description={status.target?.is_active
           ? <>Akun <strong>{status.target.code} · {status.target.name}</strong> tidak akan tersedia untuk transaksi baru, tetapi tetap tersimpan dalam jurnal dan laporan historis.</>
           : <>Akun <strong>{status.target?.code} · {status.target?.name}</strong> akan kembali dapat dipilih pada transaksi baru.</>}
@@ -209,7 +233,7 @@ export function AccountsPage({ accounts, onCreate, onUpdate, onStatusChange, onD
         busy={removal.busy}
         error={removal.error}
         onClose={removal.close}
-        onConfirm={() => removal.run((account) => onDelete(account.id))}
+        onConfirm={() => removal.run((account) => mutate(() => onDelete(account.id)))}
         description={<>
           <strong>{removal.target?.code} · {removal.target?.name}</strong> akan hilang dari chart of accounts dan tindakan ini tidak dapat dibatalkan.
           Penghapusan ditolak jika akun masih menjadi induk atau pernah dipakai jurnal, mapping, bank, produk, aset, anggaran, maupun data operasional lain.

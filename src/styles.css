@@ -1,73 +1,129 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-display: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   --color-brand: #155eef;
   --color-brand-strong: #004eeb;
   --color-brand-soft: #eff4ff;
   --shadow-panel: 0 1px 2px rgb(16 24 40 / 4%), 0 6px 18px rgb(16 24 40 / 4%);
 }
 
+
+/* Design token — Bagian 05 spesifikasi (referensi UX: Accurate Online). */
+:root {
+  --rail-bg: #1B3A5C;
+  --rail-fg: #C5D4E3;
+  --rail-active: #2D5580;
+  --accent: #E8175D;
+  --accent-fg: #FFFFFF;
+  --accent-soft: #FDE7EE;
+  --bg: #F0F2F5;
+  --surface: #FFFFFF;
+  --surface-alt: #F7F8FA;
+  --border: #D8DEE6;
+  --border-strong: #A9B4C2;
+  --fg: #1A1F26;
+  --fg-muted: #5B6673;
+  --fg-subtle: #8A939F;
+  --tile-transaction: #E3F5E8;
+  --tile-master: #E1EFFB;
+  --tile-setting: #FDEDE0;
+  --tile-report: #F0E9FA;
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 8px;
+  --rail-w: 64px;
+  --topbar-h: 56px;
+  --tabbar-h: 40px;
+  --row-h: 36px;
+}
+
 @layer base {
   * { box-sizing: border-box; }
   html, body, #root { min-width: 320px; min-height: 100%; }
-  body { @apply m-0 min-h-screen bg-[#f5f7fb] font-sans text-slate-900 antialiased; }
+  body { @apply m-0 min-h-screen text-[13px] antialiased; background: var(--bg); color: var(--fg); font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
   button { @apply cursor-pointer; }
   button:focus-visible, input:focus-visible, select:focus-visible { @apply outline-3 outline-offset-1 outline-blue-200; }
   label { @apply grid min-w-0 gap-1.5 text-[10px] font-bold text-slate-600; }
-  input, select { @apply min-h-10.5 w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 shadow-xs outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-3 focus:ring-blue-100; }
-  table { @apply w-full border-collapse text-xs; }
-  th, td { @apply h-12 border-b border-slate-100 px-4 py-2.5 text-left align-middle; }
-  th { @apply bg-slate-50 text-[9px] font-bold tracking-[.09em] text-slate-500 uppercase; }
-  tbody tr { @apply transition hover:bg-blue-50/30; }
+  input, select { @apply min-h-8.5 w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 shadow-xs outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-3 focus:ring-blue-100; }
+  table { @apply w-full border-collapse text-[13px] tabular-nums; }
+  th, td { @apply h-9 border-b px-2 py-1.5 text-left align-middle; border-color: var(--border); }
+  th { @apply text-[11px] font-bold text-[color:var(--fg-muted)]; background: var(--surface-alt); }
+  tbody tr:nth-child(even) { background: var(--surface-alt); }
+  tbody tr { @apply transition hover:bg-[color:var(--accent-soft)]; }
   tbody tr:last-child td { @apply border-b-0; }
   tfoot th { @apply border-t border-slate-300 bg-white; }
 }
 
 @layer components {
-  .shell { @apply grid min-h-screen grid-cols-[264px_minmax(0,1fr)] max-[960px]:grid-cols-[78px_minmax(0,1fr)] max-[700px]:block; }
-  .sidebar { @apply sticky top-0 z-20 flex h-screen flex-col overflow-y-auto border-r border-slate-800 bg-slate-900 px-4 pt-5.5 pb-4 text-white max-[960px]:px-2.5 max-[700px]:fixed max-[700px]:inset-x-0 max-[700px]:bottom-0 max-[700px]:top-auto max-[700px]:h-[66px] max-[700px]:block max-[700px]:overflow-x-auto max-[700px]:border-t max-[700px]:border-r-0 max-[700px]:p-2.5; }
-  .brand { @apply flex min-h-14 items-center gap-3 border-b border-slate-700 px-2.5 pb-4.5 max-[960px]:justify-center max-[960px]:px-0 max-[700px]:hidden; }
-  .brand-mark { @apply size-10 shrink-0 rounded-xl shadow-lg shadow-blue-900/20; }
-  .brand strong, .brand small { @apply block; }
-  .brand strong { @apply font-display text-[19px] leading-tight font-extrabold tracking-[-.45px]; }
-  .brand small { @apply mt-0.5 text-[10px] font-bold tracking-[.13em] text-slate-400 uppercase; }
-  .main-nav { @apply mt-5 grid gap-5 pb-4 max-[960px]:gap-2 max-[700px]:m-0 max-[700px]:flex max-[700px]:w-max max-[700px]:gap-1 max-[700px]:p-0; }
-  .nav-group { @apply grid gap-1 max-[700px]:flex; }
-  .nav-group > p { @apply mx-3 mt-0 mb-1.5 text-[9px] font-bold tracking-[.14em] text-slate-500 uppercase max-[960px]:hidden; }
-  .nav-item { @apply flex min-h-10 w-full items-center gap-3 rounded-lg border-0 bg-transparent px-3 py-2 text-left text-[13px] font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white max-[960px]:justify-center max-[960px]:px-2 max-[700px]:size-12 max-[700px]:p-0; }
-  .nav-item.active { @apply bg-brand text-white shadow-lg shadow-blue-900/30 max-[700px]:shadow-none; }
-  .nav-icon { @apply size-5 shrink-0; }
-  .nav-item > span, .brand > div { @apply max-[960px]:hidden; }
-  .sidebar-profile { @apply mt-auto grid min-w-0 grid-cols-[34px_minmax(0,1fr)_28px] items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 p-2.5 max-[960px]:hidden; }
-  .sidebar-profile > span { @apply grid size-8.5 place-items-center rounded-lg bg-brand font-extrabold; }
-  .sidebar-profile div { @apply min-w-0; }
-  .sidebar-profile strong, .sidebar-profile small { @apply block overflow-hidden text-ellipsis whitespace-nowrap; }
-  .sidebar-profile strong { @apply text-[11px]; }
-  .sidebar-profile small { @apply mt-0.5 text-[9px] text-slate-400; }
-  .sidebar-profile button { @apply grid size-7 place-items-center rounded-md border-0 bg-transparent p-0 text-slate-400 hover:bg-slate-700 hover:text-white; }
-  .sidebar-profile svg { @apply size-4; }
-  .content { @apply min-w-0 overflow-hidden max-[700px]:pb-18; }
-  .topbar { @apply h-[68px] border-b border-slate-200 bg-white/90 backdrop-blur-xl max-[700px]:h-14; }
-  .topbar-inner, .page-stage { @apply mx-auto w-full max-w-[1360px]; }
-  .topbar-inner { @apply flex h-full items-center justify-between px-[clamp(24px,4vw,52px)] max-[700px]:px-4; }
-  .topbar-path { @apply flex min-w-0 items-center gap-2 text-xs text-slate-400; }
-  .topbar-path strong { @apply text-slate-700; }
-  .breadcrumb { @apply max-w-80 overflow-hidden text-ellipsis whitespace-nowrap font-bold text-brand; }
-  .environment-badge { @apply inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-[11px] font-bold text-blue-700 max-[700px]:hidden; }
-  .environment-badge i { @apply size-1.5 rounded-full bg-emerald-500; }
-  .page-stage { @apply px-[clamp(24px,4vw,52px)] pt-8.5 pb-16 max-[700px]:px-4 max-[700px]:pt-6 max-[700px]:pb-9; }
-  .page-stage > section { animation: page-in .2s ease-out; }
+  /* ---- Shell: top bar 56px + tab bar 40px + icon rail 64px (§3.1) ---- */
+  .app-shell { @apply grid h-screen; grid-template-rows: var(--topbar-h) var(--tabbar-h) minmax(0, 1fr); }
+  .topbar { @apply flex items-center gap-4 px-3 text-white; background: linear-gradient(90deg, #14304D 0%, #1B3A5C 100%); }
+  .topbar-brand { @apply flex items-center gap-2.5; }
+  .topbar-brand img { @apply size-8 rounded-lg; }
+  .topbar-brand strong { @apply text-sm leading-none font-extrabold tracking-tight; }
+  .topbar-brand span { @apply mt-0.5 block text-[9px] font-bold tracking-[.16em] uppercase; color: var(--rail-fg); }
+  .topbar-tools { @apply ml-auto flex items-center gap-1; }
+  .topbar-tools button { @apply grid size-8 place-items-center rounded-md border-0 bg-transparent; color: var(--rail-fg); }
+  .topbar-tools button:hover { @apply text-white; background: var(--rail-active); }
+  .topbar-tools svg { @apply size-4.5; }
+  .topbar-org { @apply hidden pr-1 text-right leading-tight sm:block; }
+  .topbar-org span { @apply block max-w-56 overflow-hidden text-[12px] font-bold text-ellipsis whitespace-nowrap; }
+  .topbar-org small { @apply block text-[10px]; color: var(--rail-fg); }
+  .topbar-avatar { @apply grid size-8 shrink-0 place-items-center rounded-full border-0 text-[12px] font-extrabold text-white; background: var(--accent); }
+
+  .tabbar { @apply flex items-stretch border-b bg-white; border-color: var(--border); }
+  .tabbar-strip { @apply flex min-w-0 flex-1 items-stretch gap-px overflow-x-auto; }
+  .doc-tab { @apply flex shrink-0 items-center gap-1 border-r px-1 text-[12px]; border-color: var(--border); background: var(--surface-alt); color: var(--fg); }
+  .doc-tab > button:first-child { @apply max-w-56 truncate border-0 bg-transparent px-2 py-0 text-[12px] font-semibold text-inherit; }
+  .doc-tab.is-active { @apply text-white; background: var(--accent); }
+  .doc-tab-close { @apply grid size-5 place-items-center rounded-sm border-0 bg-transparent p-0 text-inherit opacity-60 hover:opacity-100; }
+  .doc-tab-close svg { @apply size-3; }
+  .tabbar-count { @apply relative flex shrink-0 items-center border-l px-1.5; border-color: var(--border); }
+  .tabbar-count > button { @apply flex items-center gap-1 rounded-md border-0 bg-transparent px-2 py-1 text-[11px] font-bold; color: var(--fg-muted); }
+  .tabbar-count svg { @apply size-3.5; }
+  .tabbar-menu { @apply absolute top-full right-0 z-50 grid min-w-52 gap-0.5 rounded-lg border bg-white p-1.5 shadow-xl; border-color: var(--border); }
+  .tabbar-menu button { @apply truncate rounded-md border-0 bg-transparent px-2.5 py-1.5 text-left text-[12px] font-semibold hover:bg-[color:var(--surface-alt)]; color: var(--fg); }
+  .tabbar-menu button.is-active { color: var(--accent); }
+
+  .shell-body { @apply grid min-h-0; grid-template-columns: var(--rail-w) minmax(0, 1fr); }
+  .icon-rail { @apply flex flex-col items-center gap-0.5 overflow-y-auto py-2; background: var(--rail-bg); }
+  .rail-slot { @apply relative; }
+  .rail-icon { @apply grid size-11 place-items-center rounded-md border-0 bg-transparent; color: var(--rail-fg); }
+  .rail-icon svg { @apply size-5.5; }
+  .rail-icon:hover, .rail-icon.is-open { @apply text-white; background: var(--rail-active); }
+  .rail-icon.is-active { @apply text-white; background: var(--rail-active); box-shadow: inset 3px 0 0 var(--accent); }
+  .rail-tooltip { @apply pointer-events-none absolute top-1/2 left-[calc(100%+8px)] z-40 -translate-y-1/2 rounded-md bg-slate-900 px-2 py-1 text-[11px] whitespace-nowrap text-white opacity-0 transition-opacity; }
+  .rail-slot:hover .rail-tooltip { @apply opacity-100; }
+  .rail-slot:has(.flyout) .rail-tooltip { @apply hidden; }
+
+  .flyout { @apply absolute top-0 left-[calc(100%+8px)] z-50 rounded-lg border bg-white p-6 shadow-[0_18px_45px_rgb(16_24_40_/_22%)]; border-color: var(--border); animation: flyout-in .12s ease-out; }
+  .flyout h2 { @apply mt-0 mb-4 border-b-2 pb-2 text-2xl font-normal; color: var(--fg); border-color: var(--accent); }
+  .flyout-tiles { @apply grid gap-2.5; }
+  .tile { @apply grid h-25 w-25 content-center justify-items-center gap-1.5 rounded-lg border p-2 text-center; border-color: var(--border); color: var(--fg); }
+  .tile svg { @apply size-8; color: var(--fg-muted); }
+  .tile span { @apply text-[12px] leading-tight font-semibold; }
+  .tile:hover { border-color: var(--border-strong); @apply shadow-md; }
+  .tile-transaction { background: var(--tile-transaction); }
+  .tile-master { background: var(--tile-master); }
+  .tile-setting { background: var(--tile-setting); }
+  .tile-report { background: var(--tile-report); }
+
+  .tab-stage { @apply min-w-0 overflow-y-auto; background: var(--bg); }
+  .tab-panel { @apply px-5 pt-5 pb-10 max-sm:px-3; }
+  .tab-panel[hidden] { display: none; }
+  .tab-panel > section { animation: page-in .2s ease-out; }
 
   .page-header { @apply mb-7 flex items-start justify-between gap-7 max-sm:grid max-sm:gap-3.5; }
   .page-header.compact { @apply items-end max-sm:items-start; }
-  .page-header h1 { @apply mt-1 mb-2 max-w-4xl font-display text-[clamp(29px,3vw,40px)] leading-[1.12] font-extrabold tracking-[-1.3px] text-slate-950; }
-  .page-header.compact h1 { @apply text-[clamp(28px,2.5vw,34px)]; }
+  .page-header h1 { @apply mt-0.5 mb-1 max-w-4xl text-xl leading-tight font-bold tracking-tight text-slate-950; }
+  .page-header.compact h1 { @apply text-lg; }
   .page-header p { @apply m-0 max-w-3xl text-sm leading-relaxed text-slate-500; }
-  .eyebrow { @apply m-0 font-display text-[10px] font-bold tracking-[.16em] text-brand uppercase; }
-  .panel { @apply rounded-[14px] border border-slate-200 bg-white shadow-panel; }
+  .eyebrow { @apply m-0 text-[10px] font-bold tracking-[.16em] uppercase; color: var(--accent); }
+  .panel { @apply rounded-lg border bg-white shadow-panel; border-color: var(--border); }
   .pill { @apply inline-flex min-h-6 items-center whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600; }
   .pill.success { @apply bg-emerald-50 text-emerald-700; }
   .pill.warning { @apply bg-orange-50 text-orange-800; }
@@ -302,6 +358,7 @@
   .toast button { @apply grid size-6 shrink-0 place-items-center rounded-md border-0 bg-transparent p-0 text-lg text-blue-700 hover:bg-blue-100; }
 }
 
+@keyframes flyout-in { from { opacity: 0; transform: translateX(-6px); } }
 @keyframes page-in { from { opacity: 0; transform: translateY(3px); } }
 @keyframes modal-fade { from { opacity: 0; } }
 @keyframes modal-rise { from { opacity: 0; transform: translateY(10px) scale(.985); } }
@@ -332,4 +389,124 @@
   .security-note p, .security-note strong { @apply m-0 block; }
   .security-note p { @apply text-[10px] leading-relaxed; }
   .security-note strong { @apply mb-0.5 text-slate-700; }
+}
+
+/* ---- Pola halaman Bagian 04: LIST, FORM MASTER, FORM TRANSAKSI ---- */
+@layer components {
+  .list-view { @apply overflow-hidden rounded-lg border bg-white shadow-panel; border-color: var(--border); }
+  .filter-chips { @apply flex flex-wrap items-center gap-2 border-b px-3 py-2; border-color: var(--border); background: var(--surface-alt); }
+  .filter-chip { @apply flex min-h-7 items-center gap-1.5 rounded-full border bg-white px-2.5 text-[12px] font-semibold; border-color: var(--border); color: var(--fg-muted); }
+  .filter-chip select { @apply min-h-6 w-auto border-0 bg-transparent p-0 pr-1 text-[12px] font-bold shadow-none focus:ring-0; color: var(--fg); }
+  .filter-reset { @apply flex min-h-7 items-center gap-1 rounded-full border-0 bg-transparent px-2 text-[11px] font-bold; color: var(--fg-subtle); }
+  .filter-reset svg { @apply size-3; }
+  .filter-reset:hover { color: var(--accent); }
+
+  .list-toolbar { @apply flex flex-wrap items-center gap-2 border-b px-3 py-2; border-color: var(--border); }
+  .list-toolbar-right { @apply ml-auto flex flex-wrap items-center gap-1.5; }
+  .tool-primary { @apply inline-flex min-h-8 items-center gap-1.5 rounded-md border-0 px-2.5 text-[12px] font-bold text-white disabled:opacity-40; background: var(--info, #1565C0); }
+  .tool-primary svg { @apply size-4; }
+  .tool-icon { @apply grid size-8 place-items-center rounded-md border bg-white; border-color: var(--border); color: var(--fg-muted); }
+  .tool-icon:hover { border-color: var(--border-strong); color: var(--fg); }
+  .tool-icon svg { @apply size-4; }
+  .column-picker { @apply relative; }
+  .column-panel { @apply absolute top-full right-0 z-40 mt-1 grid max-h-80 w-56 gap-1 overflow-y-auto rounded-lg border bg-white p-2 shadow-xl; border-color: var(--border); }
+  .column-panel > strong { @apply px-1 pb-1 text-[11px]; color: var(--fg-muted); }
+  .column-option { @apply flex min-h-7 grid-cols-none items-center gap-2 rounded-md px-1 text-[12px] font-semibold hover:bg-[color:var(--surface-alt)]; color: var(--fg); }
+  .column-option input { @apply size-3.5 min-h-0 w-3.5 shadow-none; }
+  .list-search { @apply flex min-h-8 min-w-52 items-center gap-1.5 rounded-md border bg-white px-2; border-color: var(--border); color: var(--fg-subtle); }
+  .list-search svg { @apply size-3.5; }
+  .list-search input { @apply min-h-6 border-0 bg-transparent p-0 text-[12px] shadow-none focus:border-0 focus:ring-0; }
+  .list-search > button { @apply grid size-4 place-items-center rounded-full border-0 bg-transparent p-0; }
+  .list-count { @apply inline-flex min-h-7 items-center rounded-md border px-2 text-[12px] font-bold tabular-nums; border-color: var(--border); background: var(--surface-alt); color: var(--fg-muted); }
+
+  .list-table th.sortable { @apply cursor-pointer select-none; }
+  .list-table th.sortable:hover { color: var(--fg); }
+  .sort-arrow { @apply ml-1 inline size-3 align-middle; }
+  .sort-arrow.is-desc { @apply rotate-180; }
+  .list-table tr.is-openable { @apply cursor-pointer; }
+  .list-pager { @apply flex flex-wrap items-center justify-between gap-2 border-t px-3 py-2; border-color: var(--border); background: var(--surface-alt); }
+  .pager-buttons { @apply flex items-center gap-1; }
+  .pager-buttons button { @apply grid min-h-7 min-w-7 place-items-center rounded-md border bg-white px-1.5 text-[12px] font-bold disabled:opacity-35; border-color: var(--border); color: var(--fg-muted); }
+  .pager-buttons button.is-active { @apply text-white; background: var(--accent); border-color: var(--accent); }
+  .pager-gap { @apply px-1; color: var(--fg-subtle); }
+  .pager-size select { @apply min-h-7 w-auto rounded-md border bg-white py-0 pr-6 pl-2 text-[12px] font-semibold shadow-none; border-color: var(--border); }
+  .context-menu { @apply fixed z-50 grid min-w-48 gap-0.5 rounded-lg border bg-white p-1.5 shadow-xl; border-color: var(--border); }
+
+  .sub-tabs { @apply flex items-stretch gap-0 overflow-x-auto border-b bg-white; border-color: var(--border); }
+  .sub-tabs button { @apply shrink-0 border-0 border-b-2 border-transparent bg-transparent px-3.5 py-2 text-[12px] font-bold whitespace-nowrap; color: var(--fg-muted); }
+  .sub-tabs button.is-active { border-color: var(--accent); color: var(--accent); }
+  .icon-tabs { @apply flex shrink-0 flex-col gap-1 border-r p-1; border-color: var(--border); background: var(--surface-alt); }
+  .icon-tabs button { @apply relative grid size-9 place-items-center rounded-md border-0 bg-transparent; color: var(--fg-muted); }
+  .icon-tabs button svg { @apply size-4.5; }
+  .icon-tabs button.is-active { @apply bg-white shadow-sm; color: var(--accent); }
+  .icon-tab-tip { @apply pointer-events-none absolute top-1/2 left-[calc(100%+6px)] z-40 -translate-y-1/2 rounded-md bg-slate-900 px-2 py-1 text-[11px] whitespace-nowrap text-white opacity-0 transition-opacity; }
+  .icon-tabs button:hover .icon-tab-tip { @apply opacity-100; }
+
+  .document-shell { @apply grid items-start gap-3; grid-template-columns: minmax(0, 1fr) 52px; }
+  .document-main { @apply min-w-0 overflow-hidden rounded-lg border bg-white shadow-panel; border-color: var(--border); }
+  .document-head { @apply flex items-center gap-2 border-b px-2 py-1.5; border-color: var(--border); background: var(--surface-alt); }
+  .back-to-list { @apply grid size-7 place-items-center rounded-md border-0 text-white; background: var(--success); }
+  .back-to-list svg { @apply size-4; }
+  .document-chip { @apply inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-bold text-white; background: var(--accent); }
+  .document-chip i { @apply size-1.5 rounded-full bg-white; }
+  .document-body { @apply p-3; }
+  .action-rail { @apply sticky top-2 grid gap-1.5; }
+  .rail-action { @apply relative; }
+  .rail-action-button { @apply grid h-10 w-full place-items-center rounded-md border bg-white; border-color: var(--border); color: var(--fg-muted); }
+  .rail-action-button.is-primary { @apply border-0 text-white; background: var(--success); }
+  .rail-action-button svg { @apply size-4.5; }
+  .rail-caret { @apply !size-3 opacity-70; }
+  .rail-menu { @apply absolute top-0 right-[calc(100%+6px)] z-40 grid min-w-52 gap-0.5 rounded-lg border bg-white p-1.5 shadow-xl; border-color: var(--border); }
+  .rail-menu button { @apply grid min-h-8 rounded-md border-0 bg-transparent px-2.5 py-1.5 text-left text-[12px] font-semibold whitespace-nowrap hover:bg-[color:var(--surface-alt)] disabled:pointer-events-none disabled:opacity-40; color: var(--fg); }
+  .rail-menu button small { @apply text-[10px] font-normal; color: var(--fg-subtle); }
+
+  .doc-header { @apply grid gap-2 border-b px-3 py-2.5 sm:grid-cols-2; border-color: var(--border); background: var(--surface-alt); }
+  .doc-header-row { @apply flex flex-wrap items-center gap-2; }
+  .doc-field { @apply grid min-w-0 flex-1 gap-1 text-[11px] font-bold; color: var(--fg-muted); }
+  .doc-field b { color: var(--danger); }
+  .doc-field input, .doc-field select { @apply min-h-8 text-[12px]; }
+  .doc-panels { @apply flex min-h-72 items-stretch; }
+  .doc-panel { @apply min-w-0 flex-1 p-3; }
+  .doc-grid { @apply grid gap-3 sm:grid-cols-2; }
+
+  .totals-footer { @apply grid gap-1 border-t px-3 py-2.5; border-color: var(--border); background: var(--surface-alt); }
+  .totals-row { @apply ml-auto flex w-full max-w-md items-center justify-between gap-6 text-[12px]; color: var(--fg-muted); }
+  .totals-row span:last-child { @apply font-bold tabular-nums; color: var(--fg); }
+  .totals-row.is-total { @apply mt-1 border-t pt-2 text-[15px] font-extrabold; border-color: var(--border-strong); color: var(--fg); }
+  .totals-row input { @apply h-7 w-24 text-right text-[12px]; }
+
+  .line-grid { @apply overflow-hidden rounded-lg border; border-color: var(--border); }
+  .line-picker { @apply flex flex-wrap items-center gap-2 border-b px-2 py-1.5; border-color: var(--border); background: var(--surface-alt); color: var(--fg-subtle); }
+  .line-picker svg { @apply size-4; }
+  .line-picker select { @apply min-h-8 max-w-md flex-1 text-[12px]; }
+  .line-picker > button { @apply inline-flex min-h-8 items-center gap-1 rounded-md border bg-white px-2 text-[12px] font-bold; border-color: var(--border); color: var(--fg-muted); }
+  .line-picker > button svg { @apply size-3.5; }
+  .line-picker strong { @apply ml-auto text-[12px]; color: var(--fg-muted); }
+  .line-picker strong b { color: var(--danger); }
+  .line-table td { @apply px-1.5 py-1; }
+  .line-table input, .line-table select { @apply min-h-7 rounded-sm px-1.5 py-0 text-[12px] shadow-none; }
+  .line-table td input.number { @apply text-right; }
+  .line-table td > select + input { @apply mt-1; }
+  .line-handle, .line-handle-head { @apply w-6 text-center; }
+  .line-handle { @apply cursor-grab; color: var(--fg-subtle); }
+  .line-handle svg { @apply mx-auto size-3.5 rotate-90; }
+  .line-unit { @apply text-[12px]; color: var(--fg-muted); }
+  .line-hint { @apply m-0 border-t px-2 py-1.5 text-[11px]; border-color: var(--border); background: var(--surface-alt); color: var(--fg-subtle); }
+
+  .lookup { @apply relative grid min-w-0 gap-1 text-[11px] font-bold; color: var(--fg-muted); }
+  .lookup-label b { color: var(--danger); }
+  .lookup-trigger { @apply flex min-h-8 w-full items-center justify-between gap-2 rounded-md border bg-white px-2 text-[12px] font-normal; border-color: var(--border); color: var(--fg-subtle); }
+  .lookup-trigger svg { @apply size-3.5; }
+  .lookup-chip { @apply inline-flex min-h-8 items-center justify-between gap-2 rounded-md border px-2 text-[12px] font-semibold; border-color: var(--info); background: #EAF2FC; color: var(--fg); }
+  .lookup-chip button { @apply grid size-4 shrink-0 place-items-center rounded-full border-0 bg-transparent p-0; color: var(--fg-muted); }
+  .lookup-chip svg { @apply size-3; }
+  .lookup-panel { @apply absolute top-full left-0 z-40 mt-1 grid w-80 max-w-[90vw] gap-1 rounded-lg border bg-white p-2 shadow-xl; border-color: var(--border); }
+  .lookup-options { @apply grid max-h-60 gap-0.5 overflow-y-auto; }
+  .lookup-options button { @apply rounded-md border-0 bg-transparent px-2 py-1.5 text-left text-[12px] font-semibold hover:bg-[color:var(--surface-alt)]; color: var(--fg); }
+  .lookup-options p { @apply m-0 px-2 py-3 text-center text-[12px] font-normal; color: var(--fg-subtle); }
+}
+
+@layer components {
+  .doc-tab-dirty { @apply size-1.5 rounded-full; background: var(--warning); }
+  .doc-tab.is-active .doc-tab-dirty { @apply bg-white; }
 }

@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
-  adjustInventory, createDocument, listDocuments, listInventoryBalances, listItems, listReservations,
+  adjustInventory, listDocuments, listDocumentsPaged, listInventoryBalances, listItems, listReservations, listUnits,
   listWarehouses, releaseReservation, reserveInventory, stockOpname, transferInventory, transitionDocument,
 } from '../api/operations'
 import { listContacts } from '../api/accounting'
@@ -8,14 +8,27 @@ import { listProjects } from '../api/projects'
 import { openDocumentPrint } from '../api/print'
 import type { Project } from '../types/reports'
 import { Badge, Button, DataEntryGuide, PageHeader } from '../components/ui'
-import { AddButton, DataTable, SearchInput, TablePanel, type Column } from '../components/DataTable'
+import { AddButton, DataTable, TablePanel, type Column } from '../components/DataTable'
+import { ListView, type ListColumn } from '../components/ListView'
+import { JournalPeek } from '../components/JournalPeek'
+import { DocumentForm } from './DocumentForm'
+import { usePersisted } from '../lib/persist'
+import { useServerList } from '../lib/serverList'
+import { downloadCsv, fetchAllPages } from '../lib/csv'
+import { formatDate, formatMinor, fromMinor } from '../lib/money'
 import { ConfirmDialog, FormModal, messageOf, useConfirm } from '../components/Modal'
 import type { Contact } from '../types/accounting'
-import type { BusinessDocument, InventoryBalance, InventoryReservation, Item, Warehouse } from '../types/operations'
+import type { BusinessDocument, InventoryBalance, InventoryReservation, Item, Unit, Warehouse } from '../types/operations'
 
 const documentTypes = ['SALES_QUOTE', 'SALES_ORDER', 'DELIVERY', 'SALES_INVOICE', 'SALES_RETURN', 'PURCHASE_REQUISITION', 'PURCHASE_ORDER', 'GOODS_RECEIPT', 'PURCHASE_INVOICE', 'PURCHASE_RETURN']
 const advanceable = ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'OPEN', 'PARTIAL']
-const today = () => new Date().toISOString().slice(0, 10)
+/** Dokumen hilir utama untuk aksi cepat "Proses" dari daftar. */
+const downstreamPrimary: Record<string, string> = {
+  SALES_QUOTE: 'SALES_ORDER', SALES_ORDER: 'DELIVERY', DELIVERY: 'SALES_INVOICE', SALES_INVOICE: 'SALES_RETURN',
+  PURCHASE_REQUISITION: 'PURCHASE_ORDER', PURCHASE_ORDER: 'GOODS_RECEIPT', GOODS_RECEIPT: 'PURCHASE_INVOICE', PURCHASE_INVOICE: 'PURCHASE_RETURN',
+}
+const downstreamOf = (type: string) => downstreamPrimary[type] ?? ''
+const documentStatuses = ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'OPEN', 'PARTIAL', 'COMPLETED', 'CANCELLED']
 
 /** nextStatus mirrors the backend transition ladder for a document. */
 function nextStatus(status: string) {
@@ -35,20 +48,23 @@ function advanceLabel(status: string) {
 
 type InventoryAction = 'adjust' | 'transfer' | 'opname' | 'reserve'
 
-export function DocumentsPage({ onNotice }: { onNotice: (value: string) => void }) {
+export function DocumentsPage({ scale, onNotice }: { scale: number; onNotice: (value: string) => void }) {
   const [documents, setDocuments] = useState<BusinessDocument[]>([])
   const [items, setItems] = useState<Item[]>([])
   const [warehouses, setWarehouses] = useState<Warehouse[]>([])
+  const [units, setUnits] = useState<Unit[]>([])
   const [balances, setBalances] = useState<InventoryBalance[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [reservations, setReservations] = useState<InventoryReservation[]>([])
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [typeFilter, setTypeFilter] = useState('')
+  const [typeFilter, setTypeFilter] = usePersisted('filter.documents.type', 'ALL')
+  const [statusFilter, setStatusFilter] = usePersisted('filter.documents.status', 'ALL')
 
-  const [documentOpen, setDocumentOpen] = useState(false)
-  const [currency, setCurrency] = useState('IDR')
+  const [view, setView] = useState<'list' | 'form'>('list')
+  const [prefill, setPrefill] = useState<{ documentType: string; sourceId: string } | null>(null)
+  const [formKey, setFormKey] = useState(0)
+  const [journalTarget, setJournalTarget] = useState<BusinessDocument | null>(null)
   const [inventoryAction, setInventoryAction] = useState<{ kind: InventoryAction; balance: InventoryBalance | null } | null>(null)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
@@ -58,9 +74,9 @@ export function DocumentsPage({ onNotice }: { onNotice: (value: string) => void 
 
   async function refresh() {
     const results = await Promise.allSettled([
-      listDocuments(), listItems(), listWarehouses(), listInventoryBalances(), listContacts(), listReservations(), listProjects(''),
+      listDocuments(), listItems(), listWarehouses(), listInventoryBalances(), listContacts(), listReservations(), listProjects(''), listUnits(),
     ])
-    const [d, i, w, b, c, r, p] = results
+    const [d, i, w, b, c, r, p, u] = results
     if (d.status === 'fulfilled') setDocuments(d.value ?? [])
     if (i.status === 'fulfilled') setItems(i.value ?? [])
     if (w.status === 'fulfilled') setWarehouses(w.value ?? [])
@@ -68,6 +84,7 @@ export function DocumentsPage({ onNotice }: { onNotice: (value: string) => void 
     if (c.status === 'fulfilled') setContacts(c.value ?? [])
     if (r.status === 'fulfilled') setReservations(r.value ?? [])
     if (p.status === 'fulfilled') setProjects(p.value ?? [])
+    if (u.status === 'fulfilled') setUnits(u.value ?? [])
     const failed = results.filter((result) => result.status === 'rejected').length
     if (failed > 0) onNotice(`${failed} data Jual Beli belum berhasil dimuat. Halaman tetap dapat digunakan.`)
     setLoading(false)
@@ -93,42 +110,51 @@ export function DocumentsPage({ onNotice }: { onNotice: (value: string) => void 
   const activeItems = items.filter((item) => item.is_active)
   const inventoryItems = activeItems.filter((item) => item.item_type === 'INVENTORY')
   const activeWarehouses = warehouses.filter((warehouse) => warehouse.is_active)
-  const activeContacts = contacts.filter((contact) => contact.is_active)
   const openSalesOrders = documents.filter((document) => document.document_type === 'SALES_ORDER' && !['COMPLETED', 'CANCELLED'].includes(document.status))
   const itemLabel = (id: string) => { const item = items.find((candidate) => candidate.id === id); return item ? `${item.sku} · ${item.name}` : id.slice(0, 8) }
   const documentNumber = (id: string) => documents.find((document) => document.id === id)?.number ?? id.slice(0, 8)
 
-  const visibleDocuments = useMemo(() => {
-    const needle = search.trim().toLowerCase()
-    return documents.filter((document) => {
-      if (typeFilter && document.document_type !== typeFilter) return false
-      if (!needle) return true
-      return `${document.number} ${document.document_type} ${document.status}`.toLowerCase().includes(needle)
-    })
-  }, [documents, search, typeFilter])
+  // Daftar dokumen dipaginasi server-side; `documents` tetap dipakai untuk
+  // menamai reservasi dan menyediakan sales order yang masih terbuka.
+  const documentList = useServerList('documents', listDocumentsPaged, {
+    defaultSort: 'date',
+    defaultOrder: 'desc',
+    filters: { type: typeFilter, status: statusFilter },
+  })
+
+  /** Ekspor dokumen mengambil seluruh halaman hasil filter dari server. */
+  async function exportDocuments() {
+    const rows = await fetchAllPages(listDocumentsPaged, { filters: { type: typeFilter, status: statusFilter }, search: documentList.search, sort: 'date', order: 'desc' })
+    downloadCsv('dokumen-bisnis.csv', ['Nomor', 'Jenis', 'Tanggal', 'Mata uang', 'Status', 'Nilai'],
+      rows.map((document) => [document.number, document.document_type, document.document_date.slice(0, 10), document.currency_code, document.status, fromMinor(document.total_minor, scale)]))
+    onNotice(`${rows.length} dokumen diekspor ke CSV.`)
+  }
 
   function openInventory(kind: InventoryAction, balance: InventoryBalance | null = null) {
     setInventoryAction({ kind, balance })
     setFormError(null)
   }
 
-  const documentColumns: Array<Column<BusinessDocument>> = [
-    { header: 'Nomor', className: 'mono', cell: (document) => document.number },
-    { header: 'Jenis', cell: (document) => <span className="type-tag">{document.document_type}</span> },
-    { header: 'Tanggal', cell: (document) => document.document_date.slice(0, 10) },
-    { header: 'Mata uang', cell: (document) => document.currency_code },
+  const documentColumns: Array<ListColumn<BusinessDocument>> = [
+    { sortable: true, key: 'number', header: 'Nomor', className: 'mono', width: '150px', sortValue: (document) => document.number, cell: (document) => document.number },
+    { sortable: true, key: 'type', header: 'Jenis', sortValue: (document) => document.document_type, cell: (document) => <span className="type-tag">{document.document_type}</span> },
+    { sortable: true, key: 'date', header: 'Tanggal', width: '130px', sortValue: (document) => document.document_date, cell: (document) => formatDate(document.document_date) },
+    { sortable: true, key: 'currency', header: 'Mata uang', width: '100px', optional: true, cell: (document) => document.currency_code },
     {
+      key: 'status',
       header: 'Status',
+      width: '150px',
+      sortValue: (document) => document.status,
       cell: (document) => <Badge tone={document.status === 'COMPLETED' ? 'success' : document.status === 'PENDING_APPROVAL' ? 'warning' : 'neutral'}>{document.status}</Badge>,
     },
-    { header: 'Nilai', align: 'right', className: 'mono', cell: (document) => document.total_minor.toLocaleString('id-ID') },
+    { sortable: true, key: 'total', header: 'Nilai', align: 'right', className: 'mono', width: '150px', sortValue: (document) => document.total_minor, cell: (document) => formatMinor(document.total_minor, scale) },
   ]
 
   const balanceColumns: Array<Column<InventoryBalance>> = [
     { header: 'Produk', cell: (balance) => <><strong>{balance.item_name}</strong><small className="block mono">{balance.sku}</small></> },
     { header: 'Gudang', cell: (balance) => <>{balance.warehouse_name}<small className="block mono">{balance.warehouse_code}</small></> },
     { header: 'Kuantitas', align: 'right', className: 'mono', cell: (balance) => balance.quantity },
-    { header: 'Nilai', align: 'right', className: 'mono', cell: (balance) => balance.value_minor.toLocaleString('id-ID') },
+    { header: 'Nilai', align: 'right', className: 'mono', cell: (balance) => formatMinor(balance.value_minor, scale) },
   ]
 
   const reservationColumns: Array<Column<InventoryReservation>> = [
@@ -145,6 +171,37 @@ export function DocumentsPage({ onNotice }: { onNotice: (value: string) => void 
     reserve: 'Reservasi stok',
   }
 
+  if (view === 'form') {
+    return (
+      <section>
+        <DocumentForm
+          key={formKey}
+          prefill={prefill}
+          scale={scale}
+          items={items}
+          units={units}
+          warehouses={warehouses}
+          contacts={contacts}
+          projects={projects}
+          onCancel={() => { setPrefill(null); setView('list') }}
+          onNotice={onNotice}
+          onSaved={(created, again) => {
+            void refresh()
+            void documentList.reload()
+            onNotice(`Dokumen ${created.number} tersimpan sebagai draft. Jurnal terbentuk saat dokumen diselesaikan.`)
+            if (again) { setPrefill(null); setFormKey((value) => value + 1) }
+          }}
+          onProcess={(source, downstreamType) => {
+            // "Proses" membuka form baru berjenis hilir dengan isi dokumen ini.
+            setPrefill({ documentType: downstreamType, sourceId: source.id })
+            setFormKey((value) => value + 1)
+            onNotice(`Dokumen hilir disiapkan dari ${source.number}.`)
+          }}
+        />
+      </section>
+    )
+  }
+
   return (
     <section>
       <PageHeader
@@ -154,7 +211,7 @@ export function DocumentsPage({ onNotice }: { onNotice: (value: string) => void 
         action={<div className="page-actions">
           <Button variant="secondary" icon="refresh" onClick={() => openInventory('transfer')} disabled={inventoryItems.length === 0 || activeWarehouses.length < 2}>Transfer stok</Button>
           <Button variant="secondary" icon="check" onClick={() => openInventory('opname')} disabled={inventoryItems.length === 0 || activeWarehouses.length === 0}>Stock opname</Button>
-          <AddButton onClick={() => { setDocumentOpen(true); setFormError(null) }}>Dokumen baru</AddButton>
+          <AddButton onClick={() => { setPrefill(null); setFormKey((value) => value + 1); setView('form'); setFormError(null) }}>Dokumen baru</AddButton>
         </div>}
       />
       <DataEntryGuide
@@ -167,38 +224,52 @@ export function DocumentsPage({ onNotice }: { onNotice: (value: string) => void 
         note="Master kontak, produk, dan gudang sebaiknya dibuat terlebih dahulu. Penyelesaian dokumen membentuk jurnal dan pergerakan stok secara atomik."
       />
 
-      <TablePanel
-        title="Dokumen bisnis"
-        description="Penyelesaian dokumen mem-post jurnal, open item, dan stok dalam satu transaksi."
-        badge={`${visibleDocuments.length} dari ${documents.length}`}
-        badgeTone="info"
-        className="!mt-0"
-        action={<AddButton onClick={() => { setDocumentOpen(true); setFormError(null) }}>Dokumen baru</AddButton>}
-        toolbar={
-          <>
-            <SearchInput value={search} onChange={setSearch} placeholder="Cari nomor, jenis, atau status dokumen…" />
-            <label className="shrink-0 max-sm:w-full">
-              <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} aria-label="Filter jenis dokumen">
-                <option value="">Semua jenis</option>
-                {documentTypes.map((type) => <option key={type} value={type}>{type}</option>)}
-              </select>
-            </label>
-          </>
-        }
-      >
-        <DataTable
-          columns={documentColumns}
-          rows={visibleDocuments}
-          keyOf={(document) => document.id}
-          loading={loading}
-          empty={documents.length === 0 ? 'Belum ada dokumen bisnis.' : 'Tidak ada dokumen yang cocok dengan filter.'}
-          rowActions={[
-            { label: (document) => advanceLabel(document.status), icon: 'check', onSelect: advance.open, when: (document) => advanceable.includes(document.status) },
-            { label: 'Cetak PDF', icon: 'printer', onSelect: (document) => void openDocumentPrint(document.id, 'pdf') },
-            { label: 'Pratinjau', icon: 'reports', onSelect: (document) => void openDocumentPrint(document.id, 'html') },
-          ]}
-        />
-      </TablePanel>
+      <ListView
+        storageKey="documents"
+        columns={documentColumns}
+        rows={documentList.rows}
+        keyOf={(document) => document.id}
+        loading={documentList.loading}
+        server={documentList.server}
+        search={documentList.search}
+        onSearch={documentList.setSearch}
+        searchPlaceholder="Cari nomor, jenis, atau status dokumen"
+        onCreate={() => { setPrefill(null); setFormKey((value) => value + 1); setView('form'); setFormError(null) }}
+        createLabel="Dokumen baru"
+        onRefresh={() => { void refresh(); void documentList.reload() }}
+        onExport={() => void exportDocuments()}
+        onPrint={() => window.print()}
+        empty={documentList.error ?? (documents.length === 0 ? 'Belum ada dokumen bisnis.' : 'Tidak ada dokumen yang cocok dengan filter.')}
+        filters={[
+          {
+            key: 'type',
+            label: 'Jenis',
+            value: typeFilter,
+            onChange: setTypeFilter,
+            options: [{ value: 'ALL', label: 'Semua' }, ...documentTypes.map((type) => ({ value: type, label: type }))],
+          },
+          {
+            key: 'status',
+            label: 'Status',
+            value: statusFilter,
+            onChange: setStatusFilter,
+            options: [{ value: 'ALL', label: 'Semua' }, ...documentStatuses.map((value) => ({ value, label: value }))],
+          },
+        ]}
+        rowActions={[
+          { label: (document) => advanceLabel(document.status), icon: 'check', onSelect: advance.open, when: (document) => advanceable.includes(document.status) },
+          { label: 'Lihat Jurnal', icon: 'journal', onSelect: setJournalTarget },
+          {
+            label: 'Proses ke dokumen hilir',
+            icon: 'operations',
+            onSelect: (document) => { setPrefill({ documentType: downstreamOf(document.document_type), sourceId: document.id }); setFormKey((value) => value + 1); setView('form') },
+            when: (document) => downstreamOf(document.document_type) !== '',
+          },
+          { label: 'Cetak PDF', icon: 'printer', onSelect: (document) => void openDocumentPrint(document.id, 'pdf') },
+          { label: 'Pratinjau', icon: 'reports', onSelect: (document) => void openDocumentPrint(document.id, 'html') },
+        ]}
+        onRowOpen={setJournalTarget}
+      />
 
       <TablePanel
         title="Saldo per gudang"
@@ -237,82 +308,6 @@ export function DocumentsPage({ onNotice }: { onNotice: (value: string) => void 
           />
         </TablePanel>
       )}
-
-      {/* ---- Document modal ---- */}
-      <FormModal
-        open={documentOpen}
-        formKey="document"
-        size="lg"
-        eyebrow="DOKUMEN"
-        title="Dokumen bisnis baru"
-        description="Dokumen dibuat sebagai draft. Jurnal dan pergerakan stok baru terbentuk saat dokumen diselesaikan."
-        submitLabel="Buat draft"
-        busy={saving}
-        error={formError}
-        onClose={() => setDocumentOpen(false)}
-        onSubmit={(values) => {
-          const item = items.find((candidate) => candidate.id === values.get('item_id'))
-          const due = String(values.get('due_date'))
-          return save(
-            () => createDocument({
-              document_type: String(values.get('document_type')),
-              contact_id: values.get('contact_id') || null,
-              project_id: values.get('project_id') || null,
-              currency_code: String(values.get('currency_code') || 'IDR'),
-              exchange_rate_numerator: Number(values.get('exchange_rate_numerator') || 0),
-              exchange_rate_denominator: Number(values.get('exchange_rate_denominator') || 0),
-              warehouse_id: values.get('warehouse_id') || null,
-              document_date: String(values.get('document_date')),
-              due_date: due || null,
-              notes: String(values.get('notes')),
-              lines: [{
-                item_id: item?.id ?? null,
-                unit_id: item?.base_unit_id ?? null,
-                description: String(values.get('description')),
-                quantity: String(values.get('quantity')),
-                unit_price: String(values.get('unit_price')),
-                discount: String(values.get('discount') || '0'),
-                tax: String(values.get('tax') || '0'),
-              }],
-            }),
-            'Dokumen bisnis berhasil dibuat sebagai draft.',
-            () => setDocumentOpen(false),
-          )
-        }}
-      >
-        <div className="form-row">
-          <label>Jenis<select name="document_type">{documentTypes.map((type) => <option key={type}>{type}</option>)}</select></label>
-          <label>Tanggal<input type="date" name="document_date" defaultValue={today()} required /></label>
-          <label>Jatuh tempo<input type="date" name="due_date" /></label>
-        </div>
-        <div className="form-row">
-          <label>Kontak<select name="contact_id"><option value="">Tanpa kontak</option>{activeContacts.map((contact) => <option key={contact.id} value={contact.id}>{contact.name} · {contact.type}</option>)}</select></label>
-          <label>Produk<select name="item_id"><option value="">Tanpa master produk</option>{activeItems.map((item) => <option key={item.id} value={item.id}>{item.sku} · {item.name}</option>)}</select></label>
-          <label>Gudang<select name="warehouse_id"><option value="">Tanpa gudang</option>{activeWarehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.code} · {warehouse.name}</option>)}</select></label>
-          <label>Proyek<select name="project_id"><option value="">Tanpa proyek</option>{projects.map((project) => <option key={project.id} value={project.id}>{project.code} · {project.name}</option>)}</select></label>
-        </div>
-        <label>Deskripsi<input name="description" required /></label>
-        <div className="form-row">
-          <label>Kuantitas<input name="quantity" defaultValue="1" inputMode="decimal" required /></label>
-          <label>Harga satuan<input name="unit_price" defaultValue="0" inputMode="numeric" required /></label>
-          <label>Diskon<input name="discount" defaultValue="0" inputMode="numeric" /></label>
-          <label>Pajak<input name="tax" defaultValue="0" inputMode="numeric" /></label>
-        </div>
-        <div className="form-row">
-          <label>Mata uang<input name="currency_code" value={currency} onChange={(event) => setCurrency(event.target.value.toUpperCase())} maxLength={3} /></label>
-          {currency !== 'IDR' && <>
-            <label>Kurs (Rp per 1 {currency})<input name="exchange_rate_numerator" type="number" min={1} defaultValue={16000} /></label>
-            <label>Per<input name="exchange_rate_denominator" type="number" min={1} defaultValue={1} /></label>
-          </>}
-        </div>
-        {currency !== 'IDR' && (
-          <div className="callout">
-            <strong>Valas</strong>
-            <span>Nilai dokumen tetap dalam {currency}; jurnal diposting dalam rupiah memakai kurs ini. Surat jalan dan penerimaan barang harus tetap rupiah karena langsung menilai persediaan.</span>
-          </div>
-        )}
-        <label>Catatan<input name="notes" /></label>
-      </FormModal>
 
       {/* ---- Inventory action modal ---- */}
       <FormModal
@@ -410,7 +405,7 @@ export function DocumentsPage({ onNotice }: { onNotice: (value: string) => void 
           </div>
         )}
         {inventoryAction?.balance && (
-          <p className="modal-note">Saldo saat ini: <strong>{inventoryAction.balance.quantity}</strong> di {inventoryAction.balance.warehouse_name}, senilai {inventoryAction.balance.value_minor.toLocaleString('id-ID')}.</p>
+          <p className="modal-note">Saldo saat ini: <strong>{inventoryAction.balance.quantity}</strong> di {inventoryAction.balance.warehouse_name}, senilai {formatMinor(inventoryAction.balance.value_minor, scale)}.</p>
         )}
       </FormModal>
 
@@ -431,6 +426,14 @@ export function DocumentsPage({ onNotice }: { onNotice: (value: string) => void 
         description={advance.target?.status === 'OPEN' || advance.target?.status === 'PARTIAL'
           ? <>Menyelesaikan <strong>{advance.target.number}</strong> akan mem-post jurnal, open item, dan pergerakan stok secara atomik. Tindakan ini tidak dapat dibatalkan.</>
           : <>Status dokumen <strong>{advance.target?.number}</strong> akan berubah dari {advance.target?.status} menjadi {advance.target ? nextStatus(advance.target.status) : ''}.</>}
+      />
+
+      <JournalPeek
+        open={journalTarget !== null}
+        documentId={journalTarget?.id ?? ''}
+        number={journalTarget?.number ?? ''}
+        scale={scale}
+        onClose={() => setJournalTarget(null)}
       />
 
       <ConfirmDialog

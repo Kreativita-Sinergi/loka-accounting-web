@@ -3,7 +3,7 @@ import { AxiosError } from 'axios'
 import { createContact, postOpeningBalance, saveLocalization, updateSettings } from '../api/accounting'
 import { createInvitation, saveOnboarding } from '../api/operations'
 import { Badge, Button, Card, PageHeader, cx } from '../components/ui'
-import type { PageKey } from '../components/Layout'
+import type { PageKey } from '../lib/menu'
 import type { Account, AccountingSettings, ApiEnvelope } from '../types/accounting'
 import type { Onboarding } from '../types/operations'
 
