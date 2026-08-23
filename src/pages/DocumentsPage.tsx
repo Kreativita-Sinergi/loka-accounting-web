@@ -48,7 +48,7 @@ function advanceLabel(status: string) {
 
 type InventoryAction = 'adjust' | 'transfer' | 'opname' | 'reserve'
 
-export function DocumentsPage({ scale, onNotice }: { scale: number; onNotice: (value: string) => void }) {
+export function DocumentsPage({ documentType, scale, onNotice }: { documentType?: string; scale: number; onNotice: (value: string) => void }) {
   const [documents, setDocuments] = useState<BusinessDocument[]>([])
   const [items, setItems] = useState<Item[]>([])
   const [warehouses, setWarehouses] = useState<Warehouse[]>([])
@@ -58,7 +58,7 @@ export function DocumentsPage({ scale, onNotice }: { scale: number; onNotice: (v
   const [reservations, setReservations] = useState<InventoryReservation[]>([])
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
-  const [typeFilter, setTypeFilter] = usePersisted('filter.documents.type', 'ALL')
+  const [typeFilter, setTypeFilter] = usePersisted(`filter.documents.type.${documentType ?? 'all'}`, documentType ?? 'ALL')
   const [statusFilter, setStatusFilter] = usePersisted('filter.documents.status', 'ALL')
 
   const [view, setView] = useState<'list' | 'form'>('list')
@@ -176,7 +176,7 @@ export function DocumentsPage({ scale, onNotice }: { scale: number; onNotice: (v
       <section>
         <DocumentForm
           key={formKey}
-          prefill={prefill}
+          prefill={prefill ?? (documentType ? { documentType, sourceId: '' } : null)}
           scale={scale}
           items={items}
           units={units}

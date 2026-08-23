@@ -180,7 +180,7 @@ export function ProductsPage({ accounts, onNotice }: { accounts: Account[]; onNo
         createDisabled={activeUnits.length === 0}
         createTitle={activeUnits.length === 0 ? 'Buat satuan lebih dulu' : 'Produk baru'}
         onRefresh={() => { void refresh(); void itemList.reload() }}
-        onImport={() => requestTab('imports')}
+        onImport={() => requestTab('settings.import')}
         onExport={() => void exportItems()}
         onPrint={() => window.print()}
         empty={itemList.error ?? (items.length === 0 ? 'Belum ada produk. Buat satuan lebih dulu, lalu tambahkan produk.' : 'Tidak ada produk yang cocok dengan filter.')}

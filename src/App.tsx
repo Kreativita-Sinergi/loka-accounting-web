@@ -3,7 +3,7 @@ import { AxiosError } from 'axios'
 import { createAccount, createJournal, deleteAccount, getSettings, initializeAccounting, listAccounts, setAccountActive, updateAccount } from './api/accounting'
 import { Shell } from './components/Shell'
 import { TabContext, useTabs } from './store/tabs'
-import type { PageKey } from './lib/menu'
+import { tileOf, type PageKey } from './lib/menu'
 import { AccountsPage } from './pages/AccountsPage'
 import { JournalPage } from './pages/JournalPage'
 import { OverviewPage } from './pages/OverviewPage'
@@ -20,6 +20,9 @@ import { ProjectsPage } from './pages/ProjectsPage'
 import { AssetsPage } from './pages/AssetsPage'
 import { ImportPage } from './pages/ImportPage'
 import { GetStartedPage } from './pages/GetStartedPage'
+import { ScaffoldPage } from './pages/ScaffoldPage'
+import { ItemMasterPage } from './pages/ItemMasterPage'
+import { CashBankPage } from './pages/CashBankPage'
 import { getOnboarding } from './api/operations'
 import type { Onboarding } from './types/operations'
 import { clearSession, getStoredProfile, type AuthSession, type IdentityProfile } from './api/auth'
@@ -104,29 +107,55 @@ export default function App() {
   function logout() { clearSession(); setSettings(null); setAccounts([]); setOnboarding(null); onboardingRouted.current = false; setProfile(null) }
   if (!profile) return <AuthPage onAuthenticated={authenticated} />
   const activeAccounts = accounts.filter((account) => account.is_active)
+  const scale = settings?.currency_scale ?? 0
 
   // Keep-alive (§3.4): setiap tab yang pernah dibuka tetap ter-mount; yang tidak
   // aktif hanya disembunyikan agar scroll, isi form, dan filter tidak hilang.
   function render(key: PageKey) {
+    // Ubin yang sudah punya backend dilayani halaman aslinya; sisanya memakai
+    // ScaffoldPage sehingga tata letaknya tetap sesuai Accurate.
     switch (key) {
-      case 'overview': return <OverviewPage settings={settings} onboarding={onboarding} loading={loading} onInitialize={initialize} onGetStarted={() => open('get-started')} />
-      case 'get-started': return settings && onboarding ? <GetStartedPage settings={settings} onboarding={onboarding} accounts={activeAccounts} onChanged={(value) => { setOnboarding(value); void getSettings().then(setSettings) }} onNavigate={open} onNotice={setNotice} /> : null
-      case 'accounts': return <AccountsPage accounts={accounts} onCreate={accountCreate} onUpdate={accountUpdate} onStatusChange={accountStatus} onDelete={accountDelete} />
-      case 'journal': return <JournalPage accounts={activeAccounts} onSubmit={async (input) => { try { await createJournal(input); setNotice('Jurnal berhasil diposting.') } catch (error) { showError(error, setNotice); throw error } }} />
-      case 'ledger': return <LedgerPage />
-      case 'operations': return <OperationsPage accounts={activeAccounts} onNotice={setNotice} />
-      case 'products': return <ProductsPage accounts={activeAccounts} onNotice={setNotice} />
-      case 'documents': return <DocumentsPage scale={settings?.currency_scale ?? 0} onNotice={setNotice} />
-      case 'controls': return <ControlsPage profile={profile!} onNotice={setNotice} />
-      case 'advanced': return <AdvancedPage accounts={activeAccounts} onNotice={setNotice} />
-      case 'compliance': return <ModulePage kind="compliance" accounts={activeAccounts} onNotice={setNotice} />
-      case 'payroll': return <ModulePage kind="payroll" accounts={activeAccounts} onNotice={setNotice} />
-      case 'manufacturing': return <ModulePage kind="manufacturing" accounts={activeAccounts} onNotice={setNotice} />
-      case 'currency': return <ModulePage kind="currency" accounts={activeAccounts} onNotice={setNotice} />
-      case 'projects': return <ProjectsPage onNotice={setNotice} />
-      case 'assets': return <AssetsPage accounts={activeAccounts} onNotice={setNotice} />
-      case 'imports': return <ImportPage onNotice={setNotice} />
-      case 'reports': return <ReportsPage />
+      case 'company.dashboard': return <OverviewPage settings={settings} onboarding={onboarding} loading={loading} onInitialize={initialize} onGetStarted={() => open('settings.setup')} />
+      case 'settings.setup': return settings && onboarding ? <GetStartedPage settings={settings} onboarding={onboarding} accounts={activeAccounts} onChanged={(value) => { setOnboarding(value); void getSettings().then(setSettings) }} onNavigate={open} onNotice={setNotice} /> : null
+      case 'settings.preference': return <AdvancedPage accounts={activeAccounts} onNotice={setNotice} />
+      case 'settings.import': return <ImportPage onNotice={setNotice} />
+      case 'settings.user': case 'settings.role': case 'settings.numbering': case 'company.info':
+        return <ControlsPage profile={profile!} onNotice={setNotice} />
+      case 'company.project': return <ProjectsPage onNotice={setNotice} />
+      case 'company.currency': return <ModulePage kind="currency" accounts={activeAccounts} onNotice={setNotice} />
+      case 'company.department': case 'cash.account': return <AdvancedPage accounts={activeAccounts} onNotice={setNotice} />
+      case 'cash.in': return <CashBankPage kind="RECEIPT" scale={scale} accounts={accounts} onNotice={setNotice} />
+      case 'cash.out': return <CashBankPage kind="PAYMENT" scale={scale} accounts={accounts} onNotice={setNotice} />
+      case 'cash.transfer': return <CashBankPage kind="TRANSFER" scale={scale} accounts={accounts} onNotice={setNotice} />
+      case 'cash.history': return <CashBankPage kind="HISTORY" scale={scale} accounts={accounts} onNotice={setNotice} />
+      case 'gl.journal': return <JournalPage accounts={activeAccounts} onSubmit={async (input) => { try { await createJournal(input); setNotice('Jurnal berhasil diposting.') } catch (error) { showError(error, setNotice); throw error } }} />
+      case 'gl.account': return <AccountsPage accounts={accounts} onCreate={accountCreate} onUpdate={accountUpdate} onStatusChange={accountStatus} onDelete={accountDelete} />
+      case 'gl.ledger': case 'reports.ledger': return <LedgerPage />
+      case 'sales.receipt': case 'purchase.payment': case 'sales.customer': case 'purchase.vendor': case 'reports.aging':
+        return <OperationsPage accounts={activeAccounts} onNotice={setNotice} />
+      case 'sales.quote': return <DocumentsPage documentType="SALES_QUOTE" scale={scale} onNotice={setNotice} />
+      case 'sales.order': return <DocumentsPage documentType="SALES_ORDER" scale={scale} onNotice={setNotice} />
+      case 'sales.delivery': return <DocumentsPage documentType="DELIVERY" scale={scale} onNotice={setNotice} />
+      case 'sales.invoice': return <DocumentsPage documentType="SALES_INVOICE" scale={scale} onNotice={setNotice} />
+      case 'sales.return': return <DocumentsPage documentType="SALES_RETURN" scale={scale} onNotice={setNotice} />
+      case 'purchase.requisition': return <DocumentsPage documentType="PURCHASE_REQUISITION" scale={scale} onNotice={setNotice} />
+      case 'purchase.order': return <DocumentsPage documentType="PURCHASE_ORDER" scale={scale} onNotice={setNotice} />
+      case 'purchase.receipt': return <DocumentsPage documentType="GOODS_RECEIPT" scale={scale} onNotice={setNotice} />
+      case 'purchase.invoice': return <DocumentsPage documentType="PURCHASE_INVOICE" scale={scale} onNotice={setNotice} />
+      case 'purchase.return': return <DocumentsPage documentType="PURCHASE_RETURN" scale={scale} onNotice={setNotice} />
+      case 'inventory.transfer': case 'inventory.adjustment': case 'inventory.opnameresult': case 'inventory.stockbywarehouse':
+        return <DocumentsPage scale={scale} onNotice={setNotice} />
+      case 'inventory.category': return <ItemMasterPage kind="category" accounts={activeAccounts} onNotice={setNotice} />
+      case 'inventory.brand': return <ItemMasterPage kind="brand" accounts={activeAccounts} onNotice={setNotice} />
+      case 'inventory.item': case 'inventory.warehouse': case 'inventory.unit':
+        return <ProductsPage accounts={activeAccounts} onNotice={setNotice} />
+      case 'inventory.joborder': case 'inventory.material': case 'inventory.rollover':
+        return <ModulePage kind="manufacturing" accounts={activeAccounts} onNotice={setNotice} />
+      case 'fa.asset': return <AssetsPage accounts={activeAccounts} onNotice={setNotice} />
+      case 'tax.indonesia': return <ModulePage kind="compliance" accounts={activeAccounts} onNotice={setNotice} />
+      case 'tax.payroll': return <ModulePage kind="payroll" accounts={activeAccounts} onNotice={setNotice} />
+      case 'reports.list': return <ReportsPage />
+      default: return <ScaffoldPage pageKey={key} />
     }
   }
 
@@ -134,7 +163,7 @@ export default function App() {
     <Shell tabs={tabs} active={active} onOpen={open} onClose={close} onActivate={setActive} profile={profile} onLogout={logout}>
       {notice && <div className="toast" role="status"><span>{notice}</span><button onClick={() => setNotice(null)} aria-label="Tutup notifikasi">×</button></div>}
       {tabs.map((tab) => (
-        <TabContext.Provider key={tab.key} value={{ setDirty: (dirty) => setDirty(tab.key, dirty), rename: (label) => rename(tab.key, label) }}>
+        <TabContext.Provider key={tab.key} value={{ setDirty: (dirty) => setDirty(tab.key, dirty), rename: (label) => rename(tab.key, label), restore: () => rename(tab.key, tileOf(tab.key).label) }}>
           <div className="tab-panel" hidden={tab.key !== active}>{render(tab.key)}</div>
         </TabContext.Provider>
       ))}

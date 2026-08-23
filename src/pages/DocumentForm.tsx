@@ -8,7 +8,6 @@ import { LineGrid, emptyLine, type DocumentLine } from '../components/LineGrid'
 import { decimal, formatMoney, fromMinor, lineTotal } from '../lib/money'
 import { messageOf } from '../components/Modal'
 import { useTabHandle } from '../store/tabs'
-import { tileOf } from '../lib/menu'
 import type { Contact } from '../types/accounting'
 import type { BusinessDocument, Item, Unit, Warehouse } from '../types/operations'
 import type { Project } from '../types/reports'
@@ -95,7 +94,7 @@ export function DocumentForm({
   const [journalOpen, setJournalOpen] = useState(false)
 
   // Tab dokumen menampilkan nomor setelah tersimpan dan menandai perubahan.
-  useTabHandle(dirty, saved ? `Dokumen ${saved.number}` : 'Data Baru', tileOf('documents').label)
+  useTabHandle(dirty, saved ? `Dokumen ${saved.number}` : 'Data Baru')
 
   const isSales = salesTypes.includes(documentType)
   const partnerLabel = isSales ? 'Pelanggan' : 'Pemasok'

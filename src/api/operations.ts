@@ -1,7 +1,7 @@
 import { api } from './client'
 import { getPaged, type PageRequest } from './paging'
 import type { ApiEnvelope } from '../types/accounting'
-import type { Attachment, DocumentJournalRow } from '../types/operations'
+import type { Attachment, CashHistoryRow, CashTransaction, DocumentJournalRow, ItemBrand, ItemCategory } from '../types/operations'
 import type { APIKey, Approval, ApprovalPolicy, BusinessDocument, DocumentSequence, InventoryBalance, InventoryReservation, Invitation, Item, Onboarding, OrganizationMember, SecuritySettings, Unit, UnitConversion, Warehouse, Webhook } from '../types/operations'
 
 const data = async <T>(request: Promise<{ data: ApiEnvelope<T> }>) => (await request).data.data
@@ -96,3 +96,38 @@ export async function downloadAttachment(attachment: Attachment) {
   link.click()
   URL.revokeObjectURL(url)
 }
+
+// ---- Kategori dan merek barang ----
+export type ItemCategoryInput = { name: string; parent_id: string | null; is_default: boolean; inventory_account_id: string | null; sales_account_id: string | null; cogs_account_id: string | null }
+export const listItemCategories = () => data<ItemCategory[]>(api.get('/item-categories'))
+export const createItemCategory = (input: ItemCategoryInput) => data<ItemCategory>(api.post('/item-categories', input))
+export const updateItemCategory = (id: string, input: ItemCategoryInput) => data<ItemCategory>(api.put(`/item-categories/${id}`, input))
+export const setItemCategoryActive = (id: string, isActive: boolean) => data<ItemCategory>(api.patch(`/item-categories/${id}/status`, { is_active: isActive }))
+export const deleteItemCategory = (id: string) => data(api.delete(`/item-categories/${id}`))
+
+export const listItemBrands = () => data<ItemBrand[]>(api.get('/item-brands'))
+export const createItemBrand = (input: { name: string }) => data<ItemBrand>(api.post('/item-brands', input))
+export const updateItemBrand = (id: string, input: { name: string }) => data<ItemBrand>(api.put(`/item-brands/${id}`, input))
+export const setItemBrandActive = (id: string, isActive: boolean) => data<ItemBrand>(api.patch(`/item-brands/${id}/status`, { is_active: isActive }))
+export const deleteItemBrand = (id: string) => data(api.delete(`/item-brands/${id}`))
+
+// ---- Kas & Bank ----
+export type CashLineInput = { account_id: string; description: string; contact_id?: string | null; project_id?: string | null; amount: string }
+export type CashTransactionInput = {
+  kind: 'RECEIPT' | 'PAYMENT' | 'TRANSFER'
+  transaction_date: string
+  account_id: string
+  destination_account_id?: string | null
+  contact_id?: string | null
+  fee_account_id?: string | null
+  fee?: string
+  amount?: string
+  memo: string
+  lines?: CashLineInput[]
+}
+export const createCashTransaction = (input: CashTransactionInput) => data<CashTransaction>(api.post('/cash-transactions', input))
+export const listCashTransactionsPaged = (request: PageRequest) => getPaged<CashTransaction>('/cash-transactions', request)
+export const getCashTransaction = (id: string) => data<CashTransaction>(api.get(`/cash-transactions/${id}`))
+export const voidCashTransaction = (id: string, reason: string) => data<CashTransaction>(api.post(`/cash-transactions/${id}/void`, { reason }))
+export const cashAccountHistory = (accountId: string, startDate: string, endDate: string) =>
+  data<CashHistoryRow[]>(api.get(`/cash-accounts/${accountId}/history`, { params: { start_date: startDate, end_date: endDate } }))

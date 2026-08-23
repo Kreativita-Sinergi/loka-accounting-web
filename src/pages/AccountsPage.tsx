@@ -150,7 +150,7 @@ export function AccountsPage({ accounts, onCreate, onUpdate, onStatusChange, onD
         onCreate={openCreate}
         createLabel="Akun baru"
         onRefresh={() => void list.reload()}
-        onImport={() => requestTab('imports')}
+        onImport={() => requestTab('settings.import')}
         onExport={() => void downloadExport('accounts')}
         onPrint={() => window.print()}
         rowActions={rowActions}

@@ -1,20 +1,16 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { tileOf, type PageKey } from '../lib/menu'
+import { isKnownTile, tileOf, type PageKey } from '../lib/menu'
 
 export type Tab = { key: PageKey; label: string; closable: boolean; dirty: boolean }
 
 const MAX_TABS = 15
-const HOME: Tab = { key: 'overview', label: 'Dashboard', closable: false, dirty: false }
-
-const pageKeys = new Set<string>([
-  'overview', 'get-started', 'accounts', 'journal', 'ledger', 'operations', 'products', 'documents',
-  'controls', 'advanced', 'compliance', 'payroll', 'manufacturing', 'currency', 'reports', 'projects', 'assets', 'imports',
-])
+export const HOME_KEY: PageKey = 'company.dashboard'
+const HOME: Tab = { key: HOME_KEY, label: 'Dashboard', closable: false, dirty: false }
 
 /** Tab aktif tercermin di URL agar halaman dapat di-refresh dan dibagikan. */
 function keyFromHash(): PageKey | null {
   const value = window.location.hash.replace(/^#\/?/, '')
-  return pageKeys.has(value) ? (value as PageKey) : null
+  return isKnownTile(value) ? value : null
 }
 
 /**
@@ -23,10 +19,10 @@ function keyFromHash(): PageKey | null {
  */
 export function useTabs() {
   const initial = keyFromHash()
-  const [tabs, setTabs] = useState<Tab[]>(() => initial && initial !== 'overview'
+  const [tabs, setTabs] = useState<Tab[]>(() => initial && initial !== HOME_KEY
     ? [HOME, { key: initial, label: tileOf(initial).label, closable: true, dirty: false }]
     : [HOME])
-  const [active, setActive] = useState<PageKey>(initial ?? 'overview')
+  const [active, setActive] = useState<PageKey>(initial ?? HOME_KEY)
 
   // URL mengikuti tab aktif tanpa memuat ulang halaman.
   useEffect(() => {
@@ -80,24 +76,24 @@ export function useTabs() {
 }
 
 /** Kontrol tab yang tersedia bagi halaman di dalam tab tersebut. */
-export type TabHandle = { setDirty: (dirty: boolean) => void; rename: (label: string) => void }
+export type TabHandle = { setDirty: (dirty: boolean) => void; rename: (label: string) => void; restore: () => void }
 
 export const TabContext = createContext<TabHandle | null>(null)
 
-const noop: TabHandle = { setDirty: () => undefined, rename: () => undefined }
+const noop: TabHandle = { setDirty: () => undefined, rename: () => undefined, restore: () => undefined }
 
 /**
  * Melaporkan status "belum disimpan" dan label tab dari dalam form. Nilai
  * kotor membuat tab meminta konfirmasi sebelum ditutup (§3.4).
  */
-export function useTabHandle(dirty?: boolean, label?: string, restoreLabel?: string) {
+export function useTabHandle(dirty?: boolean, label?: string) {
   const handle = useContext(TabContext) ?? noop
   useEffect(() => { if (dirty !== undefined) handle.setDirty(dirty) }, [handle, dirty])
   useEffect(() => { if (label) handle.rename(label) }, [handle, label])
   // Saat form ditutup, tab kembali ke label daftar dan tidak lagi kotor.
   useEffect(() => () => {
     handle.setDirty(false)
-    if (restoreLabel) handle.rename(restoreLabel)
-  }, [handle, restoreLabel])
+    handle.restore()
+  }, [handle])
   return handle
 }

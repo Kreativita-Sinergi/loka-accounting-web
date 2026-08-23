@@ -1,11 +1,10 @@
-import { useState } from 'react'
-import { createItem, updateItem } from '../api/operations'
+import { useEffect, useState } from 'react'
+import { createItem, listItemBrands, listItemCategories, updateItem } from '../api/operations'
 import { ActionRail, DocumentShell, LookupField } from '../components/FormShell'
 import { messageOf } from '../components/Modal'
 import { useTabHandle } from '../store/tabs'
-import { tileOf } from '../lib/menu'
 import type { Account } from '../types/accounting'
-import type { Item, Unit } from '../types/operations'
+import type { Item, ItemBrand, ItemCategory, Unit } from '../types/operations'
 
 const itemTypes: Array<{ value: Item['item_type']; label: string }> = [
   { value: 'INVENTORY', label: 'Barang persediaan' },
@@ -15,6 +14,7 @@ const itemTypes: Array<{ value: Item['item_type']; label: string }> = [
 
 const subTabs = [
   { key: 'general', label: 'Umum' },
+  { key: 'trade', label: 'Penjualan / Pembelian' },
   { key: 'stock', label: 'Stok' },
   { key: 'accounts', label: 'Akun' },
 ]
@@ -42,12 +42,33 @@ export function ItemForm({
   const [cogsAccountId, setCogsAccountId] = useState(item?.cogs_account_id ?? '')
   const [trackLots, setTrackLots] = useState(item?.track_lots ?? false)
   const [trackSerials, setTrackSerials] = useState(item?.track_serials ?? false)
+  const [categoryId, setCategoryId] = useState(item?.category_id ?? '')
+  const [brandId, setBrandId] = useState(item?.brand_id ?? '')
+  const [barcode, setBarcode] = useState(item?.barcode ?? '')
+  const [minimumStock, setMinimumStock] = useState(item?.minimum_stock ?? '0')
+  const [categories, setCategories] = useState<ItemCategory[]>([])
+  const [brands, setBrands] = useState<ItemBrand[]>([])
   const [autoSku, setAutoSku] = useState(!item)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [dirty, setDirty] = useState(false)
 
-  useTabHandle(dirty, item ? item.sku : 'Data Baru', tileOf('products').label)
+  useTabHandle(dirty, item ? item.sku : 'Data Baru')
+
+  // Kategori dan merek adalah master tersendiri, sama seperti Accurate.
+  useEffect(() => {
+    let cancelled = false
+    void Promise.all([listItemCategories(), listItemBrands()])
+      .then(([categoryRows, brandRows]) => {
+        if (cancelled) return
+        setCategories(categoryRows.filter((row) => row.is_active))
+        setBrands(brandRows.filter((row) => row.is_active))
+        // Kategori default terpasang otomatis pada barang baru.
+        if (!item) setCategoryId((current) => current || (categoryRows.find((row) => row.is_default)?.id ?? ''))
+      })
+      .catch(() => undefined)
+    return () => { cancelled = true }
+  }, [item])
 
   const inventory = itemType === 'INVENTORY'
   const unitOptions = units.filter((unit) => unit.is_active).map((unit) => ({ value: unit.id, label: `${unit.code} · ${unit.name}` }))
@@ -73,6 +94,10 @@ export function ItemForm({
         costing_method: costing,
         inventory_account_id: inventory ? inventoryAccountId || null : null,
         cogs_account_id: inventory ? cogsAccountId || null : null,
+        category_id: categoryId || null,
+        brand_id: brandId || null,
+        barcode,
+        minimum_stock: minimumStock || '0',
         track_lots: trackLots,
         track_serials: trackSerials,
       }
@@ -122,11 +147,24 @@ export function ItemForm({
             </span>
           </label>
           <LookupField label="Satuan" required value={baseUnitId} options={unitOptions} onChange={touch(setBaseUnitId)} placeholder="Cari/Pilih satuan…" />
+          <LookupField label="Kategori Barang" value={categoryId} options={categories.map((row) => ({ value: row.id, label: row.name }))} onChange={touch(setCategoryId)} placeholder="Cari/Pilih kategori…" />
+          <LookupField label="Merek Barang" value={brandId} options={brands.map((row) => ({ value: row.id, label: row.name }))} onChange={touch(setBrandId)} placeholder="Cari/Pilih merek…" />
+          <label className="doc-field">UPC/Barcode<input value={barcode} onChange={(event) => touch(setBarcode)(event.target.value)} placeholder="Opsional" /></label>
+        </div>
+      )}
+
+      {tab === 'trade' && (
+        <div className="doc-grid">
+          <p className="modal-note sm:col-span-2">
+            Harga jual dan harga pemasok dikelola pada master <strong>Harga Jual</strong> dan <strong>Harga Pemasok</strong>.
+            Kedua modul itu belum terhubung ke backend, jadi tab ini masih kosong.
+          </p>
         </div>
       )}
 
       {tab === 'stock' && (
         <div className="doc-grid">
+          <label className="doc-field">Batas Minimum Stok<input value={minimumStock} inputMode="decimal" disabled={!inventory} onChange={(event) => touch(setMinimumStock)(event.target.value)} /></label>
           <label className="doc-field">Metode biaya
             <select value={costing} onChange={(event) => touch(setCosting)(event.target.value as Item['costing_method'])} disabled={!inventory}>
               <option value="MOVING_AVERAGE">Rata-rata bergerak</option>

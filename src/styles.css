@@ -511,3 +511,11 @@
   .doc-tab-dirty { @apply size-1.5 rounded-full; background: var(--warning); }
   .doc-tab.is-active .doc-tab-dirty { @apply bg-white; }
 }
+
+@layer components {
+  .scaffold-notice { @apply mb-3 flex items-start gap-3 rounded-lg border px-4 py-3; border-color: #F3D9A4; background: #FDF6E7; color: #7A5B12; }
+  .scaffold-notice svg { @apply mt-0.5 size-4 shrink-0; }
+  .scaffold-notice strong { @apply block text-[12px]; }
+  .scaffold-notice span { @apply mt-1 block text-[11px] leading-relaxed; }
+  .doc-field textarea { @apply w-full rounded-md border px-2 py-1.5 text-[12px]; border-color: var(--border); }
+}
