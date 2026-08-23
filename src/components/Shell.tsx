@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import type { IdentityProfile } from '../api/auth'
 import { modules, moduleOf, type MenuModule, type MenuTile, type PageKey } from '../lib/menu'
@@ -6,11 +6,108 @@ import type { Tab } from '../store/tabs'
 import { Icon } from './Icon'
 import { cx } from './ui'
 import { ConfirmDialog } from './Modal'
+import { MenuSearch, rememberMenu } from './MenuSearch'
 
 /**
  * Shell aplikasi mengikuti Bagian 03 spesifikasi: top bar 56px, tab bar 40px,
  * icon rail 64px dengan menu flyout berisi ubin berwarna per kelompok fungsi.
  */
+
+/**
+ * Membuat strip tab dapat digulir: roda mouse menggeser mendatar, strip dapat
+ * ditarik (drag) seperti peta, tombol panah muncul saat tab meluber, dan tab
+ * aktif selalu digulir ke dalam pandangan.
+ */
+function useTabStrip(active: PageKey, count: number) {
+  const stripRef = useRef<HTMLDivElement>(null)
+  const [edges, setEdges] = useState({ left: false, right: false })
+  // Dipakai agar klik yang mengakhiri sebuah tarikan tidak ikut memindah tab.
+  const drag = useRef<{ startX: number; startScroll: number; moved: boolean } | null>(null)
+
+  const measure = useCallback(() => {
+    const strip = stripRef.current
+    if (!strip) return
+    const max = strip.scrollWidth - strip.clientWidth
+    setEdges({ left: strip.scrollLeft > 1, right: strip.scrollLeft < max - 1 })
+  }, [])
+
+  useEffect(() => {
+    const strip = stripRef.current
+    if (!strip) return
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(strip)
+    return () => observer.disconnect()
+  }, [measure, count])
+
+  // Roda mouse vertikal digeser menjadi gulir mendatar pada strip tab.
+  useEffect(() => {
+    const strip = stripRef.current
+    if (!strip) return
+    const onWheel = (event: WheelEvent) => {
+      if (event.ctrlKey) return
+      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY
+      if (!delta) return
+      const max = strip.scrollWidth - strip.clientWidth
+      if (max <= 0) return
+      event.preventDefault()
+      strip.scrollLeft = Math.max(0, Math.min(max, strip.scrollLeft + delta))
+    }
+    strip.addEventListener('wheel', onWheel, { passive: false })
+    return () => strip.removeEventListener('wheel', onWheel)
+  }, [])
+
+  // Tab aktif digulir ke dalam pandangan ketika berpindah atau baru dibuka.
+  useEffect(() => {
+    const target = stripRef.current?.querySelector('[data-tab-active="true"]')
+    target?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
+  }, [active, count])
+
+  const nudge = useCallback((direction: -1 | 1) => {
+    const strip = stripRef.current
+    if (!strip) return
+    strip.scrollBy({ left: direction * Math.max(160, strip.clientWidth * 0.7), behavior: 'smooth' })
+  }, [])
+
+  const onPointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const strip = stripRef.current
+    // Hanya tombol kiri, dan hanya bila memang ada yang bisa digeser.
+    if (!strip || event.button !== 0 || strip.scrollWidth <= strip.clientWidth) return
+    drag.current = { startX: event.clientX, startScroll: strip.scrollLeft, moved: false }
+  }, [])
+
+  const onPointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const strip = stripRef.current
+    const state = drag.current
+    if (!strip || !state) return
+    const shift = event.clientX - state.startX
+    if (!state.moved && Math.abs(shift) < 4) return
+    if (!state.moved) {
+      state.moved = true
+      strip.setPointerCapture(event.pointerId)
+      strip.classList.add('is-dragging')
+    }
+    strip.scrollLeft = state.startScroll - shift
+  }, [])
+
+  const endDrag = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const strip = stripRef.current
+    const state = drag.current
+    drag.current = null
+    if (!strip || !state) return
+    if (strip.hasPointerCapture(event.pointerId)) strip.releasePointerCapture(event.pointerId)
+    strip.classList.remove('is-dragging')
+    // Klik penutup tarikan dibatalkan supaya tidak salah pindah tab.
+    if (state.moved) {
+      const swallow = (click: MouseEvent) => { click.preventDefault(); click.stopPropagation() }
+      strip.addEventListener('click', swallow, { capture: true, once: true })
+      setTimeout(() => strip.removeEventListener('click', swallow, { capture: true } as EventListenerOptions), 0)
+    }
+  }, [])
+
+  return { stripRef, edges, measure, nudge, dragHandlers: { onPointerDown, onPointerMove, onPointerUp: endDrag, onPointerCancel: endDrag } }
+}
+
 export function Shell({
   tabs,
   active,
@@ -35,9 +132,23 @@ export function Shell({
   const [flyout, setFlyout] = useState<{ module: MenuModule; top: number; left: number } | null>(null)
   const [closing, setClosing] = useState<Tab | null>(null)
   const [overflow, setOverflow] = useState(false)
+  const [palette, setPalette] = useState(false)
   const railRef = useRef<HTMLDivElement>(null)
   const flyoutRef = useRef<HTMLDivElement>(null)
   const activeModule = moduleOf(active)
+  const { stripRef, edges, measure, nudge, dragHandlers } = useTabStrip(active, tabs.length)
+
+  // Ctrl+K / Cmd+K membuka pencarian menu dari mana pun di dalam aplikasi.
+  useEffect(() => {
+    const shortcut = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setPalette(true)
+      }
+    }
+    window.addEventListener('keydown', shortcut)
+    return () => window.removeEventListener('keydown', shortcut)
+  }, [])
 
   useEffect(() => {
     if (!flyout) return
@@ -59,6 +170,7 @@ export function Shell({
   }, [flyout])
 
   function openTile(tile: MenuTile) {
+    rememberMenu(tile.key)
     onOpen(tile.key)
     setFlyout(null)
   }
@@ -89,7 +201,7 @@ export function Shell({
           <strong>Loka<span>Accounting</span></strong>
         </div>
         <div className="topbar-tools">
-          <button type="button" title="Cari (Ctrl+K)" aria-label="Cari"><Icon name="search" /></button>
+          <button type="button" title="Cari menu (Ctrl+K)" aria-label="Cari menu" onClick={() => setPalette(true)}><Icon name="search" /></button>
           <button type="button" title="Bantuan" aria-label="Bantuan"><Icon name="help" /></button>
           <button type="button" title="Notifikasi" aria-label="Notifikasi"><Icon name="bell" /></button>
         </div>
@@ -103,17 +215,23 @@ export function Shell({
       </header>
 
       <nav className="tabbar" aria-label="Dokumen terbuka">
-        <div className="tabbar-strip">
+        {edges.left && <button type="button" className="tabbar-nudge is-left" onClick={() => nudge(-1)} aria-label="Geser tab ke kiri"><Icon name="chevron" /></button>}
+        <div className="tabbar-strip" ref={stripRef} onScroll={measure} {...dragHandlers}>
           {tabs.map((tab) => (
-            <span key={tab.key} className={cx('doc-tab', tab.key === active && 'is-active')}>
-              <button type="button" onClick={() => onActivate(tab.key)} aria-current={tab.key === active ? 'page' : undefined}>{tab.label}</button>
+            <span key={tab.key} className={cx('doc-tab', tab.key === active && 'is-active')} data-tab-active={tab.key === active}
+              onAuxClick={(event) => { if (event.button === 1 && tab.closable) { event.preventDefault(); if (tab.dirty) setClosing(tab); else onClose(tab.key) } }}>
+              <button type="button" onClick={() => onActivate(tab.key)} aria-current={tab.key === active ? 'page' : undefined} title={tab.label}>{tab.label}</button>
               {tab.dirty && <i className="doc-tab-dirty" title="Ada perubahan yang belum disimpan" />}
               {tab.closable && <button type="button" className="doc-tab-close" onClick={() => tab.dirty ? setClosing(tab) : onClose(tab.key)} aria-label={`Tutup ${tab.label}`}><Icon name="close" /></button>}
             </span>
           ))}
         </div>
+        {edges.right && <button type="button" className="tabbar-nudge is-right" onClick={() => nudge(1)} aria-label="Geser tab ke kanan"><Icon name="chevron" /></button>}
+        <button type="button" className="tabbar-search" onClick={() => setPalette(true)} title="Cari menu (Ctrl+K)">
+          <Icon name="search" /><span>Cari menu</span><kbd>Ctrl K</kbd>
+        </button>
         <div className="tabbar-count">
-          <button type="button" onClick={() => setOverflow((value) => !value)} aria-expanded={overflow}>
+          <button type="button" onClick={() => setOverflow((value) => !value)} aria-expanded={overflow} title="Daftar tab terbuka">
             {tabs.length} <Icon name="chevron" />
           </button>
           {overflow && (
@@ -162,6 +280,8 @@ export function Shell({
 
         <main className="tab-stage">{children}</main>
       </div>
+
+      <MenuSearch open={palette} onClose={() => setPalette(false)} onOpenTile={onOpen} />
 
       <ConfirmDialog
         open={closing !== null}

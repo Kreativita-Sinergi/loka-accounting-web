@@ -75,8 +75,22 @@
   .topbar-org small { @apply block text-[10px]; color: var(--rail-fg); }
   .topbar-avatar { @apply grid size-8 shrink-0 place-items-center rounded-full border-0 text-[12px] font-extrabold text-white; background: var(--accent); }
 
-  .tabbar { @apply flex items-stretch border-b bg-white; border-color: var(--border); }
-  .tabbar-strip { @apply flex min-w-0 flex-1 items-stretch gap-px overflow-x-auto; }
+  .tabbar { @apply relative flex items-stretch border-b bg-white; border-color: var(--border); }
+  /* Strip tab digulir mendatar; batang gulir disembunyikan agar tetap 40px. */
+  .tabbar-strip { @apply flex min-w-0 flex-1 items-stretch gap-px overflow-x-auto overflow-y-hidden scroll-smooth; scrollbar-width: none; -ms-overflow-style: none; overscroll-behavior-x: contain; }
+  .tabbar-strip::-webkit-scrollbar { @apply hidden; }
+  .tabbar-strip.is-dragging { @apply cursor-grabbing select-none scroll-auto; }
+  .tabbar-strip.is-dragging .doc-tab { @apply pointer-events-none; }
+  .tabbar-nudge { @apply z-10 grid w-6 shrink-0 place-items-center border-r bg-white p-0; border-color: var(--border); color: var(--fg-muted); }
+  .tabbar-nudge:hover { background: var(--surface-alt); color: var(--fg); }
+  .tabbar-nudge svg { @apply size-4; }
+  .tabbar-nudge.is-left svg { @apply rotate-90; }
+  .tabbar-nudge.is-right { @apply border-r-0 border-l; }
+  .tabbar-nudge.is-right svg { @apply -rotate-90; }
+  .tabbar-search { @apply hidden shrink-0 items-center gap-1.5 border-l bg-white px-2.5 text-[11px] font-semibold md:flex; border-color: var(--border); color: var(--fg-muted); }
+  .tabbar-search:hover { background: var(--surface-alt); color: var(--fg); }
+  .tabbar-search svg { @apply size-3.5; }
+  .tabbar-search kbd { @apply rounded border px-1 py-px text-[9px] font-bold; border-color: var(--border); color: var(--fg-muted); }
   .doc-tab { @apply flex shrink-0 items-center gap-1 border-r px-1 text-[12px]; border-color: var(--border); background: var(--surface-alt); color: var(--fg); }
   .doc-tab > button:first-child { @apply max-w-56 truncate border-0 bg-transparent px-2 py-0 text-[12px] font-semibold text-inherit; }
   .doc-tab.is-active { @apply text-white; background: var(--accent); }
@@ -518,4 +532,25 @@
   .scaffold-notice strong { @apply block text-[12px]; }
   .scaffold-notice span { @apply mt-1 block text-[11px] leading-relaxed; }
   .doc-field textarea { @apply w-full rounded-md border px-2 py-1.5 text-[12px]; border-color: var(--border); }
+}
+
+@layer components {
+  /* Palet pencarian menu (Ctrl+K). */
+  .palette-backdrop { @apply fixed inset-0 z-100 flex justify-center px-4 pt-[12vh]; background: rgba(15, 23, 42, .45); }
+  .palette { @apply grid h-fit max-h-[70vh] w-full max-w-xl grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-xl border bg-white shadow-2xl; border-color: var(--border); }
+  .palette-field { @apply flex items-center gap-2 border-b px-3 py-2.5; border-color: var(--border); }
+  .palette-field svg { @apply size-4 shrink-0; color: var(--fg-muted); }
+  .palette-field input { @apply min-h-0 border-0 bg-transparent p-0 text-[13px] shadow-none focus:ring-0; }
+  .palette-field kbd { @apply shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-bold; border-color: var(--border); color: var(--fg-muted); }
+  .palette-list { @apply grid content-start gap-px overflow-y-auto p-1.5; }
+  .palette-row { @apply flex w-full items-center gap-2.5 rounded-lg border-0 bg-transparent px-2.5 py-2 text-left text-[12px]; color: var(--fg); }
+  .palette-row svg { @apply size-4 shrink-0; color: var(--fg-muted); }
+  .palette-row.is-cursor { background: var(--surface-alt); }
+  .palette-row.is-cursor svg { color: var(--accent); }
+  .palette-label { @apply flex-1 truncate font-semibold; }
+  .palette-label mark { @apply bg-transparent font-extrabold; color: var(--accent); }
+  .palette-module { @apply shrink-0 text-[10px] font-bold tracking-wide uppercase; color: var(--fg-muted); }
+  .palette-empty { @apply m-0 px-3 py-6 text-center text-[12px]; color: var(--fg-muted); }
+  .palette-foot { @apply flex flex-wrap gap-3 border-t px-3 py-2 text-[10px]; border-color: var(--border); color: var(--fg-muted); }
+  .palette-foot kbd { @apply mx-px rounded border px-1 py-px text-[9px] font-bold; border-color: var(--border); }
 }
