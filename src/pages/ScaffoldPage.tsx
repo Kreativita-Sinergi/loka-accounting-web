@@ -126,7 +126,7 @@ function TransactionScaffold({ label, spec }: { label: string; spec: Extract<Spe
       <div className="doc-header">
         <div className="doc-header-row">{spec.header.slice(0, 2).map((field) => <FieldControl key={field.label} field={field} />)}</div>
         <div className="doc-header-row">
-          <label className="doc-field">{spec.numberLabel} <b>*</b>
+          <label className="doc-field"><span className="lookup-label">{spec.numberLabel} <b>*</b></span>
             <span className="flex items-center gap-1.5">
               <button type="button" className="tool-icon" disabled title="Nomor otomatis">A</button>
               <select disabled defaultValue={spec.numberTemplate}><option>{spec.numberTemplate}</option></select>
@@ -145,9 +145,11 @@ function TransactionScaffold({ label, spec }: { label: string; spec: Extract<Spe
             : spec.columns.length > 0 && (
               <div className="line-grid">
                 <div className="line-picker">
-                  <Icon name="search" />
-                  <select disabled><option>Cari/Pilih Barang &amp; Jasa…</option></select>
                   <strong>{active?.label ?? label} <b>*</b></strong>
+                  <span className="line-picker-search">
+                    <Icon name="search" />
+                    <select disabled><option>Cari/Pilih Barang &amp; Jasa…</option></select>
+                  </span>
                 </div>
                 <div className="table-wrap">
                   <table className="line-table">

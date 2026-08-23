@@ -28,6 +28,10 @@
   --fg: #1A1F26;
   --fg-muted: #5B6673;
   --fg-subtle: #8A939F;
+  --success: #1E9E5A;
+  --danger: #D92D20;
+  --warning: #DC6803;
+  --info: #1565C0;
   --tile-transaction: #E3F5E8;
   --tile-master: #E1EFFB;
   --tile-setting: #FDEDE0;
@@ -470,7 +474,8 @@
   .document-body { @apply p-3; }
   .action-rail { @apply sticky top-2 grid gap-1.5; }
   .rail-action { @apply relative; }
-  .rail-action-button { @apply grid h-10 w-full place-items-center rounded-md border bg-white; border-color: var(--border); color: var(--fg-muted); }
+  .rail-action-button { @apply grid h-10 w-full place-items-center rounded-md border bg-white shadow-xs; border-color: var(--border); color: var(--fg-muted); }
+  .rail-action-button:hover { border-color: var(--border-strong); color: var(--fg); }
   .rail-action-button.is-primary { @apply border-0 text-white; background: var(--success); }
   .rail-action-button svg { @apply size-4.5; }
   .rail-caret { @apply !size-3 opacity-70; }
@@ -478,11 +483,17 @@
   .rail-menu button { @apply grid min-h-8 rounded-md border-0 bg-transparent px-2.5 py-1.5 text-left text-[12px] font-semibold whitespace-nowrap hover:bg-[color:var(--surface-alt)] disabled:pointer-events-none disabled:opacity-40; color: var(--fg); }
   .rail-menu button small { @apply text-[10px] font-normal; color: var(--fg-subtle); }
 
-  .doc-header { @apply grid gap-2 border-b px-3 py-2.5 sm:grid-cols-2; border-color: var(--border); background: var(--surface-alt); }
-  .doc-header-row { @apply flex flex-wrap items-center gap-2; }
-  .doc-field { @apply grid min-w-0 flex-1 gap-1 text-[11px] font-bold; color: var(--fg-muted); }
+  /* Semua field header mengalir ke satu kisi supaya lebarnya seragam dan
+     kontrolnya sejajar, berapa pun jumlah field per barisnya. */
+  .doc-header { @apply grid items-end gap-x-3 gap-y-2.5 border-b px-3 py-2.5; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); border-color: var(--border); background: var(--surface-alt); }
+  .doc-header-row { @apply contents; }
+  /* Blok, bukan grid: teks label dan tanda * tetap satu baris. */
+  .doc-field { @apply block min-w-0 flex-1 text-[11px] leading-4 font-bold; color: var(--fg-muted); }
+  .doc-field > input, .doc-field > select, .doc-field > textarea, .doc-field > span, .doc-field > .lookup-trigger { @apply mt-1; }
+  .doc-field > .lookup-label { @apply mt-0 block; }
   .doc-field b { color: var(--danger); }
   .doc-field input, .doc-field select { @apply min-h-8 text-[12px]; }
+  .doc-field .tool-icon { @apply shrink-0 text-[11px] font-bold; }
   .doc-panels { @apply flex min-h-72 items-stretch; }
   .doc-panel { @apply min-w-0 flex-1 p-3; }
   .doc-grid { @apply grid gap-3 sm:grid-cols-2; }
@@ -494,13 +505,18 @@
   .totals-row input { @apply h-7 w-24 text-right text-[12px]; }
 
   .line-grid { @apply overflow-hidden rounded-lg border; border-color: var(--border); }
-  .line-picker { @apply flex flex-wrap items-center gap-2 border-b px-2 py-1.5; border-color: var(--border); background: var(--surface-alt); color: var(--fg-subtle); }
+  .line-picker { @apply flex flex-wrap items-center gap-2 border-b px-2.5 py-2; border-color: var(--border); background: var(--surface-alt); color: var(--fg-subtle); }
   .line-picker svg { @apply size-4; }
   .line-picker select { @apply min-h-8 max-w-md flex-1 text-[12px]; }
   .line-picker > button { @apply inline-flex min-h-8 items-center gap-1 rounded-md border bg-white px-2 text-[12px] font-bold; border-color: var(--border); color: var(--fg-muted); }
   .line-picker > button svg { @apply size-3.5; }
-  .line-picker strong { @apply ml-auto text-[12px]; color: var(--fg-muted); }
+  .line-picker strong { @apply mr-1 text-[12px]; color: var(--fg); }
+  /* Kotak cari barang tampil sebagai satu kesatuan input, bukan ikon + select lepas. */
+  .line-picker-search { @apply ml-auto flex min-h-8 w-full max-w-md items-center gap-1.5 rounded-md border bg-white px-2; border-color: var(--border); }
+  .line-picker-search svg { @apply size-3.5 shrink-0; color: var(--fg-subtle); }
+  .line-picker-search select { @apply min-h-7 w-full border-0 bg-transparent px-0 shadow-none focus:border-0 focus:ring-0; }
   .line-picker strong b { color: var(--danger); }
+  .line-table thead th { @apply border-b px-1.5 py-1.5 text-[11px] font-bold; border-color: var(--border); background: var(--surface-alt); color: var(--fg-muted); }
   .line-table td { @apply px-1.5 py-1; }
   .line-table input, .line-table select { @apply min-h-7 rounded-sm px-1.5 py-0 text-[12px] shadow-none; }
   .line-table td input.number { @apply text-right; }

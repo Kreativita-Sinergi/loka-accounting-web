@@ -79,13 +79,15 @@ export function LineGrid({
   return (
     <div className="line-grid">
       <div className="line-picker">
-        <Icon name="search" />
-        <select value={picker} onChange={(event) => addFromItem(event.target.value)} aria-label="Cari atau pilih barang dan jasa">
-          <option value="">Cari/Pilih Barang &amp; Jasa…</option>
-          {items.map((item) => <option key={item.value} value={item.value}>{item.code} · {item.label}</option>)}
-        </select>
-        <button type="button" onClick={() => onChange([...lines, emptyLine()])} title="Tambah baris kosong"><Icon name="plus" /> Baris</button>
         <strong>Rincian Barang <b>*</b></strong>
+        <span className="line-picker-search">
+          <Icon name="search" />
+          <select value={picker} onChange={(event) => addFromItem(event.target.value)} aria-label="Cari atau pilih barang dan jasa">
+            <option value="">Cari/Pilih Barang &amp; Jasa…</option>
+            {items.map((item) => <option key={item.value} value={item.value}>{item.code} · {item.label}</option>)}
+          </select>
+        </span>
+        <button type="button" onClick={() => onChange([...lines, emptyLine()])} title="Tambah baris kosong"><Icon name="plus" /> Baris</button>
       </div>
 
       <div className="table-wrap">
