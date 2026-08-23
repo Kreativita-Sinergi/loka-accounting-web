@@ -90,7 +90,8 @@
   .tabbar-menu button.is-active { color: var(--accent); }
 
   .shell-body { @apply grid min-h-0; grid-template-columns: var(--rail-w) minmax(0, 1fr); }
-  .icon-rail { @apply flex flex-col items-center gap-0.5 overflow-y-auto py-2; background: var(--rail-bg); }
+  /* Rail tidak boleh memotong tooltip, jadi overflow dibiarkan terlihat. */
+  .icon-rail { @apply flex flex-col items-center gap-0.5 overflow-visible py-2; background: var(--rail-bg); }
   .rail-slot { @apply relative; }
   .rail-icon { @apply grid size-11 place-items-center rounded-md border-0 bg-transparent; color: var(--rail-fg); }
   .rail-icon svg { @apply size-5.5; }
@@ -98,9 +99,9 @@
   .rail-icon.is-active { @apply text-white; background: var(--rail-active); box-shadow: inset 3px 0 0 var(--accent); }
   .rail-tooltip { @apply pointer-events-none absolute top-1/2 left-[calc(100%+8px)] z-40 -translate-y-1/2 rounded-md bg-slate-900 px-2 py-1 text-[11px] whitespace-nowrap text-white opacity-0 transition-opacity; }
   .rail-slot:hover .rail-tooltip { @apply opacity-100; }
-  .rail-slot:has(.flyout) .rail-tooltip { @apply hidden; }
 
-  .flyout { @apply absolute top-0 left-[calc(100%+8px)] z-50 rounded-lg border bg-white p-6 shadow-[0_18px_45px_rgb(16_24_40_/_22%)]; border-color: var(--border); animation: flyout-in .12s ease-out; }
+
+  .flyout { @apply fixed z-100 max-h-[calc(100vh-16px)] overflow-y-auto rounded-lg border bg-white p-6 shadow-[0_18px_45px_rgb(16_24_40_/_22%)]; border-color: var(--border); animation: flyout-in .12s ease-out; }
   .flyout h2 { @apply mt-0 mb-4 border-b-2 pb-2 text-2xl font-normal; color: var(--fg); border-color: var(--accent); }
   .flyout-tiles { @apply grid gap-2.5; }
   .tile { @apply grid h-25 w-25 content-center justify-items-center gap-1.5 rounded-lg border p-2 text-center; border-color: var(--border); color: var(--fg); }

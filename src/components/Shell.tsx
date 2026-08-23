@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import type { IdentityProfile } from '../api/auth'
 import { modules, moduleOf, type MenuModule, type MenuTile, type PageKey } from '../lib/menu'
 import type { Tab } from '../store/tabs'
@@ -29,25 +30,56 @@ export function Shell({
   onLogout: () => void
   children: ReactNode
 }) {
-  const [flyout, setFlyout] = useState<MenuModule | null>(null)
+  // Flyout dirender lewat portal: icon rail dapat menggulir, dan panel yang
+  // melayang di luar kotaknya tidak boleh ikut terpotong.
+  const [flyout, setFlyout] = useState<{ module: MenuModule; top: number; left: number } | null>(null)
   const [closing, setClosing] = useState<Tab | null>(null)
   const [overflow, setOverflow] = useState(false)
   const railRef = useRef<HTMLDivElement>(null)
+  const flyoutRef = useRef<HTMLDivElement>(null)
   const activeModule = moduleOf(active)
 
   useEffect(() => {
     if (!flyout) return
-    const dismiss = (event: MouseEvent) => { if (!railRef.current?.contains(event.target as Node)) setFlyout(null) }
+    const dismiss = (event: MouseEvent) => {
+      const target = event.target as Node
+      if (railRef.current?.contains(target) || flyoutRef.current?.contains(target)) return
+      setFlyout(null)
+    }
     const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') setFlyout(null) }
+    const reposition = () => setFlyout(null)
     window.addEventListener('mousedown', dismiss)
     window.addEventListener('keydown', escape)
-    return () => { window.removeEventListener('mousedown', dismiss); window.removeEventListener('keydown', escape) }
+    window.addEventListener('resize', reposition)
+    return () => {
+      window.removeEventListener('mousedown', dismiss)
+      window.removeEventListener('keydown', escape)
+      window.removeEventListener('resize', reposition)
+    }
   }, [flyout])
 
   function openTile(tile: MenuTile) {
     onOpen(tile.key)
     setFlyout(null)
   }
+
+  /** Membuka flyout sejajar ikon yang diklik. */
+  function toggleFlyout(module: MenuModule, button: HTMLButtonElement) {
+    setFlyout((current) => {
+      if (current?.module.id === module.id) return null
+      const rect = button.getBoundingClientRect()
+      return { module, left: rect.right + 8, top: rect.top }
+    })
+  }
+
+  // Setelah terukur, panel digeser ke atas bila melewati tepi bawah viewport.
+  useLayoutEffect(() => {
+    const panel = flyoutRef.current
+    if (!flyout || !panel) return
+    const height = panel.getBoundingClientRect().height
+    const top = Math.max(8, Math.min(flyout.top, window.innerHeight - height - 8))
+    if (Math.abs(top - flyout.top) > 1) setFlyout({ ...flyout, top })
+  }, [flyout])
 
   return (
     <div className="app-shell">
@@ -100,30 +132,34 @@ export function Shell({
             <div className="rail-slot" key={module.id}>
               <button
                 type="button"
-                className={cx('rail-icon', activeModule === module.id && 'is-active', flyout?.id === module.id && 'is-open')}
-                onClick={() => setFlyout((current) => current?.id === module.id ? null : module)}
-                aria-expanded={flyout?.id === module.id}
+                className={cx('rail-icon', activeModule === module.id && 'is-active', flyout?.module.id === module.id && 'is-open')}
+                onClick={(event) => toggleFlyout(module, event.currentTarget)}
+                aria-expanded={flyout?.module.id === module.id}
                 aria-label={module.label}
+                title={module.label}
               >
                 <Icon name={module.icon} />
               </button>
               <span className="rail-tooltip">{module.label}</span>
-              {flyout?.id === module.id && (
-                <div className="flyout" role="menu">
-                  <h2>{module.label}</h2>
-                  <div className="flyout-tiles" style={{ gridTemplateColumns: `repeat(${Math.min(Math.max(module.tiles.length, 2), 4)}, 100px)` }}>
-                    {module.tiles.map((tile) => (
-                      <button key={`${module.id}-${tile.key}-${tile.label}`} type="button" role="menuitem" className={cx('tile', `tile-${tile.group}`)} onClick={() => openTile(tile)} title={tile.hint}>
-                        <Icon name={tile.icon} />
-                        <span>{tile.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           ))}
         </div>
+
+        {flyout && createPortal(
+          <div className="flyout" role="menu" ref={flyoutRef} style={{ left: flyout.left, top: flyout.top }}>
+            <h2>{flyout.module.label}</h2>
+            <div className="flyout-tiles" style={{ gridTemplateColumns: `repeat(${Math.min(Math.max(flyout.module.tiles.length, 2), 4)}, 100px)` }}>
+              {flyout.module.tiles.map((tile) => (
+                <button key={`${flyout.module.id}-${tile.key}-${tile.label}`} type="button" role="menuitem" className={cx('tile', `tile-${tile.group}`)} onClick={() => openTile(tile)} title={tile.hint}>
+                  <Icon name={tile.icon} />
+                  <span>{tile.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>,
+          document.body,
+        )}
+
         <main className="tab-stage">{children}</main>
       </div>
 
