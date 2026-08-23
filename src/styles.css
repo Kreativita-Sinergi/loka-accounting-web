@@ -80,8 +80,10 @@
   .tabbar-strip { @apply flex min-w-0 flex-1 items-stretch gap-px overflow-x-auto overflow-y-hidden scroll-smooth; scrollbar-width: none; -ms-overflow-style: none; overscroll-behavior-x: contain; }
   .tabbar-strip::-webkit-scrollbar { @apply hidden; }
   .tabbar-strip.is-panning, .tabbar-strip.is-sorting { @apply cursor-grabbing select-none scroll-auto; }
-  .tabbar-strip.is-panning .doc-tab { @apply pointer-events-none; }
-  .doc-tab.is-moving { @apply z-10 opacity-90 shadow-lg; }
+  .tabbar-strip.is-panning .doc-tab, .tabbar-strip.is-sorting .doc-tab { @apply pointer-events-none; }
+  /* Tetangga bergeser beranimasi; tab yang ditarik mengikuti kursor tanpa jeda. */
+  .tabbar-strip.is-sorting .doc-tab { transition: transform .16s cubic-bezier(.2, .8, .3, 1); }
+  .doc-tab.is-moving { @apply relative z-10 shadow-lg; }
   .tabbar-nudge { @apply z-10 grid w-6 shrink-0 place-items-center border-r bg-white p-0; border-color: var(--border); color: var(--fg-muted); }
   .tabbar-nudge:hover { background: var(--surface-alt); color: var(--fg); }
   .tabbar-nudge svg { @apply size-4; }

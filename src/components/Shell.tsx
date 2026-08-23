@@ -22,8 +22,21 @@ function useTabStrip(active: PageKey, count: number, onReorder?: (from: number, 
   const stripRef = useRef<HTMLDivElement>(null)
   const [edges, setEdges] = useState({ left: false, right: false })
   const [moving, setMoving] = useState<number | null>(null)
-  // Dipakai agar klik yang mengakhiri sebuah geseran tidak ikut memindah tab.
-  const drag = useRef<{ startX: number; startScroll: number; index: number | null; moved: boolean } | null>(null)
+  // Geseran aktif: menyimpan tata letak awal agar animasi tidak perlu
+  // mengukur ulang, dan agar klik penutup geseran bisa dibatalkan.
+  const drag = useRef<{
+    startX: number
+    startScroll: number
+    index: number | null
+    from: number
+    target: number
+    moved: boolean
+    nodes: HTMLElement[]
+    centers: number[]
+    span: number
+    min: number
+    max: number
+  } | null>(null)
 
   const measure = useCallback(() => {
     const strip = stripRef.current
@@ -80,8 +93,38 @@ function useTabStrip(active: PageKey, count: number, onReorder?: (from: number, 
     const index = tab ? Number(tab.dataset.index) : null
     // Menarik area kosong hanya berguna bila memang ada yang bisa digulir.
     if (index === null && strip.scrollWidth <= strip.clientWidth) return
-    drag.current = { startX: event.clientX, startScroll: strip.scrollLeft, index, moved: false }
+    // Tata letak awal diukur sekali; sisanya animasi murni transform.
+    const nodes = index === null ? [] : [...strip.querySelectorAll<HTMLElement>('.doc-tab')]
+    const centers = nodes.map((node) => node.offsetLeft + node.offsetWidth / 2)
+    const span = index === null || nodes.length < 2 ? 0 : nodes[index].offsetWidth + 1
+    drag.current = {
+      startX: event.clientX,
+      startScroll: strip.scrollLeft,
+      index,
+      from: index ?? 0,
+      target: index ?? 0,
+      moved: false,
+      nodes,
+      centers,
+      span,
+      min: nodes.length ? -nodes[index ?? 0].offsetLeft : 0,
+      max: nodes.length ? strip.scrollWidth - (nodes[index ?? 0].offsetLeft + nodes[index ?? 0].offsetWidth) : 0,
+    }
   }, [])
+
+  /** Menempatkan tab tetangga sesuai posisi sisip saat ini (beranimasi). */
+  function layout(state: NonNullable<typeof drag.current>, dx: number) {
+    state.nodes.forEach((node, i) => {
+      if (i === state.from) {
+        node.style.transform = `translateX(${dx}px)`
+        return
+      }
+      const push = i > state.from && i <= state.target ? -state.span
+        : i < state.from && i >= state.target ? state.span
+        : 0
+      node.style.transform = push ? `translateX(${push}px)` : ''
+    })
+  }
 
   const onPointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     const strip = stripRef.current
@@ -93,7 +136,10 @@ function useTabStrip(active: PageKey, count: number, onReorder?: (from: number, 
       state.moved = true
       strip.setPointerCapture(event.pointerId)
       strip.classList.add(state.index === null ? 'is-panning' : 'is-sorting')
-      if (state.index !== null) setMoving(state.index)
+      if (state.index !== null) {
+        setMoving(state.index)
+        state.nodes[state.from].style.transition = 'none'
+      }
     }
 
     if (state.index === null) {
@@ -101,17 +147,15 @@ function useTabStrip(active: PageKey, count: number, onReorder?: (from: number, 
       return
     }
 
-    // Mengurut ulang: tab pindah begitu kursor melewati titik tengah tetangga.
-    const boxes = [...strip.querySelectorAll<HTMLElement>('.doc-tab')].map((node) => node.getBoundingClientRect())
-    let target = state.index
-    for (let i = 0; i < boxes.length; i += 1) {
-      const box = boxes[i]
-      if (event.clientX >= box.left && event.clientX <= box.right) { target = i; break }
-      if (i === 0 && event.clientX < box.left) target = 0
-      if (i === boxes.length - 1 && event.clientX > box.right) target = i
-    }
+    // Tab yang ditarik mengikuti kursor; tetangga bergeser satu lebar tab.
+    const dx = Math.max(state.min, Math.min(state.max, shift + (state.startScroll - strip.scrollLeft)))
+    const center = state.centers[state.from] + dx
+    let target = state.target
+    while (target < state.centers.length - 1 && center > state.centers[target + 1]) target += 1
+    while (target > 0 && center < state.centers[target - 1]) target -= 1
+    state.target = target
+    layout(state, dx)
     if (target !== state.index) {
-      onReorder?.(state.index, target)
       state.index = target
       setMoving(target)
     }
@@ -119,7 +163,7 @@ function useTabStrip(active: PageKey, count: number, onReorder?: (from: number, 
     const frame = strip.getBoundingClientRect()
     if (event.clientX < frame.left + 40) strip.scrollLeft -= 14
     else if (event.clientX > frame.right - 40) strip.scrollLeft += 14
-  }, [onReorder])
+  }, [])
 
   const endDrag = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     const strip = stripRef.current
@@ -129,13 +173,16 @@ function useTabStrip(active: PageKey, count: number, onReorder?: (from: number, 
     if (!strip || !state) return
     if (strip.hasPointerCapture(event.pointerId)) strip.releasePointerCapture(event.pointerId)
     strip.classList.remove('is-panning', 'is-sorting')
+    // Transform dilepas berbarengan dengan urutan baru, jadi tidak berkedip.
+    for (const node of strip.querySelectorAll<HTMLElement>('.doc-tab')) { node.style.transition = ''; node.style.transform = '' }
+    if (state.moved && state.index !== null && state.target !== state.from) onReorder?.(state.from, state.target)
     // Klik penutup geseran dibatalkan supaya tidak salah pindah tab.
     if (state.moved) {
       const swallow = (click: MouseEvent) => { click.preventDefault(); click.stopPropagation() }
       strip.addEventListener('click', swallow, { capture: true, once: true })
       setTimeout(() => strip.removeEventListener('click', swallow, { capture: true } as EventListenerOptions), 0)
     }
-  }, [])
+  }, [onReorder])
 
   return { stripRef, edges, moving, measure, nudge, dragHandlers: { onPointerDown, onPointerMove, onPointerUp: endDrag, onPointerCancel: endDrag } }
 }
