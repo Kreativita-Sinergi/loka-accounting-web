@@ -14,15 +14,16 @@ import { MenuSearch, rememberMenu } from './MenuSearch'
  */
 
 /**
- * Membuat strip tab dapat digulir: roda mouse menggeser mendatar, strip dapat
- * ditarik (drag) seperti peta, tombol panah muncul saat tab meluber, dan tab
- * aktif selalu digulir ke dalam pandangan.
+ * Membuat strip tab hidup: tab dapat digeser untuk diurutkan ulang, area
+ * kosong strip dapat ditarik seperti peta, roda mouse menggeser mendatar,
+ * tombol panah muncul saat tab meluber, dan tab aktif selalu terlihat.
  */
-function useTabStrip(active: PageKey, count: number) {
+function useTabStrip(active: PageKey, count: number, onReorder?: (from: number, to: number) => void) {
   const stripRef = useRef<HTMLDivElement>(null)
   const [edges, setEdges] = useState({ left: false, right: false })
-  // Dipakai agar klik yang mengakhiri sebuah tarikan tidak ikut memindah tab.
-  const drag = useRef<{ startX: number; startScroll: number; moved: boolean } | null>(null)
+  const [moving, setMoving] = useState<number | null>(null)
+  // Dipakai agar klik yang mengakhiri sebuah geseran tidak ikut memindah tab.
+  const drag = useRef<{ startX: number; startScroll: number; index: number | null; moved: boolean } | null>(null)
 
   const measure = useCallback(() => {
     const strip = stripRef.current
@@ -59,6 +60,7 @@ function useTabStrip(active: PageKey, count: number) {
 
   // Tab aktif digulir ke dalam pandangan ketika berpindah atau baru dibuka.
   useEffect(() => {
+    if (drag.current) return
     const target = stripRef.current?.querySelector('[data-tab-active="true"]')
     target?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
   }, [active, count])
@@ -71,9 +73,14 @@ function useTabStrip(active: PageKey, count: number) {
 
   const onPointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     const strip = stripRef.current
-    // Hanya tombol kiri, dan hanya bila memang ada yang bisa digeser.
-    if (!strip || event.button !== 0 || strip.scrollWidth <= strip.clientWidth) return
-    drag.current = { startX: event.clientX, startScroll: strip.scrollLeft, moved: false }
+    if (!strip || event.button !== 0) return
+    // Tombol tutup tetap berperilaku sebagai tombol, bukan pegangan geser.
+    if ((event.target as HTMLElement).closest('.doc-tab-close')) return
+    const tab = (event.target as HTMLElement).closest<HTMLElement>('.doc-tab')
+    const index = tab ? Number(tab.dataset.index) : null
+    // Menarik area kosong hanya berguna bila memang ada yang bisa digulir.
+    if (index === null && strip.scrollWidth <= strip.clientWidth) return
+    drag.current = { startX: event.clientX, startScroll: strip.scrollLeft, index, moved: false }
   }, [])
 
   const onPointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
@@ -85,19 +92,44 @@ function useTabStrip(active: PageKey, count: number) {
     if (!state.moved) {
       state.moved = true
       strip.setPointerCapture(event.pointerId)
-      strip.classList.add('is-dragging')
+      strip.classList.add(state.index === null ? 'is-panning' : 'is-sorting')
+      if (state.index !== null) setMoving(state.index)
     }
-    strip.scrollLeft = state.startScroll - shift
-  }, [])
+
+    if (state.index === null) {
+      strip.scrollLeft = state.startScroll - shift
+      return
+    }
+
+    // Mengurut ulang: tab pindah begitu kursor melewati titik tengah tetangga.
+    const boxes = [...strip.querySelectorAll<HTMLElement>('.doc-tab')].map((node) => node.getBoundingClientRect())
+    let target = state.index
+    for (let i = 0; i < boxes.length; i += 1) {
+      const box = boxes[i]
+      if (event.clientX >= box.left && event.clientX <= box.right) { target = i; break }
+      if (i === 0 && event.clientX < box.left) target = 0
+      if (i === boxes.length - 1 && event.clientX > box.right) target = i
+    }
+    if (target !== state.index) {
+      onReorder?.(state.index, target)
+      state.index = target
+      setMoving(target)
+    }
+    // Menggeser tab ke tepi strip ikut menggulirnya.
+    const frame = strip.getBoundingClientRect()
+    if (event.clientX < frame.left + 40) strip.scrollLeft -= 14
+    else if (event.clientX > frame.right - 40) strip.scrollLeft += 14
+  }, [onReorder])
 
   const endDrag = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     const strip = stripRef.current
     const state = drag.current
     drag.current = null
+    setMoving(null)
     if (!strip || !state) return
     if (strip.hasPointerCapture(event.pointerId)) strip.releasePointerCapture(event.pointerId)
-    strip.classList.remove('is-dragging')
-    // Klik penutup tarikan dibatalkan supaya tidak salah pindah tab.
+    strip.classList.remove('is-panning', 'is-sorting')
+    // Klik penutup geseran dibatalkan supaya tidak salah pindah tab.
     if (state.moved) {
       const swallow = (click: MouseEvent) => { click.preventDefault(); click.stopPropagation() }
       strip.addEventListener('click', swallow, { capture: true, once: true })
@@ -105,7 +137,7 @@ function useTabStrip(active: PageKey, count: number) {
     }
   }, [])
 
-  return { stripRef, edges, measure, nudge, dragHandlers: { onPointerDown, onPointerMove, onPointerUp: endDrag, onPointerCancel: endDrag } }
+  return { stripRef, edges, moving, measure, nudge, dragHandlers: { onPointerDown, onPointerMove, onPointerUp: endDrag, onPointerCancel: endDrag } }
 }
 
 export function Shell({
@@ -114,6 +146,7 @@ export function Shell({
   onOpen,
   onClose,
   onActivate,
+  onReorder,
   profile,
   onLogout,
   children,
@@ -123,6 +156,7 @@ export function Shell({
   onOpen: (key: PageKey) => void
   onClose: (key: PageKey) => void
   onActivate: (key: PageKey) => void
+  onReorder?: (from: number, to: number) => void
   profile: IdentityProfile
   onLogout: () => void
   children: ReactNode
@@ -136,7 +170,7 @@ export function Shell({
   const railRef = useRef<HTMLDivElement>(null)
   const flyoutRef = useRef<HTMLDivElement>(null)
   const activeModule = moduleOf(active)
-  const { stripRef, edges, measure, nudge, dragHandlers } = useTabStrip(active, tabs.length)
+  const { stripRef, edges, moving, measure, nudge, dragHandlers } = useTabStrip(active, tabs.length, onReorder)
 
   // Ctrl+K / Cmd+K membuka pencarian menu dari mana pun di dalam aplikasi.
   useEffect(() => {
@@ -217,8 +251,8 @@ export function Shell({
       <nav className="tabbar" aria-label="Dokumen terbuka">
         {edges.left && <button type="button" className="tabbar-nudge is-left" onClick={() => nudge(-1)} aria-label="Geser tab ke kiri"><Icon name="chevron" /></button>}
         <div className="tabbar-strip" ref={stripRef} onScroll={measure} {...dragHandlers}>
-          {tabs.map((tab) => (
-            <span key={tab.key} className={cx('doc-tab', tab.key === active && 'is-active')} data-tab-active={tab.key === active}
+          {tabs.map((tab, index) => (
+            <span key={tab.key} className={cx('doc-tab', tab.key === active && 'is-active', moving === index && 'is-moving')} data-tab-active={tab.key === active} data-index={index}
               onAuxClick={(event) => { if (event.button === 1 && tab.closable) { event.preventDefault(); if (tab.dirty) setClosing(tab); else onClose(tab.key) } }}>
               <button type="button" onClick={() => onActivate(tab.key)} aria-current={tab.key === active ? 'page' : undefined} title={tab.label}>{tab.label}</button>
               {tab.dirty && <i className="doc-tab-dirty" title="Ada perubahan yang belum disimpan" />}

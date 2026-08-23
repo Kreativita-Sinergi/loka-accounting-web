@@ -66,13 +66,24 @@ export function useTabs() {
       : current)
   }, [])
 
+  /** Memindahkan tab ke posisi lain saat pengguna menggeser (drag) tab. */
+  const reorder = useCallback((from: number, to: number) => {
+    setTabs((current) => {
+      if (from === to || from < 0 || to < 0 || from >= current.length || to >= current.length) return current
+      const next = [...current]
+      const [moved] = next.splice(from, 1)
+      next.splice(to, 0, moved)
+      return next
+    })
+  }, [])
+
   const rename = useCallback((key: PageKey, label: string) => {
     setTabs((current) => current.some((tab) => tab.key === key && tab.label !== label)
       ? current.map((tab) => tab.key === key ? { ...tab, label } : tab)
       : current)
   }, [])
 
-  return { tabs, active, open, close, setActive, setDirty, rename }
+  return { tabs, active, open, close, setActive, setDirty, rename, reorder }
 }
 
 /** Kontrol tab yang tersedia bagi halaman di dalam tab tersebut. */

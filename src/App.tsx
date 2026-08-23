@@ -30,7 +30,7 @@ import type { Account, AccountingSettings, ApiEnvelope } from './types/accountin
 
 export default function App() {
   const [profile, setProfile] = useState<IdentityProfile | null>(() => getStoredProfile())
-  const { tabs, active, open, close, setActive, setDirty, rename } = useTabs()
+  const { tabs, active, open, close, setActive, setDirty, rename, reorder } = useTabs()
   const [settings, setSettings] = useState<AccountingSettings | null>(null)
   const [accounts, setAccounts] = useState<Account[]>([])
   const [onboarding, setOnboarding] = useState<Onboarding | null>(null)
@@ -50,7 +50,7 @@ export default function App() {
   }, [])
 
   useEffect(() => { if (profile) void refresh() }, [refresh, profile])
-  useEffect(() => { if (onboarding && !onboardingRouted.current && !onboarding.completed_at && !onboarding.dismissed_at) { onboardingRouted.current = true; open('get-started') } }, [onboarding, open])
+  useEffect(() => { if (onboarding && !onboardingRouted.current && !onboarding.completed_at && !onboarding.dismissed_at) { onboardingRouted.current = true; open('settings.setup') } }, [onboarding, open])
   useEffect(() => {
     const openTab = (event: Event) => open((event as CustomEvent<PageKey>).detail)
     window.addEventListener('loka:open-tab', openTab)
@@ -160,7 +160,7 @@ export default function App() {
   }
 
   return (
-    <Shell tabs={tabs} active={active} onOpen={open} onClose={close} onActivate={setActive} profile={profile} onLogout={logout}>
+    <Shell tabs={tabs} active={active} onOpen={open} onClose={close} onActivate={setActive} onReorder={reorder} profile={profile} onLogout={logout}>
       {notice && <div className="toast" role="status"><span>{notice}</span><button onClick={() => setNotice(null)} aria-label="Tutup notifikasi">×</button></div>}
       {tabs.map((tab) => (
         <TabContext.Provider key={tab.key} value={{ setDirty: (dirty) => setDirty(tab.key, dirty), rename: (label) => rename(tab.key, label), restore: () => rename(tab.key, tileOf(tab.key).label) }}>
