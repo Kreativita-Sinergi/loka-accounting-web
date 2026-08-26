@@ -442,6 +442,70 @@
   .list-count { @apply inline-flex min-h-7 items-center rounded-md border px-2 text-[12px] font-bold tabular-nums; border-color: var(--border); background: var(--surface-alt); color: var(--fg-muted); }
 
   /* Grafik dashboard pemantauan usaha */
+  /* Dashboard pemantauan usaha */
+  .dash-period { @apply mb-3 flex flex-wrap items-center gap-1.5 text-[11px]; color: var(--fg-muted); }
+  .dash-period svg { @apply size-3.5; }
+  .dash-period strong { color: var(--fg); }
+  .dash-period span { color: var(--fg-subtle); }
+
+  .kpi-grid { @apply grid grid-cols-4 gap-4 max-[1180px]:grid-cols-2 max-sm:grid-cols-1; }
+  .kpi { @apply relative flex flex-col gap-1 overflow-hidden px-5 pt-4.5 pb-0; }
+  .kpi.is-emphasis { @apply ring-1; --tw-ring-color: var(--accent-soft); }
+  .kpi-label { @apply text-[11px] font-bold uppercase tracking-wide; color: var(--fg-muted); }
+  .kpi-value { @apply font-display text-[26px] leading-tight font-extrabold tracking-tight; color: var(--fg); }
+  .kpi-foot { @apply flex min-h-9 flex-wrap items-center gap-x-2 gap-y-0.5 pb-3; }
+  .kpi-foot small { @apply text-[10px] leading-snug; color: var(--fg-subtle); }
+  .kpi-delta { @apply inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-extrabold tabular-nums; }
+  /* Chevron bawaan menunjuk ke bawah; kenaikan diputar setengah lingkaran. */
+  .kpi-delta svg { @apply size-3; }
+  .kpi-delta svg.is-up { @apply rotate-180; }
+  .kpi-delta.is-good { @apply bg-emerald-50 text-emerald-700; }
+  .kpi-delta.is-bad { @apply bg-rose-50 text-rose-700; }
+  .kpi-delta.is-flat { @apply bg-slate-100 text-slate-500; }
+  .kpi-spark { @apply -mx-5 block h-9 w-[calc(100%+2.5rem)]; }
+  .kpi-share { @apply grid gap-1 pb-4.5; }
+  .kpi-share-track { @apply h-1.5 overflow-hidden rounded-full; background: var(--surface-alt); }
+  .kpi-share-track i { @apply block h-full rounded-full; }
+  .kpi-share small { @apply text-[10px]; color: var(--fg-subtle); }
+
+  .dash-panel { @apply flex flex-col gap-3.5 p-5; }
+  .dash-panel > header h2 { @apply m-0 font-display text-[15px] font-extrabold; color: var(--fg); }
+  .dash-panel > header p { @apply mt-1 mb-0 text-[11px]; color: var(--fg-muted); }
+
+  .aging-row { @apply grid gap-1.5; }
+  .aging-head { @apply flex items-baseline justify-between gap-3 text-[12px] font-bold; color: var(--fg); }
+  .aging-bar { @apply flex h-2.5 gap-0.5 overflow-hidden rounded-full; background: var(--surface-alt); }
+  .aging-bar i { @apply block h-full first:rounded-l-full last:rounded-r-full; }
+  .aging-bar.is-empty i { @apply w-full; background: var(--surface-alt); }
+  .aging-row small { @apply text-[10px]; color: var(--fg-subtle); }
+  .aging-row small strong { color: var(--fg-muted); }
+  .aging-legend { @apply mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-3 text-[10px]; border-color: var(--border); color: var(--fg-muted); }
+  .aging-legend span { @apply inline-flex items-center gap-1.5; }
+  .aging-legend i { @apply inline-block size-2.5 rounded-sm; }
+
+  .balance-total { @apply flex items-baseline justify-between gap-3; }
+  .balance-total span { @apply text-[11px] font-semibold; color: var(--fg-muted); }
+  .balance-total strong { @apply font-display text-xl font-extrabold; color: var(--fg); }
+  .composition { @apply grid gap-2.5; }
+  .composition-bar { @apply flex h-3 gap-0.5 overflow-hidden rounded-full; background: var(--surface-alt); }
+  .composition-bar i { @apply block h-full first:rounded-l-full last:rounded-r-full; }
+  .composition-legend { @apply grid gap-1.5 text-[11px]; color: var(--fg-muted); }
+  .composition-legend span { @apply flex items-center gap-2; }
+  .composition-legend i { @apply inline-block size-2.5 shrink-0 rounded-sm; }
+  .composition-legend b { @apply ml-auto font-bold; color: var(--fg); }
+  .dash-panel .balance-ok, .dash-panel .balance-error { @apply m-0 mt-auto text-[11px] font-bold; }
+
+  .ranked { @apply m-0 grid list-none gap-3 p-5; }
+  .ranked li { @apply flex items-start gap-3; }
+  .ranked-index { @apply grid size-5 shrink-0 place-items-center rounded-md text-[10px] font-extrabold; background: var(--surface-alt); color: var(--fg-muted); }
+  .ranked-body { @apply grid min-w-0 flex-1 gap-1; }
+  .ranked-head { @apply flex items-baseline justify-between gap-3 text-[12px]; color: var(--fg); }
+  .ranked-head strong { @apply truncate; }
+  .ranked-track { @apply h-1.5 overflow-hidden rounded-full; background: var(--surface-alt); }
+  .ranked-track i { @apply block h-full rounded-full; background: var(--accent); }
+  .ranked-body small { @apply text-[10px]; color: var(--fg-subtle); }
+  .ranked-empty { @apply px-5 py-8 text-center text-[11px]; color: var(--fg-subtle); }
+
   .summary-value { @apply mt-1 block text-[15px] font-extrabold; color: var(--fg); }
 
   .chart-block { @apply grid gap-3 p-5; }
