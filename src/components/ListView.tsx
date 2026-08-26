@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { usePersisted } from '../lib/persist'
+import { useCanWrite } from '../lib/rbac'
+import { compareValues, nodeText } from '../lib/tableSort'
 import { EmptyState, cx } from './ui'
 import { Icon, type IconName } from './Icon'
-import type { RowAction } from './DataTable'
+import { allowedActions, type RowAction } from './DataTable'
 
 export type ListColumn<T> = {
   key: string
@@ -107,6 +109,10 @@ export function ListView<T>({
 
   const setPage = (value: number) => server ? server.onChange({ page: value, size: server.size, sort: server.sort, order: server.order }) : setLocalPage(value)
   const setPageSize = (value: number) => server ? server.onChange({ page: 1, size: value, sort: server.sort, order: server.order }) : setLocalPageSize(value)
+  // RBAC (§3.5): peran tanpa wewenang tulis tidak melihat tombol tambah,
+  // impor, maupun aksi baris yang mengubah data.
+  const canWrite = useCanWrite()
+  const writeActions = useMemo(() => allowedActions(rowActions, canWrite), [rowActions, canWrite])
   const [columnPanel, setColumnPanel] = useState(false)
   const [draft, setDraft] = useState(search)
   const [context, setContext] = useState<{ row: T; x: number; y: number } | null>(null)
@@ -128,27 +134,26 @@ export function ListView<T>({
 
   const visibleColumns = columns.filter((column) => !hidden.includes(column.key))
 
+  // Mode server: urutan datang dari database. Mode lokal: setiap kolom dapat
+  // diurutkan — memakai `sortValue` bila ada, selain itu teks selnya.
   const sorted = useMemo(() => {
     if (server || !sort) return rows
     const column = columns.find((candidate) => candidate.key === sort.key)
-    if (!column?.sortValue) return rows
+    if (!column) return rows
     const direction = sort.desc ? -1 : 1
-    return [...rows].sort((left, right) => {
-      const a = column.sortValue!(left)
-      const b = column.sortValue!(right)
-      if (typeof a === 'number' && typeof b === 'number') return (a - b) * direction
-      return String(a).localeCompare(String(b), 'id-ID', { numeric: true }) * direction
-    })
+    const valueOf = (row: T) => column.sortValue ? column.sortValue(row) : nodeText(column.cell(row))
+    return [...rows].sort((left, right) => compareValues(valueOf(left), valueOf(right)) * direction)
   }, [rows, sort, columns, server])
 
   const total = server ? server.total : sorted.length
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
   const current = Math.min(page, pageCount)
   const visibleRows = server ? sorted : sorted.slice((current - 1) * pageSize, current * pageSize)
-  const contextActions = context ? rowActions.filter((action) => !action.when || action.when(context.row)) : []
+  const contextActions = context ? writeActions.filter((action) => !action.when || action.when(context.row)) : []
 
   function toggleSort(column: ListColumn<T>) {
-    if (!column.sortable && !column.sortValue) return
+    // Server hanya memahami kolom yang memang didukung query-nya.
+    if (server && !column.sortable) return
     const next = sort?.key === column.key && !sort.desc ? { key: column.key, desc: true } : { key: column.key, desc: false }
     if (server) {
       server.onChange({ page: 1, size: server.size, sort: next.key, order: next.desc ? 'desc' : 'asc' })
@@ -176,11 +181,11 @@ export function ListView<T>({
       )}
 
       <div className="list-toolbar">
-        {onCreate && <button type="button" className="tool-primary" onClick={onCreate} disabled={createDisabled} title={createTitle ?? createLabel}><Icon name="plus" /> {createLabel}</button>}
+        {onCreate && canWrite && <button type="button" className="tool-primary" onClick={onCreate} disabled={createDisabled} title={createTitle ?? createLabel}><Icon name="plus" /> {createLabel}</button>}
         {onRefresh && <button type="button" className="tool-icon" onClick={onRefresh} title="Muat ulang"><Icon name="refresh" /></button>}
         {extraToolbar}
         <div className="list-toolbar-right">
-          {onImport && <button type="button" className="tool-icon" onClick={onImport} title="Impor dari Excel/CSV"><Icon name="download" /></button>}
+          {onImport && canWrite && <button type="button" className="tool-icon" onClick={onImport} title="Impor dari Excel/CSV"><Icon name="download" /></button>}
           {onExport && <button type="button" className="tool-icon" onClick={onExport} title="Ekspor"><Icon name="upload" /></button>}
           {onPrint && <button type="button" className="tool-icon" onClick={onPrint} title="Cetak daftar"><Icon name="printer" /></button>}
           <div className="column-picker" ref={columnBox}>
@@ -219,7 +224,7 @@ export function ListView<T>({
                   {visibleColumns.map((column) => (
                     <th
                       key={column.key}
-                      className={cx(column.align === 'right' && 'number', (column.sortable || column.sortValue) && 'sortable', column.className)}
+                      className={cx(column.align === 'right' && 'number', (server ? column.sortable : true) && 'sortable', column.className)}
                       style={column.width ? { width: column.width } : undefined}
                       onClick={() => toggleSort(column)}
                       aria-sort={sort?.key === column.key ? (sort.desc ? 'descending' : 'ascending') : undefined}
@@ -228,7 +233,7 @@ export function ListView<T>({
                       {sort?.key === column.key && <Icon name="chevron" className={cx('sort-arrow', sort.desc && 'is-desc')} />}
                     </th>
                   ))}
-                  {rowActions.length > 0 && <th className="actions-head"><span className="sr-only">Aksi</span></th>}
+                  {writeActions.length > 0 && <th className="actions-head"><span className="sr-only">Aksi</span></th>}
                 </tr>
               </thead>
               <tbody>
@@ -237,12 +242,12 @@ export function ListView<T>({
                     key={keyOf(row)}
                     className={cx(onRowOpen && 'is-openable')}
                     onClick={() => onRowOpen?.(row)}
-                    onContextMenu={(event) => { if (rowActions.length === 0) return; event.preventDefault(); setContext({ row, x: event.clientX, y: event.clientY }) }}
+                    onContextMenu={(event) => { if (writeActions.length === 0) return; event.preventDefault(); setContext({ row, x: event.clientX, y: event.clientY }) }}
                   >
                     {visibleColumns.map((column) => (
                       <td key={column.key} className={cx(column.align === 'right' && 'number', column.className)}>{column.cell(row)}</td>
                     ))}
-                    {rowActions.length > 0 && (
+                    {writeActions.length > 0 && (
                       <td className="actions-cell" onClick={(event) => event.stopPropagation()}>
                         <button type="button" className="row-menu-trigger" title="Aksi lainnya" onClick={(event) => setContext({ row, x: event.clientX, y: event.clientY })}><Icon name="more" className="size-4" /></button>
                       </td>

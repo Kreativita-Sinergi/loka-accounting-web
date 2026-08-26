@@ -137,7 +137,7 @@ export function CashBankPage({ kind, scale, accounts, onNotice }: {
           options: [{ value: 'ALL', label: 'Semua' }, { value: 'POSTED', label: 'Diposting' }, { value: 'VOID', label: 'Batal' }],
         }]}
         rowActions={[
-          { label: 'Lihat rincian & jurnal', icon: 'journal', onSelect: setDetail },
+          { label: 'Lihat rincian & jurnal', icon: 'journal', readOnly: true, onSelect: setDetail },
           {
             label: 'Batalkan transaksi',
             icon: 'trash',

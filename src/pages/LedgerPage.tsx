@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { downloadExport, getLedger } from '../api/accounting'
 import type { LedgerRow } from '../types/accounting'
+import { useLedgerRefresh } from '../lib/refresh'
 import { Button, PageHeader } from '../components/ui'
 import { DataTable, SearchInput, TablePanel, type Column } from '../components/DataTable'
 
@@ -14,11 +15,15 @@ export function LedgerPage() {
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true)
     try { setRows(await getLedger(start, end)) } finally { setLoading(false) }
-  }
-  useEffect(() => { void load() }, [])
+  }, [start, end])
+
+  useEffect(() => { void load() }, [load])
+  // Tab tetap ter-mount saat pengguna pindah ke Kas Masuk/Keluar, jadi buku
+  // besar memuat ulang begitu ada jurnal baru diposting di halaman lain.
+  useLedgerRefresh(() => void load())
 
   const visible = useMemo(() => {
     const needle = search.trim().toLowerCase()
@@ -59,6 +64,7 @@ export function LedgerPage() {
         toolbar={<SearchInput value={search} onChange={setSearch} placeholder="Cari nomor jurnal, akun, atau deskripsi…" />}
       >
         <DataTable
+          search={false}
           columns={columns}
           rows={visible}
           keyOf={(row) => `${row.journal_id}-${row.account_code}-${row.debit}-${row.credit}-${row.balance}`}

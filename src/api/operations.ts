@@ -1,10 +1,18 @@
 import { api } from './client'
+import { notifyLedgerChanged } from '../lib/refresh'
 import { getPaged, type PageRequest } from './paging'
 import type { ApiEnvelope } from '../types/accounting'
 import type { Attachment, CashHistoryRow, CashTransaction, DocumentJournalRow, ItemBrand, ItemCategory } from '../types/operations'
-import type { APIKey, Approval, ApprovalPolicy, BusinessDocument, DocumentSequence, InventoryBalance, InventoryReservation, Invitation, Item, Onboarding, OrganizationMember, SecuritySettings, Unit, UnitConversion, Warehouse, Webhook } from '../types/operations'
+import type { APIKey, Approval, ApprovalPolicy, BusinessDocument, DocumentSequence, InventoryBalance, InventoryReservation, Invitation, Item, Onboarding, OrganizationMember, OrganizationRole, SecuritySettings, Unit, UnitConversion, Warehouse, Webhook } from '../types/operations'
 
 const data = async <T>(request: Promise<{ data: ApiEnvelope<T> }>) => (await request).data.data
+
+/** Seperti `data`, tetapi memberi tahu halaman buku besar bahwa ada jurnal baru. */
+const posted = async <T>(request: Promise<{ data: ApiEnvelope<T> }>) => {
+  const value = await data<T>(request)
+  notifyLedgerChanged()
+  return value
+}
 
 export type UnitInput = { code: string; name: string; precision: number }
 export type WarehouseInput = { code: string; name: string; address: string }
@@ -28,11 +36,11 @@ export const setWarehouseActive = (id: string, isActive: boolean) => data<Wareho
 export const deleteWarehouse = (id: string) => data<Warehouse>(api.delete(`/warehouses/${id}`))
 export const listDocuments = (type = '') => data<BusinessDocument[]>(api.get('/documents', { params: type ? { type } : undefined }))
 export const createDocument = (input: Record<string, unknown>) => data<BusinessDocument>(api.post('/documents', input))
-export const transitionDocument = (id: string, status: string) => data<BusinessDocument>(api.post(`/documents/${id}/transition`, { status }))
+export const transitionDocument = (id: string, status: string) => posted<BusinessDocument>(api.post(`/documents/${id}/transition`, { status }))
 export const listInventoryBalances = () => data<InventoryBalance[]>(api.get('/inventory/balances'))
-export const adjustInventory = (input: Record<string, unknown>) => data(api.post('/inventory/adjustments', input))
-export const transferInventory = (input: Record<string, unknown>) => data(api.post('/inventory/transfers', input))
-export const stockOpname = (input: Record<string, unknown>) => data(api.post('/inventory/stock-opname', input))
+export const adjustInventory = (input: Record<string, unknown>) => posted(api.post('/inventory/adjustments', input))
+export const transferInventory = (input: Record<string, unknown>) => posted(api.post('/inventory/transfers', input))
+export const stockOpname = (input: Record<string, unknown>) => posted(api.post('/inventory/stock-opname', input))
 export const listReservations = () => data<InventoryReservation[]>(api.get('/inventory/reservations'))
 export const reserveInventory = (input: Record<string, unknown>) => data<InventoryReservation>(api.post('/inventory/reservations', input))
 export const releaseReservation = (id: string) => data(api.post(`/inventory/reservations/${id}/release`))
@@ -43,6 +51,8 @@ export const listInvitations = () => data<Invitation[]>(api.get('/organization/i
 export const createInvitation = (input: { email: string; role_code: string }) => data<{ invitation: Invitation; invitation_token: string }>(api.post('/organization/invitations', input))
 export const listMembers = () => data<OrganizationMember[]>(api.get('/organization/members'))
 export const setMemberActive = (id: string, active: boolean) => data(api.patch(`/organization/members/${id}/status`, { active }))
+export const setMemberRole = (id: string, roleCode: string) => data(api.patch(`/organization/members/${id}/role`, { role_code: roleCode }))
+export const listRoles = () => data<OrganizationRole[]>(api.get('/organization/roles'))
 export const setupMFA = (email: string) => data<{ secret: string; otpauth_url: string }>(api.post('/auth/mfa/setup', { email }))
 export const confirmMFA = (code: string) => data<{ recovery_codes: string[] }>(api.post('/auth/mfa/confirm', { code }))
 export const disableMFA = (code: string) => data(api.delete('/auth/mfa', { data: { code } }))
@@ -125,9 +135,9 @@ export type CashTransactionInput = {
   memo: string
   lines?: CashLineInput[]
 }
-export const createCashTransaction = (input: CashTransactionInput) => data<CashTransaction>(api.post('/cash-transactions', input))
+export const createCashTransaction = (input: CashTransactionInput) => posted<CashTransaction>(api.post('/cash-transactions', input))
 export const listCashTransactionsPaged = (request: PageRequest) => getPaged<CashTransaction>('/cash-transactions', request)
 export const getCashTransaction = (id: string) => data<CashTransaction>(api.get(`/cash-transactions/${id}`))
-export const voidCashTransaction = (id: string, reason: string) => data<CashTransaction>(api.post(`/cash-transactions/${id}/void`, { reason }))
+export const voidCashTransaction = (id: string, reason: string) => posted<CashTransaction>(api.post(`/cash-transactions/${id}/void`, { reason }))
 export const cashAccountHistory = (accountId: string, startDate: string, endDate: string) =>
   data<CashHistoryRow[]>(api.get(`/cash-accounts/${accountId}/history`, { params: { start_date: startDate, end_date: endDate } }))

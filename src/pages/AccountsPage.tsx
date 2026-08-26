@@ -1,13 +1,23 @@
-import { useState } from 'react'
-import type { Account, AccountType } from '../types/accounting'
-import { downloadExport, listAccountsPaged } from '../api/accounting'
+import { useCallback, useEffect, useState } from 'react'
+import type { Account, AccountType, TrialBalance } from '../types/accounting'
+import type { GeneralLedgerAccount } from '../types/reports'
+import { downloadExport, getReport, listAccountsPaged } from '../api/accounting'
+import { getGeneralLedger } from '../api/analytics'
 import { useServerList } from '../lib/serverList'
 import { requestTab } from '../lib/menu'
-import { Badge, DataEntryGuide, PageHeader } from '../components/ui'
+import { useLedgerRefresh } from '../lib/refresh'
+import { decimal, formatDate, formatMoney } from '../lib/money'
+import { Badge, Button, DataEntryGuide, EmptyState, PageHeader } from '../components/ui'
+import { amount } from './ReportsPage'
 import { StatusPill } from '../components/DataTable'
 import { ListView, type ListColumn } from '../components/ListView'
 import { usePersisted } from '../lib/persist'
-import { ConfirmDialog, FormModal, messageOf, useConfirm } from '../components/Modal'
+import { ConfirmDialog, FormModal, Modal, messageOf, useConfirm } from '../components/Modal'
+
+const today = () => new Date().toISOString().slice(0, 10)
+const monthStart = () => `${new Date().toISOString().slice(0, 7)}-01`
+/** Saldo akhir dihitung sejak transaksi pertama, bukan sejak awal bulan. */
+const beginning = '1900-01-01'
 
 const accountTypes: Array<{ value: AccountType; label: string }> = [
   { value: 'ASSET', label: 'Aset' },
@@ -22,8 +32,9 @@ const accountTypes: Array<{ value: AccountType; label: string }> = [
 
 type AccountInput = { code: string; name: string; type: AccountType; normal_balance?: Account['normal_balance']; parent_id: string | null }
 
-export function AccountsPage({ accounts, onCreate, onUpdate, onStatusChange, onDelete }: {
+export function AccountsPage({ accounts, scale, onCreate, onUpdate, onStatusChange, onDelete }: {
   accounts: Account[]
+  scale: number
   onCreate: (input: AccountInput) => Promise<void>
   onUpdate: (id: string, input: AccountInput) => Promise<void>
   onStatusChange: (id: string, active: boolean) => Promise<void>
@@ -37,8 +48,32 @@ export function AccountsPage({ accounts, onCreate, onUpdate, onStatusChange, onD
   const [statusFilter, setStatusFilter] = usePersisted('filter.accounts.status', 'ALL')
   const status = useConfirm<Account>()
   const removal = useConfirm<Account>()
+  const [detail, setDetail] = useState<Account | null>(null)
+  const [balances, setBalances] = useState<Record<string, number>>({})
 
   const editing = editor?.account ?? null
+
+  // Saldo akhir tiap akun diambil dari neraca saldo kumulatif, lalu diberi
+  // tanda sesuai saldo normal akun agar akun kredit tampil positif.
+  const loadBalances = useCallback(async () => {
+    try {
+      const report = await getReport<TrialBalance>('trial-balance', beginning, today())
+      const next: Record<string, number> = {}
+      for (const row of report.rows ?? []) next[row.account_id] = decimal(row.debit) - decimal(row.credit)
+      setBalances(next)
+    } catch {
+      setBalances({})
+    }
+  }, [])
+
+  useEffect(() => { void loadBalances() }, [loadBalances])
+  useLedgerRefresh(() => void loadBalances())
+
+  function balanceOf(account: Account) {
+    const net = balances[account.id] ?? 0
+    const signed = account.normal_balance === 'CREDIT' ? -net : net
+    return signed === 0 ? 0 : signed // menghindari tampilan "-0"
+  }
 
   // Daftar akun dipaginasi, diurutkan, dan dicari di database (§4.1).
   const list = useServerList('accounts', listAccountsPaged, {
@@ -98,10 +133,21 @@ export function AccountsPage({ accounts, onCreate, onUpdate, onStatusChange, onD
     { sortable: true, key: 'type', header: 'Tipe', sortValue: (account) => account.type, cell: (account) => <span className="type-tag">{account.type.replaceAll('_', ' ')}</span> },
     { sortable: true, key: 'normal_balance', header: 'Saldo normal', sortValue: (account) => account.normal_balance, cell: (account) => account.normal_balance },
     { key: 'parent', header: 'Akun induk', optional: true, cell: (account) => accounts.find((candidate) => candidate.id === account.parent_id)?.code ?? '—' },
+    {
+      key: 'balance',
+      header: 'Saldo akhir',
+      align: 'right',
+      className: 'mono',
+      width: '150px',
+      // Tanpa sortValue: daftar akun diurutkan di database, sedangkan saldo
+      // berasal dari neraca saldo sehingga tidak bisa diurutkan server-side.
+      cell: (account) => formatMoney(balanceOf(account), scale),
+    },
     { sortable: true, key: 'status', header: 'Status', sortValue: (account) => account.is_active ? 1 : 0, cell: (account) => <StatusPill active={account.is_active} /> },
   ]
 
   const rowActions = [
+    { label: 'Lihat detail & saldo', icon: 'ledger' as const, readOnly: true, onSelect: (account: Account) => setDetail(account) },
     { label: 'Ubah', icon: 'edit' as const, onSelect: openEdit },
     {
       label: (account: Account) => account.is_active ? 'Nonaktifkan' : 'Aktifkan',
@@ -131,6 +177,7 @@ export function AccountsPage({ accounts, onCreate, onUpdate, onStatusChange, onD
         steps={[
           'Klik “Akun baru” untuk membuka form penambahan akun.',
           'Gunakan menu aksi (titik tiga) pada baris tabel untuk Ubah, Nonaktifkan, Aktifkan, atau Hapus permanen.',
+          'Klik satu baris untuk membuka detail akun: saldo awal, mutasi, dan saldo akhir beserta jurnal pembentuknya.',
           'Nonaktifkan adalah pengganti hapus: akun tetap ada dalam histori tetapi tidak tersedia untuk transaksi baru.',
           'Hapus permanen hanya tersedia untuk akun nonaktif dan akan ditolak jika akun masih dipakai data lain.',
         ]}
@@ -154,7 +201,7 @@ export function AccountsPage({ accounts, onCreate, onUpdate, onStatusChange, onD
         onExport={() => void downloadExport('accounts')}
         onPrint={() => window.print()}
         rowActions={rowActions}
-        onRowOpen={openEdit}
+        onRowOpen={setDetail}
         empty={list.error ?? (accounts.length === 0 ? 'Belum ada akun dalam chart of accounts.' : 'Tidak ada akun yang cocok dengan filter.')}
         filters={[
           {
@@ -173,6 +220,8 @@ export function AccountsPage({ accounts, onCreate, onUpdate, onStatusChange, onD
           },
         ]}
       />
+
+      <AccountDetail account={detail} scale={scale} onClose={() => setDetail(null)} onEdit={(account) => { setDetail(null); openEdit(account) }} />
 
       <FormModal
         open={editor !== null}
@@ -240,5 +289,104 @@ export function AccountsPage({ accounts, onCreate, onUpdate, onStatusChange, onD
         </>}
       />
     </section>
+  )
+}
+
+/**
+ * Detail satu akun: saldo awal periode, mutasi debit/kredit, saldo akhir, dan
+ * jurnal pembentuknya. Sumbernya laporan buku besar per akun, jadi angka di
+ * sini selalu sama dengan Buku Besar dan Neraca Saldo.
+ */
+function AccountDetail({ account, scale, onClose, onEdit }: {
+  account: Account | null
+  scale: number
+  onClose: () => void
+  onEdit: (account: Account) => void
+}) {
+  const [start, setStart] = useState(monthStart())
+  const [end, setEnd] = useState(today())
+  const [report, setReport] = useState<GeneralLedgerAccount | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const accountId = account?.id
+  const load = useCallback(async () => {
+    if (!accountId) return
+    setLoading(true)
+    try {
+      const value = await getGeneralLedger({ account_id: accountId, start_date: start, end_date: end })
+      setReport(value.accounts.find((row) => row.account_id === accountId) ?? null)
+      setError(null)
+    } catch (caught) {
+      setReport(null)
+      setError(messageOf(caught, 'Mutasi akun gagal dimuat.'))
+    } finally {
+      setLoading(false)
+    }
+  }, [accountId, start, end])
+
+  useEffect(() => { void load() }, [load])
+  useLedgerRefresh(() => void load())
+
+  if (!account) return null
+
+  // Akun tanpa mutasi pada periode ini tetap punya saldo — nol.
+  const zero = formatMoney(0, scale)
+  const summary = report ?? { opening_balance: zero, total_debit: zero, total_credit: zero, closing_balance: zero, entries: [] }
+
+  return (
+    <Modal
+      open
+      size="xl"
+      eyebrow="DETAIL AKUN"
+      title={`${account.code} · ${account.name}`}
+      description={`${account.type.replaceAll('_', ' ')} · saldo normal ${account.normal_balance}${account.is_system ? ' · akun sistem' : ''}`}
+      onClose={onClose}
+      footer={<Button variant="secondary" icon="edit" onClick={() => onEdit(account)}>Ubah akun</Button>}
+    >
+      <div className="flex items-center gap-1.5 mb-4">
+        <input type="date" value={start} onChange={(event) => setStart(event.target.value)} className="!min-h-8 !w-36" aria-label="Tanggal awal" />
+        <span className="text-[11px] text-[color:var(--fg-muted)]">s/d</span>
+        <input type="date" value={end} onChange={(event) => setEnd(event.target.value)} className="!min-h-8 !w-36" aria-label="Tanggal akhir" />
+      </div>
+
+      <div className="doc-grid mb-4">
+        <div><span className="lookup-label">Saldo awal</span><strong className="summary-value mono">{amount(summary.opening_balance)}</strong></div>
+        <div><span className="lookup-label">Mutasi debit</span><strong className="summary-value mono">{amount(summary.total_debit)}</strong></div>
+        <div><span className="lookup-label">Mutasi kredit</span><strong className="summary-value mono">{amount(summary.total_credit)}</strong></div>
+        <div><span className="lookup-label">Saldo akhir</span><strong className="summary-value mono">{amount(summary.closing_balance)}</strong></div>
+      </div>
+
+      {error && <p className="modal-note mb-4">{error}</p>}
+      {loading && summary.entries.length === 0 && <p className="modal-note">Memuat mutasi akun…</p>}
+
+      {summary.entries.length === 0 && !loading
+        ? <EmptyState icon="ledger">Belum ada mutasi pada rentang tanggal ini. Saldo akhir mengikuti saldo awal.</EmptyState>
+        : (
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Tanggal</th><th>No. jurnal</th><th>Keterangan</th><th className="number">Debit</th><th className="number">Kredit</th><th className="number">Saldo</th></tr></thead>
+              <tbody>
+                {summary.entries.map((entry, index) => (
+                  <tr key={`${entry.journal_id}-${index}`}>
+                    <td>{formatDate(entry.transaction_date)}</td>
+                    <td className="mono">{entry.journal_number}</td>
+                    <td>{entry.description}</td>
+                    <td className="number mono">{amount(entry.debit)}</td>
+                    <td className="number mono">{amount(entry.credit)}</td>
+                    <td className="number mono">{amount(entry.running_balance)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot><tr>
+                <th colSpan={3}>Saldo akhir</th>
+                <th className="number">{amount(summary.total_debit)}</th>
+                <th className="number">{amount(summary.total_credit)}</th>
+                <th className="number">{amount(summary.closing_balance)}</th>
+              </tr></tfoot>
+            </table>
+          </div>
+        )}
+    </Modal>
   )
 }

@@ -441,6 +441,27 @@
   .list-search > button { @apply grid size-4 place-items-center rounded-full border-0 bg-transparent p-0; }
   .list-count { @apply inline-flex min-h-7 items-center rounded-md border px-2 text-[12px] font-bold tabular-nums; border-color: var(--border); background: var(--surface-alt); color: var(--fg-muted); }
 
+  /* Grafik dashboard pemantauan usaha */
+  .summary-value { @apply mt-1 block text-[15px] font-extrabold; color: var(--fg); }
+
+  .chart-block { @apply grid gap-3 p-5; }
+  .chart-legend { @apply flex flex-wrap items-center gap-4 text-[11px] font-semibold; color: var(--fg-muted); }
+  .chart-legend span { @apply inline-flex items-center gap-1.5; }
+  .chart-legend i { @apply inline-block size-2.5 rounded-sm; }
+  .chart-canvas { @apply relative; }
+  .chart-canvas svg { @apply block h-auto w-full; }
+  .chart-tooltip { @apply pointer-events-none absolute top-1 grid -translate-x-1/2 gap-1 rounded-lg border bg-white p-2.5 text-[11px] shadow-xl; border-color: var(--border); color: var(--fg-muted); min-width: 190px; }
+  .chart-tooltip strong { @apply text-[12px]; color: var(--fg); }
+  .chart-tooltip span { @apply flex items-center gap-1.5; }
+  .chart-tooltip i { @apply inline-block size-2.5 shrink-0 rounded-sm; }
+  .chart-tooltip b { @apply ml-auto font-bold; color: var(--fg); }
+
+  .table-toolbar { @apply flex flex-wrap items-center justify-between gap-2.5 border-b px-5 py-2.5; border-color: var(--border); background: var(--surface-alt); }
+  .table-toolbar-count { @apply text-[11px] font-semibold tabular-nums; color: var(--fg-muted); }
+  .data-panel .table-toolbar { @apply px-5; }
+  table th.is-sortable { @apply cursor-pointer select-none; }
+  table th.is-sortable:hover { color: var(--fg); }
+
   .list-table th.sortable { @apply cursor-pointer select-none; }
   .list-table th.sortable:hover { color: var(--fg); }
   .sort-arrow { @apply ml-1 inline size-3 align-middle; }

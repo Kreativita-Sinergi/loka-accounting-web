@@ -176,6 +176,7 @@ export function OperationsPage({ accounts, onNotice }: { accounts: Account[]; on
         toolbar={<SearchInput value={search} onChange={setSearch} placeholder="Cari nama, email, atau telepon kontak…" />}
       >
         <DataTable
+          search={false}
           columns={contactColumns}
           rows={visibleContacts}
           keyOf={(contact) => contact.id}

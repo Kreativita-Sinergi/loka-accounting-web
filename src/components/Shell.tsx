@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import type { IdentityProfile } from '../api/auth'
 import { modules, moduleOf, type MenuModule, type MenuTile, type PageKey } from '../lib/menu'
+import { useAccess } from '../lib/rbac'
 import type { Tab } from '../store/tabs'
 import { Icon } from './Icon'
 import { cx } from './ui'
@@ -217,7 +218,17 @@ export function Shell({
   const railRef = useRef<HTMLDivElement>(null)
   const flyoutRef = useRef<HTMLDivElement>(null)
   const activeModule = moduleOf(active)
+  const { can, role } = useAccess()
   const { stripRef, edges, moving, measure, nudge, dragHandlers } = useTabStrip(active, tabs.length, onReorder)
+
+  // RBAC: modul dan ubin yang tidak berwenang tidak ditampilkan sama sekali,
+  // sehingga pengguna tidak menemui halaman yang pasti ditolak backend.
+  const visibleModules = useMemo(
+    () => modules
+      .map((module) => ({ ...module, tiles: module.tiles.filter((item) => can(item.view)) }))
+      .filter((module) => module.tiles.length > 0),
+    [can],
+  )
 
   // Ctrl+K / Cmd+K membuka pencarian menu dari mana pun di dalam aplikasi.
   useEffect(() => {
@@ -288,7 +299,7 @@ export function Shell({
         </div>
         <div className="topbar-org">
           <span>{profile.organization_name}</span>
-          <small>IDR · Indonesia</small>
+          <small>IDR · Indonesia · {role?.label ?? profile.role_code}</small>
         </div>
         <button type="button" className="topbar-avatar" onClick={onLogout} title={`${profile.full_name} — klik untuk keluar`}>
           {profile.full_name.slice(0, 1).toUpperCase()}
@@ -327,7 +338,7 @@ export function Shell({
 
       <div className="shell-body">
         <div className="icon-rail" ref={railRef}>
-          {modules.map((module) => (
+          {visibleModules.map((module) => (
             <div className="rail-slot" key={module.id}>
               <button
                 type="button"

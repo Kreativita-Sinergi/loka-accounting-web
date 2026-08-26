@@ -2,17 +2,16 @@ import { useEffect, useState } from 'react'
 import {
   confirmMFA, createAPIKey, createInvitation, createWebhook, decideApproval, deleteApprovalPolicy,
   deleteSequence, deleteWebhook, getSecurity, listAPIKeys, listApprovalPolicies, listApprovals,
-  listInvitations, listMembers, listSequences, listWebhooks, revokeAPIKey, saveApprovalPolicy,
-  saveSecurity, saveSequence, setMemberActive, setWebhookActive, setupMFA, updateWebhook,
+  listInvitations, listMembers, listRoles, listSequences, listWebhooks, revokeAPIKey, saveApprovalPolicy,
+  saveSecurity, saveSequence, setMemberActive, setMemberRole, setWebhookActive, setupMFA, updateWebhook,
 } from '../api/operations'
 import type { IdentityProfile } from '../api/auth'
 import { Badge, Button, DataEntryGuide, PageHeader } from '../components/ui'
 import { AddButton, DataTable, StatusPill, TablePanel, type Column } from '../components/DataTable'
 import { ConfirmDialog, FormModal, messageOf, useConfirm } from '../components/Modal'
-import type { APIKey, Approval, ApprovalPolicy, DocumentSequence, Invitation, OrganizationMember, SecuritySettings, Webhook } from '../types/operations'
+import type { APIKey, Approval, ApprovalPolicy, DocumentSequence, Invitation, OrganizationMember, OrganizationRole, SecuritySettings, Webhook } from '../types/operations'
 
 const documentTypes = ['SALES_QUOTE', 'SALES_ORDER', 'DELIVERY', 'SALES_INVOICE', 'SALES_RETURN', 'PURCHASE_ORDER', 'GOODS_RECEIPT', 'PURCHASE_INVOICE', 'PURCHASE_RETURN']
-const roles = ['ACCOUNTANT', 'FINANCE', 'AUDITOR', 'READ_ONLY', 'OWNER']
 
 export function ControlsPage({ profile, onNotice }: { profile: IdentityProfile; onNotice: (value: string) => void }) {
   const [security, setSecurity] = useState<SecuritySettings | null>(null)
@@ -23,6 +22,8 @@ export function ControlsPage({ profile, onNotice }: { profile: IdentityProfile; 
   const [keys, setKeys] = useState<APIKey[]>([])
   const [webhooks, setWebhooks] = useState<Webhook[]>([])
   const [policies, setPolicies] = useState<ApprovalPolicy[]>([])
+  const [roles, setRoles] = useState<OrganizationRole[]>([])
+  const [roleEditor, setRoleEditor] = useState<OrganizationMember | null>(null)
   const [loading, setLoading] = useState(true)
 
   const [mfaSecret, setMfaSecret] = useState('')
@@ -48,11 +49,16 @@ export function ControlsPage({ profile, onNotice }: { profile: IdentityProfile; 
   const decision = useConfirm<{ approval: Approval; verdict: 'APPROVED' | 'REJECTED' }>()
 
   async function refresh() {
-    const [s, i, m, a, n, k, w, p] = await Promise.all([
-      getSecurity(), listInvitations(), listMembers(), listApprovals(), listSequences(), listAPIKeys(), listWebhooks(), listApprovalPolicies(),
+    const [s, i, m, a, n, k, w, p, r] = await Promise.all([
+      getSecurity(), listInvitations(), listMembers(), listApprovals(), listSequences(), listAPIKeys(), listWebhooks(), listApprovalPolicies(), listRoles(),
     ])
-    setSecurity(s); setInvitations(i); setMembers(m); setApprovals(a); setSequences(n); setKeys(k); setWebhooks(w); setPolicies(p)
+    setSecurity(s); setInvitations(i); setMembers(m); setApprovals(a); setSequences(n); setKeys(k); setWebhooks(w); setPolicies(p); setRoles(r)
     setLoading(false)
+  }
+
+  /** Label peran diambil dari katalog RBAC backend, bukan ditulis ulang di web. */
+  function roleLabel(code: string) {
+    return roles.find((role) => role.code === code)?.label ?? code
   }
   useEffect(() => { void refresh() }, [])
 
@@ -98,9 +104,34 @@ export function ControlsPage({ profile, onNotice }: { profile: IdentityProfile; 
   const pendingApprovals = approvals.filter((approval) => approval.status === 'PENDING').length
 
   const memberColumns: Array<Column<OrganizationMember>> = [
-    { header: 'Anggota', cell: (member) => <><strong>{member.full_name}</strong><small className="block">{member.email}</small></> },
-    { header: 'Peran', cell: (member) => <span className="type-tag">{member.role_code}</span> },
-    { header: 'Status', cell: (member) => <StatusPill active={member.is_active} /> },
+    { header: 'Anggota', sortValue: (member) => member.full_name, cell: (member) => <><strong>{member.full_name}</strong><small className="block">{member.email}</small></> },
+    {
+      header: 'Peran',
+      sortValue: (member) => member.role_code,
+      cell: (member) => <span className="flex items-center gap-2">
+        <span className="type-tag">{roleLabel(member.role_code)}</span>
+        {member.role_code === 'OWNER' && <Badge tone="info">Super admin</Badge>}
+      </span>,
+    },
+    { header: 'Status', sortValue: (member) => member.is_active ? 1 : 0, cell: (member) => <StatusPill active={member.is_active} /> },
+  ]
+
+  const roleColumns: Array<Column<OrganizationRole>> = [
+    {
+      header: 'Peran',
+      sortValue: (role) => role.label,
+      cell: (role) => <span className="flex items-center gap-2">
+        <strong>{role.label}</strong>
+        {role.is_super_admin && <Badge tone="info">Super admin</Badge>}
+        {role.code === profile.role_code && <Badge tone="success">Peran Anda</Badge>}
+      </span>,
+    },
+    { header: 'Kode', className: 'mono', width: '140px', sortValue: (role) => role.code, cell: (role) => role.code },
+    { header: 'Wewenang', cell: (role) => <>
+      <p className="m-0">{role.description}</p>
+      <small className="block mono">{role.permissions.map((permission) => permission.endsWith('.') ? `${permission}*` : permission).join(' · ')}</small>
+    </> },
+    { header: 'Anggota', align: 'right', width: '100px', sortValue: (role) => members.filter((member) => member.role_code === role.code).length, cell: (role) => members.filter((member) => member.role_code === role.code).length },
   ]
 
   const invitationColumns: Array<Column<Invitation>> = [
@@ -228,6 +259,12 @@ export function ControlsPage({ profile, onNotice }: { profile: IdentityProfile; 
           empty="Belum ada anggota."
           rowActions={[
             {
+              label: 'Ubah peran',
+              icon: 'compliance',
+              onSelect: (member) => { setRoleEditor(member); setFormError(null) },
+              disabled: (member) => member.user_id === profile.user_id && 'Peran Anda sendiri tidak dapat diubah',
+            },
+            {
               label: (member) => member.is_active ? 'Nonaktifkan' : 'Aktifkan',
               icon: 'power',
               onSelect: memberStatus.open,
@@ -235,6 +272,15 @@ export function ControlsPage({ profile, onNotice }: { profile: IdentityProfile; 
             },
           ]}
         />
+      </TablePanel>
+
+      <TablePanel
+        title="Peran & hak akses"
+        description="Katalog peran bawaan sistem. Pembuat organisasi otomatis menjadi super admin, dan hanya super admin yang dapat memindahkan anggota antarperan."
+        badge={`${roles.length} peran`}
+        badgeTone="info"
+      >
+        <DataTable columns={roleColumns} rows={roles} keyOf={(role) => role.code} loading={loading} empty="Katalog peran belum dapat dimuat." />
       </TablePanel>
 
       <div className="split-grid mt-4.5">
@@ -387,7 +433,37 @@ export function ControlsPage({ profile, onNotice }: { profile: IdentityProfile; 
         )}
       >
         <label>Email<input type="email" name="email" required /></label>
-        <label>Peran<select name="role_code">{roles.map((role) => <option key={role}>{role}</option>)}</select></label>
+        <label>Peran<select name="role_code" defaultValue="READ_ONLY">{roles.map((role) => <option key={role.code} value={role.code}>{role.label}</option>)}</select></label>
+        <p className="modal-note">Wewenang tiap peran dapat dilihat pada panel “Peran & hak akses”.</p>
+      </FormModal>
+
+      {/* ---- Member role modal ---- */}
+      <FormModal
+        open={roleEditor !== null}
+        formKey={roleEditor?.user_id ?? 'role'}
+        size="sm"
+        eyebrow="PERAN ANGGOTA"
+        title={`Ubah peran ${roleEditor?.full_name ?? ''}`}
+        description="Perubahan peran berlaku pada sesi berikutnya anggota tersebut, dan tercatat di jejak audit organisasi."
+        submitLabel="Simpan peran"
+        busy={saving}
+        error={formError}
+        onClose={() => setRoleEditor(null)}
+        onSubmit={(values) => save(
+          () => setMemberRole(roleEditor!.user_id, String(values.get('role_code'))),
+          'Peran anggota diperbarui.',
+          () => setRoleEditor(null),
+        )}
+      >
+        <label>Peran
+          <select name="role_code" defaultValue={roleEditor?.role_code}>
+            {roles.map((role) => <option key={role.code} value={role.code}>{role.label}</option>)}
+          </select>
+        </label>
+        <p className="modal-note">
+          Super admin terakhir tidak dapat diturunkan perannya, dan Anda tidak dapat mengubah peran sendiri.
+          {roleEditor && <> Peran saat ini: <strong>{roleLabel(roleEditor.role_code)}</strong>.</>}
+        </p>
       </FormModal>
 
       {/* ---- Document sequence modal ---- */}

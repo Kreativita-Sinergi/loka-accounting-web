@@ -15,6 +15,10 @@ export type MenuTile = {
   icon: IconName
   group: TileGroup
   hint: string
+  /** Permission yang harus dimiliki peran untuk membuka halaman ini. */
+  view: string
+  /** Permission untuk membuat atau mengubah data pada halaman ini. */
+  write: string
 }
 
 export type MenuModule = {
@@ -24,7 +28,46 @@ export type MenuModule = {
   tiles: MenuTile[]
 }
 
-const tile = (key: string, label: string, icon: IconName, group: TileGroup, hint: string): MenuTile => ({ key, label, icon, group, hint })
+/**
+ * Wewenang bawaan per modul, memakai nama permission yang sama persis dengan
+ * yang dipakai router backend. Halaman yang menyimpang dari bawaan modulnya
+ * dicatat di `tileOverrides`.
+ */
+const modulePermissions: Record<string, { view: string; write: string }> = {
+  settings: { view: 'accounting.settings.manage', write: 'accounting.settings.manage' },
+  company: { view: 'accounting.settings.manage', write: 'accounting.settings.manage' },
+  'general-ledger': { view: 'accounting.reports.view', write: 'accounting.journal.create' },
+  'cash-bank': { view: 'accounting.bank.view', write: 'accounting.bank.manage' },
+  sales: { view: 'accounting.documents.view', write: 'accounting.documents.manage' },
+  purchase: { view: 'accounting.documents.view', write: 'accounting.documents.manage' },
+  inventory: { view: 'accounting.inventory.view', write: 'accounting.inventory.manage' },
+  'fixed-asset': { view: 'accounting.assets.manage', write: 'accounting.assets.manage' },
+  tax: { view: 'accounting.localization.view', write: 'accounting.localization.manage' },
+  reports: { view: 'accounting.reports.view', write: 'accounting.reports.view' },
+}
+
+const tileOverrides: Record<PageKey, Partial<{ view: string; write: string }>> = {
+  'settings.activity': { view: 'accounting.audit.view' },
+  'company.dashboard': { view: 'accounting.reports.view' },
+  'company.monitor': { view: 'accounting.reports.view' },
+  'company.project': { view: 'accounting.reports.view', write: 'accounting.dimensions.manage' },
+  'company.currency': { view: 'accounting.fx.view', write: 'accounting.fx.manage' },
+  'gl.account': { view: 'accounting.coa.manage', write: 'accounting.coa.manage' },
+  'gl.budget': { write: 'accounting.budgets.manage' },
+  'gl.period': { write: 'accounting.period.close' },
+  'cash.reconcile': { write: 'accounting.bank.reconcile' },
+  'sales.customer': { view: 'accounting.contacts.view', write: 'accounting.contacts.manage' },
+  'purchase.vendor': { view: 'accounting.contacts.view', write: 'accounting.contacts.manage' },
+  'sales.receipt': { view: 'accounting.receivables.view', write: 'accounting.receivables.manage' },
+  'purchase.payment': { view: 'accounting.payables.view', write: 'accounting.payables.manage' },
+  'inventory.joborder': { view: 'accounting.manufacturing.view', write: 'accounting.manufacturing.manage' },
+  'inventory.material': { view: 'accounting.manufacturing.view', write: 'accounting.manufacturing.manage' },
+  'inventory.rollover': { view: 'accounting.manufacturing.view', write: 'accounting.manufacturing.manage' },
+  'tax.payroll': { view: 'accounting.payroll.view', write: 'accounting.payroll.manage' },
+}
+
+const tile = (key: string, label: string, icon: IconName, group: TileGroup, hint: string): MenuTile =>
+  ({ key, label, icon, group, hint, view: 'accounting.reports.view', write: 'accounting.reports.view' })
 
 export const modules: MenuModule[] = [
   {
@@ -46,6 +89,7 @@ export const modules: MenuModule[] = [
       tile('company.project', 'Proyek', 'project', 'master', 'Proyek dan pekerjaan'),
       tile('company.currency', 'Mata Uang', 'currency', 'setting', 'Kurs dan valuta asing'),
       tile('company.dashboard', 'Dashboard', 'home', 'report', 'Ringkasan perusahaan'),
+      tile('company.monitor', 'Pantau Usaha', 'reports', 'report', 'Dashboard pemantauan usaha'),
     ],
   },
   {
@@ -148,13 +192,23 @@ export const modules: MenuModule[] = [
   },
 ]
 
+// Wewenang tiap ubin diselesaikan sekali di sini: bawaan modul, lalu
+// penyimpangan per ubin.
 const tileIndex = new Map<PageKey, MenuTile>()
-for (const module of modules) for (const item of module.tiles) if (!tileIndex.has(item.key)) tileIndex.set(item.key, item)
+for (const module of modules) {
+  const fallback = modulePermissions[module.id] ?? { view: 'accounting.reports.view', write: 'accounting.reports.view' }
+  for (const item of module.tiles) {
+    const override = tileOverrides[item.key] ?? {}
+    item.view = override.view ?? fallback.view
+    item.write = override.write ?? fallback.write
+    if (!tileIndex.has(item.key)) tileIndex.set(item.key, item)
+  }
+}
 
 export const allTiles = [...tileIndex.values()]
 
 export function tileOf(key: PageKey): MenuTile {
-  return tileIndex.get(key) ?? { key, label: key, icon: 'empty', group: 'master', hint: '' }
+  return tileIndex.get(key) ?? { key, label: key, icon: 'empty', group: 'master', hint: '', view: 'accounting.reports.view', write: 'accounting.reports.view' }
 }
 
 /** Modul yang memuat sebuah halaman — dipakai untuk menyorot ikon rail aktif. */

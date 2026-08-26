@@ -1,4 +1,5 @@
 import { api } from './client'
+import { notifyLedgerChanged } from '../lib/refresh'
 import { getPaged, type PageRequest } from './paging'
 import type {
   Account,
@@ -22,7 +23,7 @@ export async function getSettings() {
   return data.data
 }
 export async function updateSettings(input: { timezone: string; fiscal_year_start_month: number; enabled_modules: string[] }) { const { data } = await api.put<ApiEnvelope<AccountingSettings>>('/settings', input); return data.data }
-export async function postOpeningBalance(input: { transaction_date: string; description: string; lines: JournalLineInput[] }) { const { data } = await api.post<ApiEnvelope<unknown>>('/opening-balances', input); return data.data }
+export async function postOpeningBalance(input: { transaction_date: string; description: string; lines: JournalLineInput[] }) { const { data } = await api.post<ApiEnvelope<unknown>>('/opening-balances', input); notifyLedgerChanged(); return data.data }
 
 export async function getLocalization() { const { data } = await api.get<ApiEnvelope<LocalizationProfile>>('/localization/profile'); return data.data }
 export async function saveLocalization(input: Partial<LocalizationProfile>) { const { data } = await api.put<ApiEnvelope<LocalizationProfile>>('/localization/profile', input); return data.data }
@@ -79,12 +80,13 @@ export async function listPayables() {
   return data.data
 }
 
-export async function createOpenItem(kind: 'receivables' | 'payables', input: Record<string, unknown>) { const { data } = await api.post<ApiEnvelope<OpenItem>>(`/${kind}`, input); return data.data }
-export async function allocateOpenItem(kind: 'receivables' | 'payables', id: string, input: Record<string, unknown>) { const { data } = await api.post<ApiEnvelope<OpenItem>>(`/${kind}/${id}/payments`, input); return data.data }
+export async function createOpenItem(kind: 'receivables' | 'payables', input: Record<string, unknown>) { const { data } = await api.post<ApiEnvelope<OpenItem>>(`/${kind}`, input); notifyLedgerChanged(); return data.data }
+export async function allocateOpenItem(kind: 'receivables' | 'payables', id: string, input: Record<string, unknown>) { const { data } = await api.post<ApiEnvelope<OpenItem>>(`/${kind}/${id}/payments`, input); notifyLedgerChanged(); return data.data }
 export async function getAging(asOf: string) { const { data } = await api.get<ApiEnvelope<AgingReport>>('/reports/aging', { params: { as_of: asOf } }); return data.data }
 
 export async function createExpense(input: { transaction_date: string; description: string; amount: string; payment_method: string; expense_account_id: string }) {
   const { data } = await api.post<ApiEnvelope<unknown>>('/expenses', input)
+  notifyLedgerChanged()
   return data.data
 }
 
@@ -211,6 +213,7 @@ export async function createJournal(input: {
     post: true,
     lines: input.lines,
   })
+  notifyLedgerChanged()
   return data.data
 }
 

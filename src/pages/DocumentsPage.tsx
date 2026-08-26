@@ -258,7 +258,7 @@ export function DocumentsPage({ documentType, scale, onNotice }: { documentType?
         ]}
         rowActions={[
           { label: (document) => advanceLabel(document.status), icon: 'check', onSelect: advance.open, when: (document) => advanceable.includes(document.status) },
-          { label: 'Lihat Jurnal', icon: 'journal', onSelect: setJournalTarget },
+          { label: 'Lihat Jurnal', icon: 'journal', readOnly: true, onSelect: setJournalTarget },
           {
             label: 'Proses ke dokumen hilir',
             icon: 'operations',

@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { AxiosError } from 'axios'
 import { createAccount, createJournal, deleteAccount, getSettings, initializeAccounting, listAccounts, setAccountActive, updateAccount } from './api/accounting'
 import { Shell } from './components/Shell'
 import { TabContext, useTabs } from './store/tabs'
 import { tileOf, type PageKey } from './lib/menu'
+import { AccessProvider, WriteAccessProvider, useAccess } from './lib/rbac'
+import { AccessDeniedPage } from './pages/AccessDeniedPage'
+import { DashboardPage } from './pages/DashboardPage'
 import { AccountsPage } from './pages/AccountsPage'
 import { JournalPage } from './pages/JournalPage'
 import { OverviewPage } from './pages/OverviewPage'
@@ -43,7 +46,10 @@ export default function App() {
       const [current, accountList, onboardingValue] = await Promise.all([getSettings(), listAccounts(), getOnboarding()])
       setSettings(current); setAccounts(accountList); setOnboarding(onboardingValue)
     } catch (error) {
-      if (!(error instanceof AxiosError) || error.response?.status !== 404) showError(error, setNotice)
+      // 404: organisasi belum diinisialisasi. 403: peran ini memang tidak
+      // berwenang membaca chart of accounts — menu untuknya sudah disaring.
+      const status = error instanceof AxiosError ? error.response?.status : undefined
+      if (status !== 404 && status !== 403) showError(error, setNotice)
     } finally {
       setLoading(false)
     }
@@ -115,6 +121,7 @@ export default function App() {
     // Ubin yang sudah punya backend dilayani halaman aslinya; sisanya memakai
     // ScaffoldPage sehingga tata letaknya tetap sesuai Accurate.
     switch (key) {
+      case 'company.monitor': return <DashboardPage scale={scale} />
       case 'company.dashboard': return <OverviewPage settings={settings} onboarding={onboarding} loading={loading} onInitialize={initialize} onGetStarted={() => open('settings.setup')} />
       case 'settings.setup': return settings && onboarding ? <GetStartedPage settings={settings} onboarding={onboarding} accounts={activeAccounts} onChanged={(value) => { setOnboarding(value); void getSettings().then(setSettings) }} onNavigate={open} onNotice={setNotice} /> : null
       case 'settings.preference': return <AdvancedPage accounts={activeAccounts} onNotice={setNotice} />
@@ -128,8 +135,8 @@ export default function App() {
       case 'cash.out': return <CashBankPage kind="PAYMENT" scale={scale} accounts={accounts} onNotice={setNotice} />
       case 'cash.transfer': return <CashBankPage kind="TRANSFER" scale={scale} accounts={accounts} onNotice={setNotice} />
       case 'cash.history': return <CashBankPage kind="HISTORY" scale={scale} accounts={accounts} onNotice={setNotice} />
-      case 'gl.journal': return <JournalPage accounts={activeAccounts} onSubmit={async (input) => { try { await createJournal(input); setNotice('Jurnal berhasil diposting.') } catch (error) { showError(error, setNotice); throw error } }} />
-      case 'gl.account': return <AccountsPage accounts={accounts} onCreate={accountCreate} onUpdate={accountUpdate} onStatusChange={accountStatus} onDelete={accountDelete} />
+      case 'gl.journal': return <JournalPage accounts={activeAccounts} scale={scale} onSubmit={async (input) => { try { await createJournal(input); setNotice('Jurnal berhasil diposting.') } catch (error) { showError(error, setNotice); throw error } }} />
+      case 'gl.account': return <AccountsPage accounts={accounts} scale={scale} onCreate={accountCreate} onUpdate={accountUpdate} onStatusChange={accountStatus} onDelete={accountDelete} />
       case 'gl.ledger': case 'reports.ledger': return <LedgerPage />
       case 'sales.receipt': case 'purchase.payment': case 'sales.customer': case 'purchase.vendor': case 'reports.aging':
         return <OperationsPage accounts={activeAccounts} onNotice={setNotice} />
@@ -160,14 +167,32 @@ export default function App() {
   }
 
   return (
-    <Shell tabs={tabs} active={active} onOpen={open} onClose={close} onActivate={setActive} onReorder={reorder} profile={profile} onLogout={logout}>
-      {notice && <div className="toast" role="status"><span>{notice}</span><button onClick={() => setNotice(null)} aria-label="Tutup notifikasi">×</button></div>}
-      {tabs.map((tab) => (
-        <TabContext.Provider key={tab.key} value={{ setDirty: (dirty) => setDirty(tab.key, dirty), rename: (label) => rename(tab.key, label), restore: () => rename(tab.key, tileOf(tab.key).label) }}>
-          <div className="tab-panel" hidden={tab.key !== active}>{render(tab.key)}</div>
-        </TabContext.Provider>
-      ))}
-    </Shell>
+    <AccessProvider profile={profile}>
+      <Shell tabs={tabs} active={active} onOpen={open} onClose={close} onActivate={setActive} onReorder={reorder} profile={profile} onLogout={logout}>
+        {notice && <div className="toast" role="status"><span>{notice}</span><button onClick={() => setNotice(null)} aria-label="Tutup notifikasi">×</button></div>}
+        {tabs.map((tab) => (
+          <TabContext.Provider key={tab.key} value={{ setDirty: (dirty) => setDirty(tab.key, dirty), rename: (label) => rename(tab.key, label), restore: () => rename(tab.key, tileOf(tab.key).label) }}>
+            <TabPanel tabKey={tab.key} hidden={tab.key !== active}>{render(tab.key)}</TabPanel>
+          </TabContext.Provider>
+        ))}
+      </Shell>
+    </AccessProvider>
+  )
+}
+
+/**
+ * Satu panel tab: menegakkan RBAC halaman (§3.5) dan menyediakan wewenang
+ * tulis bagi komponen daftar bersama di dalamnya.
+ */
+function TabPanel({ tabKey, hidden, children }: { tabKey: PageKey; hidden: boolean; children: ReactNode }) {
+  const { can, role } = useAccess()
+  const tile = tileOf(tabKey)
+  return (
+    <div className="tab-panel" hidden={hidden}>
+      <WriteAccessProvider value={can(tile.write)}>
+        {can(tile.view) ? children : <AccessDeniedPage tile={tile} role={role} />}
+      </WriteAccessProvider>
+    </div>
   )
 }
 

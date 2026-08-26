@@ -29,13 +29,6 @@ export function useTabs() {
     if (keyFromHash() !== active) window.history.replaceState(null, '', `#/${active}`)
   }, [active])
 
-  // Tombol back/forward browser tetap berpindah tab.
-  useEffect(() => {
-    const follow = () => { const key = keyFromHash(); if (key) setActive(key) }
-    window.addEventListener('hashchange', follow)
-    return () => window.removeEventListener('hashchange', follow)
-  }, [])
-
   const open = useCallback((key: PageKey, label?: string) => {
     setTabs((current) => {
       if (current.some((tab) => tab.key === key)) return current
@@ -49,6 +42,14 @@ export function useTabs() {
     })
     setActive(key)
   }, [])
+
+  // Tombol back/forward browser dan tautan langsung tetap membuka halamannya;
+  // tanpa ini alamat #/halaman yang tabnya belum terbuka hanya memberi panggung kosong.
+  useEffect(() => {
+    const follow = () => { const key = keyFromHash(); if (key) open(key) }
+    window.addEventListener('hashchange', follow)
+    return () => window.removeEventListener('hashchange', follow)
+  }, [open])
 
   const close = useCallback((key: PageKey) => {
     setTabs((current) => {

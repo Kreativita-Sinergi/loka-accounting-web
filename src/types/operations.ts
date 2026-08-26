@@ -69,3 +69,12 @@ export type CashTransaction = {
   lines?: CashTransactionLine[]
 }
 export type CashHistoryRow = { journal_id: string; journal_number: string; transaction_date: string; description: string; debit_minor: number; credit_minor: number; balance_minor: number }
+
+/** Peran RBAC bawaan sistem, dibaca dari GET /organization/roles. */
+export type OrganizationRole = {
+  code: string
+  label: string
+  description: string
+  permissions: string[]
+  is_super_admin: boolean
+}

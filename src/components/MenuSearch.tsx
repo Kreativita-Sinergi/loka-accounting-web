@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { modules, type MenuTile, type PageKey } from '../lib/menu'
+import { useAccess } from '../lib/rbac'
 import { Icon } from './Icon'
 import { cx } from './ui'
 
 type Entry = MenuTile & { module: string }
 
 /** Semua ubin menu, diberi nama modulnya agar hasil pencarian punya konteks. */
-const entries: Entry[] = modules.flatMap((module) => module.tiles.map((tile) => ({ ...tile, module: module.label })))
+const allEntries: Entry[] = modules.flatMap((module) => module.tiles.map((tile) => ({ ...tile, module: module.label })))
 
 /**
  * Skor kecocokan sederhana: kata kunci harus muncul berurutan sebagai
@@ -71,7 +72,10 @@ export function MenuSearch({ open, onClose, onOpenTile }: { open: boolean; onClo
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
+  const { can } = useAccess()
   const terms = useMemo(() => query.toLowerCase().split(/\s+/).filter(Boolean), [query])
+  // Palet hanya menawarkan menu yang memang boleh dibuka peran ini.
+  const entries = useMemo(() => allEntries.filter((entry) => can(entry.view)), [can])
 
   const results = useMemo(() => {
     if (!terms.length) {
@@ -85,7 +89,7 @@ export function MenuSearch({ open, onClose, onOpenTile }: { open: boolean; onClo
       .sort((a, b) => b.value - a.value || a.entry.label.localeCompare(b.entry.label))
       .slice(0, 40)
       .map((row) => row.entry)
-  }, [terms])
+  }, [terms, entries])
 
   useEffect(() => { setCursor(0) }, [query])
   useEffect(() => { if (open) { setQuery(''); setCursor(0); requestAnimationFrame(() => inputRef.current?.focus()) } }, [open])
