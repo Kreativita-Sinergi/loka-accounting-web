@@ -3,7 +3,7 @@ import { notifyLedgerChanged } from '../lib/refresh'
 import { getPaged, type PageRequest } from './paging'
 import type { ApiEnvelope } from '../types/accounting'
 import type { Attachment, CashHistoryRow, CashTransaction, DocumentJournalRow, ItemBrand, ItemCategory } from '../types/operations'
-import type { APIKey, Approval, ApprovalPolicy, BusinessDocument, DocumentSequence, InventoryBalance, InventoryReservation, Invitation, Item, Onboarding, OrganizationMember, OrganizationRole, SecuritySettings, Unit, UnitConversion, Warehouse, Webhook } from '../types/operations'
+import type { APIKey, Approval, ApprovalPolicy, BusinessDocument, DocumentSequence, InventoryBalance, InventoryReservation, Invitation, Item, Onboarding, OrganizationMember, OrganizationProfile, OrganizationRole, SecuritySettings, Unit, UnitConversion, Warehouse, Webhook } from '../types/operations'
 
 const data = async <T>(request: Promise<{ data: ApiEnvelope<T> }>) => (await request).data.data
 
@@ -46,6 +46,8 @@ export const reserveInventory = (input: Record<string, unknown>) => data<Invento
 export const releaseReservation = (id: string) => data(api.post(`/inventory/reservations/${id}/release`))
 
 export const getSecurity = () => data<SecuritySettings>(api.get('/organization/security'))
+export const getCompanyProfile = () => data<OrganizationProfile>(api.get('/organization/profile'))
+export const saveCompanyProfile = (input: Omit<OrganizationProfile, 'id' | 'created_at' | 'updated_at'>) => data<OrganizationProfile>(api.put('/organization/profile', input))
 export const saveSecurity = (input: Record<string, unknown>) => data<SecuritySettings>(api.put('/organization/security', input))
 export const listInvitations = () => data<Invitation[]>(api.get('/organization/invitations'))
 export const createInvitation = (input: { email: string; role_code: string }) => data<{ invitation: Invitation; invitation_token: string }>(api.post('/organization/invitations', input))

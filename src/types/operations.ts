@@ -46,6 +46,23 @@ export type Onboarding = { business_id: string; business_type: 'SERVICE' | 'RETA
 export type ApprovalPolicy = { id: string; document_type: string; minimum_amount_minor: number; minimum_discount_basis_points: number; condition_mode: 'AND' | 'OR'; approver_role: string; is_active: boolean }
 export type InventoryReservation = { id: string; item_id: string; warehouse_id: string; document_id: string; quantity: string; status: string; expires_at: string | null }
 export type OrganizationMember = { user_id: string; email: string; full_name: string; role_code: string; is_active: boolean; created_at: string }
+export type OrganizationProfile = {
+  id: string
+  name: string
+  legal_name: string | null
+  business_category: string | null
+  business_field: string | null
+  phone: string | null
+  email: string | null
+  address_line: string | null
+  city: string | null
+  province: string | null
+  postal_code: string | null
+  data_start_date: string | null
+  country_code: string
+  created_at: string
+  updated_at: string
+}
 export type DocumentJournalRow = { journal_id: string; journal_number: string; transaction_date: string; description: string; account_id: string; account_code: string; account_name: string; debit_minor: number; credit_minor: number }
 export type Attachment = { id: string; entity_type: string; entity_id: string; file_name: string; content_type: string; size_bytes: number; created_at: string }
 export type ItemCategory = { id: string; parent_id: string | null; name: string; is_default: boolean; inventory_account_id: string | null; sales_account_id: string | null; cogs_account_id: string | null; is_active: boolean }

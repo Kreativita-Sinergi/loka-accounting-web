@@ -10,6 +10,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { AccountsPage } from './pages/AccountsPage'
 import { JournalPage } from './pages/JournalPage'
 import { OverviewPage } from './pages/OverviewPage'
+import { CompanyInfoPage } from './pages/CompanyInfoPage'
 import { ReportsPage } from './pages/ReportsPage'
 import { LedgerPage } from './pages/LedgerPage'
 import { OperationsPage } from './pages/OperationsPage'
@@ -122,11 +123,12 @@ export default function App() {
     // ScaffoldPage sehingga tata letaknya tetap sesuai Accurate.
     switch (key) {
       case 'company.monitor': return <DashboardPage scale={scale} />
-      case 'company.dashboard': return <OverviewPage settings={settings} onboarding={onboarding} loading={loading} onInitialize={initialize} onGetStarted={() => open('settings.setup')} />
+      case 'company.dashboard': return <OverviewPage settings={settings} onboarding={onboarding} loading={loading} onInitialize={initialize} onGetStarted={() => open('settings.setup')} profile={profile!} scale={scale} onNavigate={open} />
       case 'settings.setup': return settings && onboarding ? <GetStartedPage settings={settings} onboarding={onboarding} accounts={activeAccounts} onChanged={(value) => { setOnboarding(value); void getSettings().then(setSettings) }} onNavigate={open} onNotice={setNotice} /> : null
       case 'settings.preference': return <AdvancedPage accounts={activeAccounts} onNotice={setNotice} />
       case 'settings.import': return <ImportPage onNotice={setNotice} />
-      case 'settings.user': case 'settings.role': case 'settings.numbering': case 'company.info':
+      case 'company.info': return <CompanyInfoPage profile={profile!} onNotice={setNotice} />
+      case 'settings.user': case 'settings.role': case 'settings.numbering':
         return <ControlsPage profile={profile!} onNotice={setNotice} />
       case 'company.project': return <ProjectsPage onNotice={setNotice} />
       case 'company.currency': return <ModulePage kind="currency" accounts={activeAccounts} onNotice={setNotice} />

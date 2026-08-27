@@ -183,6 +183,59 @@
   .workspace-card p:not(.eyebrow) { @apply m-0 text-xs leading-relaxed text-slate-500; }
   .module-chips { @apply flex flex-wrap content-center gap-2; }
   .module-chips span { @apply rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5 text-[9px] font-bold text-blue-700; }
+  .owner-company-card { @apply mb-4.5 grid grid-cols-[minmax(0,1.5fr)_minmax(250px,.75fr)_auto] items-center gap-6 border-blue-200 bg-linear-to-r from-blue-50/70 via-white to-white p-5 max-[1080px]:grid-cols-[minmax(0,1fr)_auto] max-sm:grid-cols-1; }
+  .owner-company-identity { @apply flex min-w-0 items-center gap-4; }
+  .owner-company-mark { @apply grid size-14 shrink-0 place-items-center rounded-xl bg-blue-600 text-lg font-extrabold text-white shadow-sm; }
+  .owner-company-heading { @apply flex flex-wrap items-center gap-2; }
+  .owner-company-heading h2 { @apply m-0 text-xl font-extrabold tracking-tight text-slate-950; }
+  .owner-company-identity p { @apply mt-1 mb-1.5 text-[11px] font-semibold text-slate-500; }
+  .owner-company-identity > div > span { @apply flex items-center gap-1.5 text-[11px] leading-relaxed text-slate-500; }
+  .owner-company-identity svg { @apply size-3.5 shrink-0; }
+  .owner-company-contact { @apply grid gap-2 border-l border-slate-200 pl-6 max-[1080px]:col-span-2 max-[1080px]:border-t max-[1080px]:border-l-0 max-[1080px]:pt-4 max-[1080px]:pl-0 max-sm:col-span-1; }
+  .owner-info-line { @apply grid min-w-0 grid-cols-[88px_minmax(0,1fr)] items-baseline gap-3; }
+  .owner-info-line span { @apply text-[10px] font-semibold text-slate-500; }
+  .owner-info-line strong { @apply truncate text-[11px] font-bold text-slate-800; }
+  .owner-info-line strong.muted { @apply font-semibold text-orange-700; }
+  .owner-kpi-grid { @apply grid grid-cols-4 gap-4 max-[1180px]:grid-cols-2 max-sm:grid-cols-1; }
+  .owner-metric { @apply relative flex min-h-35 flex-col p-4.5; }
+  .owner-metric-icon { @apply absolute top-4 right-4 grid size-8 place-items-center rounded-lg bg-blue-50 text-blue-600; }
+  .owner-metric-icon svg { @apply size-4; }
+  .owner-metric > span { @apply pr-10 text-[11px] font-semibold text-slate-500; }
+  .owner-metric > strong { @apply mt-auto mb-1 text-xl font-extrabold tracking-tight text-slate-950; }
+  .owner-metric > small { @apply text-[10px] text-slate-500; }
+  .owner-metric.success .owner-metric-icon { @apply bg-emerald-50 text-emerald-700; }
+  .owner-metric.danger .owner-metric-icon { @apply bg-red-50 text-red-700; }
+  .owner-metric.danger > strong, .owner-metric.danger > small { @apply text-red-700; }
+  .owner-detail-grid { @apply mt-4.5 grid grid-cols-[minmax(320px,.85fr)_minmax(420px,1.15fr)] gap-4 max-[960px]:grid-cols-1; }
+  .owner-readiness-card, .owner-books-card { @apply p-5; }
+  .owner-readiness-card header, .owner-books-card header { @apply flex items-start justify-between gap-3; }
+  .owner-readiness-card h2, .owner-books-card h2, .owner-quick-card h2 { @apply mt-1 mb-0 text-base font-extrabold text-slate-950; }
+  .owner-readiness-card header > strong { @apply text-xl font-extrabold text-blue-700; }
+  .owner-progress { @apply my-4 h-2 overflow-hidden rounded-full bg-slate-100; }
+  .owner-progress i { @apply block h-full rounded-full bg-blue-600 transition-all; }
+  .owner-checklist { @apply grid gap-1; }
+  .owner-checklist > div { @apply grid grid-cols-[22px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold text-slate-700; }
+  .owner-checklist > div > span { @apply grid size-5 place-items-center rounded-full bg-orange-50 text-[10px] font-extrabold text-orange-700; }
+  .owner-checklist > div > small { @apply text-[9px] font-bold text-orange-700; }
+  .owner-checklist > div.done > span { @apply bg-emerald-50 text-emerald-700; }
+  .owner-checklist > div.done > small { @apply text-emerald-700; }
+  .owner-book-grid { @apply mt-5 grid grid-cols-2 gap-x-6 gap-y-4 max-sm:grid-cols-1; }
+  .owner-book-grid .owner-info-line { @apply grid-cols-1 gap-1; }
+  .owner-module-row { @apply mt-5 border-t border-slate-100 pt-4; }
+  .owner-module-row > span { @apply text-[10px] font-bold text-slate-500; }
+  .owner-module-row > div { @apply mt-2 flex flex-wrap gap-1.5; }
+  .owner-module-row i { @apply rounded-md border border-blue-100 bg-blue-50 px-2 py-1 text-[9px] font-bold not-italic text-blue-700; }
+  .owner-quick-card { @apply mt-4.5 flex items-center justify-between gap-5 p-5 max-[800px]:grid; }
+  .owner-quick-card p:not(.eyebrow) { @apply mt-1 mb-0 text-[11px] text-slate-500; }
+  .owner-quick-actions { @apply flex flex-wrap justify-end gap-2 max-[800px]:justify-start; }
+  .owner-quick-actions svg { @apply size-4; }
+  .company-profile-form { @apply grid gap-4; }
+  .company-form-section { @apply grid gap-4 p-5; }
+  .company-form-section header { @apply mb-1; }
+  .company-form-section header h2 { @apply mt-1 mb-1 text-base font-extrabold text-slate-950; }
+  .company-form-section header span { @apply text-[11px] text-slate-500; }
+  .company-form-section textarea { @apply min-h-20 w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 shadow-xs outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-3 focus:ring-blue-100; }
+  .company-form-actions { @apply flex justify-end; }
   .get-started-banner { @apply mt-4.5 grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-5 border-blue-200 bg-linear-to-r from-blue-50 to-white p-5 max-sm:grid-cols-[60px_1fr] max-sm:gap-3.5; }
   .get-started-banner h2 { @apply mt-1 mb-1 font-display text-lg font-extrabold; }
   .get-started-banner p:not(.eyebrow) { @apply m-0 text-xs leading-relaxed text-slate-500; }
