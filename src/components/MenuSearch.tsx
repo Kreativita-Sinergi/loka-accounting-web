@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { modules, type MenuTile, type PageKey } from '../lib/menu'
+import { modules, systemTiles, type MenuTile, type PageKey } from '../lib/menu'
 import { useAccess } from '../lib/rbac'
 import { Icon } from './Icon'
 import { cx } from './ui'
@@ -8,7 +8,10 @@ import { cx } from './ui'
 type Entry = MenuTile & { module: string }
 
 /** Semua ubin menu, diberi nama modulnya agar hasil pencarian punya konteks. */
-const allEntries: Entry[] = modules.flatMap((module) => module.tiles.map((tile) => ({ ...tile, module: module.label })))
+const allEntries: Entry[] = [
+  ...modules.flatMap((module) => module.tiles.map((tile) => ({ ...tile, module: module.label }))),
+  ...systemTiles.map((tile) => ({ ...tile, module: 'Sistem' })),
+]
 
 /**
  * Skor kecocokan sederhana: kata kunci harus muncul berurutan sebagai

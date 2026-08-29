@@ -8,6 +8,7 @@ import { Icon } from './Icon'
 import { cx } from './ui'
 import { ConfirmDialog } from './Modal'
 import { MenuSearch, rememberMenu } from './MenuSearch'
+import { NotificationBell } from './NotificationBell'
 
 /**
  * Shell aplikasi mengikuti Bagian 03 spesifikasi: top bar 56px, tab bar 40px,
@@ -294,8 +295,8 @@ export function Shell({
         </div>
         <div className="topbar-tools">
           <button type="button" title="Cari menu (Ctrl+K)" aria-label="Cari menu" onClick={() => setPalette(true)}><Icon name="search" /></button>
-          <button type="button" title="Bantuan" aria-label="Bantuan"><Icon name="help" /></button>
-          <button type="button" title="Notifikasi" aria-label="Notifikasi"><Icon name="bell" /></button>
+          <button type="button" title="Bantuan" aria-label="Bantuan" onClick={() => onOpen('system.help')}><Icon name="help" /></button>
+          <NotificationBell onOpen={onOpen} />
         </div>
         <div className="topbar-org">
           <span>{profile.organization_name}</span>

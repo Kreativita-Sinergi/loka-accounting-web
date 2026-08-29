@@ -9,6 +9,12 @@ export type PageKey = string
 
 export type TileGroup = 'transaction' | 'master' | 'setting' | 'report'
 
+/**
+ * Wewenang semu untuk halaman yang selalu boleh dibuka siapa pun — notifikasi
+ * dan bantuan tidak memuat data yang perlu dibatasi peran.
+ */
+export const PUBLIC_PERMISSION = 'public'
+
 export type MenuTile = {
   key: PageKey
   label: string
@@ -192,6 +198,15 @@ export const modules: MenuModule[] = [
   },
 ]
 
+/**
+ * Halaman sistem: dibuka dari top bar, bukan dari icon rail, tetapi tetap
+ * menjadi tab dokumen biasa sehingga ikut tersimpan di URL dan strip tab.
+ */
+export const systemTiles: MenuTile[] = [
+  { key: 'system.notification', label: 'Notifikasi', icon: 'bell', group: 'report', hint: 'Hal yang perlu ditindaklanjuti', view: PUBLIC_PERMISSION, write: PUBLIC_PERMISSION },
+  { key: 'system.help', label: 'Bantuan', icon: 'help', group: 'report', hint: 'Panduan pemakaian dan pintasan papan ketik', view: PUBLIC_PERMISSION, write: PUBLIC_PERMISSION },
+]
+
 // Wewenang tiap ubin diselesaikan sekali di sini: bawaan modul, lalu
 // penyimpangan per ubin.
 const tileIndex = new Map<PageKey, MenuTile>()
@@ -204,6 +219,8 @@ for (const module of modules) {
     if (!tileIndex.has(item.key)) tileIndex.set(item.key, item)
   }
 }
+
+for (const item of systemTiles) tileIndex.set(item.key, item)
 
 export const allTiles = [...tileIndex.values()]
 

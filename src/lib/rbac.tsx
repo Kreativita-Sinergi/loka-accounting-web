@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { listRoles } from '../api/operations'
+import { PUBLIC_PERMISSION } from './menu'
 import type { OrganizationRole } from '../types/operations'
 import type { IdentityProfile } from '../api/auth'
 
@@ -56,6 +57,7 @@ export function AccessProvider({ profile, children }: { profile: IdentityProfile
       loading,
       can: (permission: string) => {
         if (!profile) return false
+        if (permission === PUBLIC_PERMISSION) return true
         if (isSuperAdmin) return true
         // Selama katalog belum tiba, jangan sembunyikan apa pun.
         if (!role) return loading || roles.length === 0

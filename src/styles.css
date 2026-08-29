@@ -711,3 +711,70 @@
   .palette-foot { @apply flex flex-wrap gap-3 border-t px-3 py-2 text-[10px]; border-color: var(--border); color: var(--fg-muted); }
   .palette-foot kbd { @apply mx-px rounded border px-1 py-px text-[9px] font-bold; border-color: var(--border); }
 }
+
+@layer components {
+  /* Lonceng notifikasi di top bar dan panel ringkasnya. */
+  .topbar-bell { @apply relative; }
+  .topbar-bell.is-open { @apply text-white; background: var(--rail-active); }
+  .topbar-badge { @apply absolute top-0.5 right-0.5 grid min-w-4 place-items-center rounded-full px-1 text-[9px] leading-4 font-extrabold text-white; background: var(--accent); }
+  .notif-panel { @apply fixed top-14 right-3 z-100 grid max-h-[70vh] w-[22rem] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-xl border bg-white shadow-[0_18px_45px_rgb(16_24_40_/_22%)]; border-color: var(--border); animation: flyout-in .12s ease-out; }
+  .notif-panel > header { @apply flex items-center gap-2 border-b px-3 py-2.5; border-color: var(--border); }
+  .notif-panel > header strong { @apply text-[13px] font-extrabold; color: var(--fg); }
+  .notif-panel > header .notif-count { @apply mr-auto text-[10px] font-semibold; color: var(--fg-muted); }
+  .notif-panel > header button { @apply grid size-7 shrink-0 place-items-center rounded-md border-0 bg-transparent disabled:opacity-40; color: var(--fg-muted); }
+  .notif-panel > header button:not(:disabled):hover { background: var(--surface-alt); color: var(--fg); }
+  .notif-panel > header svg { @apply size-4; }
+  .notif-panel > footer { @apply border-t p-1.5; border-color: var(--border); }
+  .notif-panel > footer button { @apply w-full rounded-lg border-0 bg-transparent px-3 py-2 text-[12px] font-bold hover:bg-[color:var(--surface-alt)]; color: var(--accent); }
+  .notif-list { @apply grid content-start gap-px overflow-y-auto p-1.5; }
+  .notif-empty { @apply m-0 px-3 py-8 text-center text-[12px]; color: var(--fg-muted); }
+
+  /* Satu baris notifikasi, dipakai panel maupun halaman penuh. */
+  .notif-row { @apply flex w-full items-start gap-2.5 rounded-lg border-0 bg-transparent px-2.5 py-2.5 text-left; }
+  .notif-row:hover { background: var(--surface-alt); }
+  .notif-dot { @apply mt-1.5 size-2 shrink-0 rounded-full; background: var(--info); }
+  .notif-row.is-critical .notif-dot { background: var(--danger); }
+  .notif-row.is-warning .notif-dot { background: var(--warning); }
+  .notif-row.is-read .notif-dot { @apply opacity-25; }
+  .notif-text { @apply grid min-w-0 flex-1 gap-0.5; }
+  .notif-text strong { @apply truncate text-[12px] font-bold; color: var(--fg); }
+  .notif-row.is-read .notif-text strong { @apply font-semibold; color: var(--fg-muted); }
+  .notif-text small { @apply text-[11px] leading-relaxed; color: var(--fg-muted); }
+  .notif-time { @apply mt-0.5 shrink-0 text-[10px] font-semibold whitespace-nowrap; color: var(--fg-subtle); }
+
+  /* Tab Notifikasi. */
+  .notif-filters { @apply mb-3 flex flex-wrap items-center gap-2; }
+  .notif-filters .filter-chip.is-active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  .notif-page { @apply grid content-start gap-px p-1.5; }
+
+  /* Tab Bantuan. */
+  .help-search { @apply mb-4 flex items-center gap-2 rounded-lg border bg-white px-3 py-2 shadow-panel; border-color: var(--border); }
+  .help-search svg { @apply size-4 shrink-0; color: var(--fg-muted); }
+  .help-search input { @apply min-h-0 flex-1 border-0 bg-transparent p-0 text-[13px] shadow-none focus:ring-0; }
+  .help-search button { @apply grid size-6 shrink-0 place-items-center rounded-md border-0 bg-transparent hover:bg-[color:var(--surface-alt)]; color: var(--fg-muted); }
+  .help-section { @apply mb-5; }
+  .help-section > h2 { @apply mb-2 text-[11px] font-extrabold tracking-[.14em] uppercase; color: var(--fg-muted); }
+  .help-grid { @apply grid gap-3 lg:grid-cols-2; }
+  .help-card { @apply p-4; }
+  .help-card h3 { @apply mt-0 mb-3 flex items-center gap-2 text-[13px] font-extrabold; color: var(--fg); }
+  .help-card h3 svg { @apply size-4; color: var(--accent); }
+  .help-steps { @apply m-0 grid gap-1.5 pl-5 text-[12px]; }
+  .help-steps li { @apply marker:font-extrabold marker:text-[color:var(--accent)]; }
+  .help-steps button, .help-tiles button { @apply border-0 bg-transparent p-0 text-left text-[12px] font-semibold underline decoration-dotted underline-offset-2; color: var(--info); }
+  .help-tiles { @apply m-0 grid gap-1.5 p-0 list-none; }
+  .help-tiles li { @apply grid gap-px; }
+  .help-tiles small { @apply text-[11px]; color: var(--fg-subtle); }
+  .help-keys { @apply m-0 grid gap-2; }
+  .help-keys > div { @apply flex flex-wrap items-baseline gap-x-3 gap-y-1; }
+  .help-keys dt { @apply flex shrink-0 gap-1; }
+  .help-keys kbd { @apply rounded border px-1.5 py-0.5 text-[10px] font-bold; border-color: var(--border); background: var(--surface-alt); color: var(--fg); }
+  .help-keys dd { @apply m-0 text-[12px]; color: var(--fg-muted); }
+  .help-faq { @apply border-b py-2 last:border-b-0; border-color: var(--border); }
+  .help-faq summary { @apply cursor-pointer list-none text-[12px] font-bold marker:hidden; color: var(--fg); }
+  .help-faq p { @apply mt-1.5 mb-0 text-[12px] leading-relaxed; color: var(--fg-muted); }
+  .help-support p { @apply m-0 text-[12px] leading-relaxed; color: var(--fg-muted); }
+  .help-support a { @apply font-bold; color: var(--info); }
+  .help-support dl { @apply mt-3 mb-0 grid gap-2 sm:grid-cols-3; }
+  .help-support dt { @apply text-[10px] font-bold tracking-wide uppercase; color: var(--fg-subtle); }
+  .help-support dd { @apply m-0 text-[12px] font-semibold; color: var(--fg); }
+}

@@ -5,6 +5,7 @@ import { Shell } from './components/Shell'
 import { TabContext, useTabs } from './store/tabs'
 import { tileOf, type PageKey } from './lib/menu'
 import { AccessProvider, WriteAccessProvider, useAccess } from './lib/rbac'
+import { NotificationProvider } from './lib/notifications'
 import { AccessDeniedPage } from './pages/AccessDeniedPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { AccountsPage } from './pages/AccountsPage'
@@ -25,6 +26,8 @@ import { AssetsPage } from './pages/AssetsPage'
 import { ImportPage } from './pages/ImportPage'
 import { GetStartedPage } from './pages/GetStartedPage'
 import { ScaffoldPage } from './pages/ScaffoldPage'
+import { NotificationsPage } from './pages/NotificationsPage'
+import { HelpPage } from './pages/HelpPage'
 import { ItemMasterPage } from './pages/ItemMasterPage'
 import { CashBankPage } from './pages/CashBankPage'
 import { getOnboarding } from './api/operations'
@@ -164,20 +167,24 @@ export default function App() {
       case 'tax.indonesia': return <ModulePage kind="compliance" accounts={activeAccounts} onNotice={setNotice} />
       case 'tax.payroll': return <ModulePage kind="payroll" accounts={activeAccounts} onNotice={setNotice} />
       case 'reports.list': return <ReportsPage />
+      case 'system.notification': return <NotificationsPage onNavigate={open} />
+      case 'system.help': return <HelpPage />
       default: return <ScaffoldPage pageKey={key} />
     }
   }
 
   return (
     <AccessProvider profile={profile}>
-      <Shell tabs={tabs} active={active} onOpen={open} onClose={close} onActivate={setActive} onReorder={reorder} profile={profile} onLogout={logout}>
-        {notice && <div className="toast" role="status"><span>{notice}</span><button onClick={() => setNotice(null)} aria-label="Tutup notifikasi">×</button></div>}
-        {tabs.map((tab) => (
-          <TabContext.Provider key={tab.key} value={{ setDirty: (dirty) => setDirty(tab.key, dirty), rename: (label) => rename(tab.key, label), restore: () => rename(tab.key, tileOf(tab.key).label) }}>
-            <TabPanel tabKey={tab.key} hidden={tab.key !== active}>{render(tab.key)}</TabPanel>
-          </TabContext.Provider>
-        ))}
-      </Shell>
+      <NotificationProvider onboarding={onboarding}>
+        <Shell tabs={tabs} active={active} onOpen={open} onClose={close} onActivate={setActive} onReorder={reorder} profile={profile} onLogout={logout}>
+          {notice && <div className="toast" role="status"><span>{notice}</span><button onClick={() => setNotice(null)} aria-label="Tutup notifikasi">×</button></div>}
+          {tabs.map((tab) => (
+            <TabContext.Provider key={tab.key} value={{ setDirty: (dirty) => setDirty(tab.key, dirty), rename: (label) => rename(tab.key, label), restore: () => rename(tab.key, tileOf(tab.key).label) }}>
+              <TabPanel tabKey={tab.key} hidden={tab.key !== active}>{render(tab.key)}</TabPanel>
+            </TabContext.Provider>
+          ))}
+        </Shell>
+      </NotificationProvider>
     </AccessProvider>
   )
 }
