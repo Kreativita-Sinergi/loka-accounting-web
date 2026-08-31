@@ -7,36 +7,48 @@ type LandingPageProps = {
 const featureGroups = [
   {
     number: '01',
+    icon: '↗',
+    eyebrow: 'LAPORAN',
     title: 'Laporan yang langsung bisa dibaca',
     description: 'Pantau laba rugi, neraca, arus kas, buku besar, dan neraca saldo dari transaksi yang sama—tanpa menyusun ulang spreadsheet.',
     items: ['Laba rugi & neraca', 'Arus kas langsung dan tidak langsung', 'Buku besar & neraca saldo'],
   },
   {
     number: '02',
+    icon: '⇄',
+    eyebrow: 'OPERASIONAL',
     title: 'Penjualan dan pembelian terhubung',
     description: 'Kelola alur dari penawaran dan pesanan hingga invoice, retur, penerimaan, pembayaran, serta umur piutang dan utang.',
     items: ['Invoice & pembayaran', 'Piutang/utang jatuh tempo', 'Pelanggan & pemasok'],
   },
   {
     number: '03',
+    icon: '◎',
+    eyebrow: 'KAS & BANK',
     title: 'Kas dan bank lebih terkendali',
     description: 'Catat penerimaan, pembayaran, dan transfer. Impor mutasi lalu cocokkan transaksi melalui rekonsiliasi bank.',
     items: ['Kas masuk & keluar', 'Impor mutasi bank', 'Rekonsiliasi transaksi'],
   },
   {
     number: '04',
+    icon: '◇',
+    eyebrow: 'ASET',
     title: 'Stok sampai aset tetap',
     description: 'Nilai persediaan, kartu stok, gudang, penyesuaian, dan aset tetap berada dalam satu sistem pembukuan.',
     items: ['Kartu & valuasi stok', 'Multi-gudang dan satuan', 'Penyusutan aset tetap'],
   },
   {
     number: '05',
+    icon: '⌁',
+    eyebrow: 'KONTROL',
     title: 'Kontrol untuk tim keuangan',
     description: 'Atur peran, kunci periode, jejak audit, persetujuan, dan autentikasi dua faktor agar perubahan tetap dapat ditelusuri.',
     items: ['Hak akses berbasis peran', 'Kunci periode & audit trail', 'MFA dan undangan tim'],
   },
   {
     number: '06',
+    icon: '▦',
+    eyebrow: 'ANALISIS',
     title: 'Analisis bisnis lebih dalam',
     description: 'Gunakan proyek, departemen, anggaran, pajak, mata uang, dan dimensi untuk melihat angka sesuai cara bisnis bekerja.',
     items: ['Anggaran & profitabilitas proyek', 'Pajak dan multi-currency', 'Dimensi & departemen'],
@@ -73,23 +85,24 @@ export function LandingPage({ onLogin, onRegister, onSubscribe }: LandingPagePro
 
       <section className="landing-hero" id="top">
         <div className="landing-hero-copy">
+          <div className="landing-trial-pill"><span>BARU</span> Trial 30 hari · Semua fitur langsung aktif</div>
           <p className="landing-kicker"><span /> AKUNTANSI UNTUK BISNIS INDONESIA</p>
-          <h1>Angka bisnis yang rapi.<br /><em>Keputusan jadi lebih pasti.</em></h1>
-          <p className="landing-lead">Dari transaksi harian sampai laporan keuangan, Loka Accounting membantu pemilik dan tim keuangan bekerja dalam satu alur yang dapat ditelusuri.</p>
+          <h1>Pembukuan rapi.<br /><em>Bisnis melaju pasti.</em></h1>
+          <p className="landing-lead">Satukan transaksi, stok, kas, aset, dan laporan keuangan dalam satu ruang kerja yang mudah dipahami—oleh pemilik maupun tim akuntansi.</p>
           <div className="landing-hero-actions">
-            <button className="landing-button" type="button" onClick={onRegister}>Buat organisasi <span aria-hidden="true">→</span></button>
-            <button className="landing-button secondary" type="button" onClick={() => document.querySelector('#features')?.scrollIntoView({ behavior: 'smooth' })}>Lihat semua fitur</button>
+            <button className="landing-button" type="button" onClick={onRegister}>Coba gratis 30 hari <span aria-hidden="true">→</span></button>
+            <button className="landing-button secondary" type="button" onClick={() => document.querySelector('#workflow')?.scrollIntoView({ behavior: 'smooth' })}>Lihat cara kerjanya</button>
           </div>
           <div className="landing-assurances" aria-label="Keunggulan utama">
-            <span>✓ Bisa digunakan mandiri</span>
-            <span>✓ Siap untuk kolaborasi tim</span>
-            <span>✓ Integrasi Loka Kasir opsional</span>
+            <span><b>✓</b> Tidak ada biaya saat trial</span>
+            <span><b>✓</b> Siap dipakai bersama tim</span>
+            <span><b>✓</b> Loka Kasir bersifat opsional</span>
           </div>
         </div>
 
         <div className="landing-product-preview" aria-label="Pratinjau dashboard Loka Accounting">
           <div className="preview-window">
-            <div className="preview-topbar"><img src="/loka-icon.svg" alt="" /><span>Loka Accounting</span><i /><i /><i /></div>
+            <div className="preview-topbar"><img src="/loka-icon.svg" alt="" /><span>Loka Accounting</span><small><i /> Data tersinkron</small><b>OA</b></div>
             <div className="preview-body">
               <aside><b>◈</b><b>⌁</b><b>↗</b><b>▦</b><b>⚙</b></aside>
               <div className="preview-content">
@@ -107,12 +120,21 @@ export function LandingPage({ onLogin, onRegister, onSubscribe }: LandingPagePro
             </div>
           </div>
           <div className="preview-float"><span>✓</span><div><small>PEMBUKUAN TERKENDALI</small><strong>Semua jurnal seimbang</strong></div></div>
+          <div className="preview-float secondary"><span>↗</span><div><small>LABA BERSIH</small><strong>Naik 9,4% bulan ini</strong></div></div>
         </div>
       </section>
 
       <section className="landing-proof" aria-label="Cakupan sistem">
-        <p>SATU SUMBER ANGKA UNTUK OPERASIONAL DAN KEUANGAN</p>
+        <p>SATU RUANG KERJA UNTUK OPERASIONAL DAN KEUANGAN</p>
         <div><span>Penjualan</span><span>Pembelian</span><span>Kas & Bank</span><span>Persediaan</span><span>Aset Tetap</span><span>Laporan</span></div>
+      </section>
+
+      <section className="landing-value-flow" aria-label="Alur nilai Loka Accounting">
+        <div><span>01</span><strong>Transaksi dicatat</strong><small>Input sekali dari aktivitas harian</small></div>
+        <i>→</i>
+        <div><span>02</span><strong>Jurnal tersusun</strong><small>Pencatatan tetap konsisten</small></div>
+        <i>→</i>
+        <div><span>03</span><strong>Laporan siap dibaca</strong><small>Angka bisnis selalu terhubung</small></div>
       </section>
 
       <section className="landing-section" id="features">
@@ -122,7 +144,8 @@ export function LandingPage({ onLogin, onRegister, onSubscribe }: LandingPagePro
         </div>
         <div className="landing-feature-grid">
           {featureGroups.map((feature) => <article key={feature.number}>
-            <span className="feature-number">{feature.number}</span>
+            <div className="feature-card-top"><span className="feature-icon">{feature.icon}</span><span className="feature-number">{feature.number}</span></div>
+            <small>{feature.eyebrow}</small>
             <h3>{feature.title}</h3>
             <p>{feature.description}</p>
             <ul>{feature.items.map(item => <li key={item}>✓ <span>{item}</span></li>)}</ul>
@@ -161,11 +184,12 @@ export function LandingPage({ onLogin, onRegister, onSubscribe }: LandingPagePro
       <section className="landing-pricing" id="pricing">
         <div className="pricing-copy"><p className="landing-kicker"><span /> HARGA SEDERHANA</p><h2>Satu harga. Semua fitur penting.</h2><p>Tidak perlu memilih modul satu per satu. Satu langganan membuka seluruh kemampuan Loka Accounting untuk satu organisasi.</p></div>
         <article className="pricing-card">
+          <div className="pricing-popular">PAKET LENGKAP</div>
           <div className="pricing-card-head"><div><small>LOKA ACCOUNTING</small><h3>Business</h3></div><span>30 hari trial</span></div>
           <div className="pricing-amount"><strong>Rp300.000</strong><span>/ bulan</span></div>
           <p>Dibayar per bulan dan tidak diperpanjang otomatis.</p>
           <ul><li>✓ Seluruh modul akuntansi dan laporan</li><li>✓ Pengguna dan kontrol akses tim</li><li>✓ Persediaan, aset, proyek, dan anggaran</li><li>✓ Rekonsiliasi bank dan audit trail</li><li>✓ Integrasi Loka Kasir opsional</li></ul>
-          <button className="landing-button" type="button" onClick={onSubscribe}>Mulai berlangganan <span>→</span></button>
+          <button className="landing-button" type="button" onClick={onSubscribe}>Coba gratis 30 hari <span>→</span></button>
           <small>Pembayaran aman melalui payment gateway setelah membuat organisasi.</small>
         </article>
       </section>
