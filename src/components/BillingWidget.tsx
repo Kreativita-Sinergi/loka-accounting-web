@@ -19,10 +19,13 @@ export function BillingWidget({ profile }: { profile: IdentityProfile }) {
   }, [isOwner])
 
   useEffect(() => {
-    if (!open || !isOwner) return
-    sessionStorage.removeItem('open_accounting_billing')
+    if (!isOwner) return
     void refresh()
-  }, [isOwner, open, refresh])
+  }, [isOwner, refresh])
+
+  useEffect(() => {
+    if (open) sessionStorage.removeItem('open_accounting_billing')
+  }, [open])
 
   useEffect(() => {
     if (!open || order?.status !== 'PENDING') return
@@ -54,9 +57,11 @@ export function BillingWidget({ profile }: { profile: IdentityProfile }) {
   }
 
   const active = subscription?.status === 'ACTIVE'
+  const trial = subscription?.status === 'TRIAL'
+  const trialDays = daysRemaining(subscription?.current_period_end)
   return <>
-    <button className={`billing-launcher ${active ? 'is-active' : ''}`} type="button" onClick={() => setOpen(true)}>
-      <span>{active ? '✓' : '◇'}</span><div><small>LANGGANAN</small><strong>{active ? 'Accounting aktif' : 'Rp300.000 / bulan'}</strong></div>
+    <button className={`billing-launcher ${active ? 'is-active' : trial ? 'is-trial' : ''}`} type="button" onClick={() => setOpen(true)}>
+      <span>{active ? '✓' : trial ? '◷' : '◇'}</span><div><small>{active ? 'LANGGANAN' : trial ? 'TRIAL' : 'LANGGANAN'}</small><strong>{active ? `Aktif s.d. ${formatShortDate(subscription?.current_period_end)}` : trial ? `${trialDays} hari tersisa` : 'Rp300.000 / bulan'}</strong></div>
     </button>
     {open && <div className="billing-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false) }}>
       <section className="billing-modal" role="dialog" aria-modal="true" aria-labelledby="billing-title">
@@ -66,6 +71,7 @@ export function BillingWidget({ profile }: { profile: IdentityProfile }) {
         <div className="billing-price"><strong>Rp300.000</strong><span>/ bulan</span></div>
         <p className="billing-description">Pembayaran berlaku untuk satu organisasi selama satu bulan dan tidak diperpanjang otomatis.</p>
         <ul><li>Seluruh modul Accounting</li><li>Kolaborasi dan kontrol akses tim</li><li>Laporan, ekspor, dan audit trail</li><li>Integrasi Loka Kasir opsional</li></ul>
+        {trial && <div className="billing-status trial"><span>◷</span><div><strong>Masa trial aktif</strong><small>{trialDays} hari tersisa · berakhir {formatDate(subscription.current_period_end)}</small></div></div>}
         {active && <div className="billing-status success"><span>✓</span><div><strong>Langganan aktif</strong><small>Berlaku sampai {formatDate(subscription.current_period_end)}</small></div></div>}
         {order?.status === 'PENDING' && <div className="billing-status pending"><span>↗</span><div><strong>Menunggu pembayaran</strong><small>Selesaikan checkout pada halaman pembayaran yang terbuka.</small></div><a href={order.payment_url} target="_blank" rel="noreferrer">Buka lagi</a></div>}
         {order?.status === 'PAID' && <div className="billing-status success"><span>✓</span><div><strong>Pembayaran berhasil</strong><small>Masa aktif organisasi sudah diperbarui.</small></div></div>}
@@ -80,6 +86,16 @@ export function BillingWidget({ profile }: { profile: IdentityProfile }) {
 function formatDate(value: string | null | undefined) {
   if (!value) return '—'
   return new Intl.DateTimeFormat('id-ID', { dateStyle: 'long' }).format(new Date(value))
+}
+
+function formatShortDate(value: string | null | undefined) {
+  if (!value) return '—'
+  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short' }).format(new Date(value))
+}
+
+function daysRemaining(value: string | null | undefined) {
+  if (!value) return 0
+  return Math.max(0, Math.ceil((new Date(value).getTime() - Date.now()) / 86_400_000))
 }
 
 function messageOf(cause: unknown) {

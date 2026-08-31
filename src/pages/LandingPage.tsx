@@ -44,7 +44,7 @@ const featureGroups = [
 ]
 
 const faqs = [
-  ['Berapa biaya Loka Accounting?', 'Rp300.000 per organisasi per bulan. Pembayaran dilakukan per bulan melalui payment gateway dan tidak diperpanjang otomatis.'],
+  ['Berapa biaya Loka Accounting?', 'Anda mendapat trial 30 hari. Setelah itu biayanya Rp300.000 per organisasi per bulan, dibayar melalui payment gateway dan tidak diperpanjang otomatis.'],
   ['Apakah harus memakai Loka Kasir?', 'Tidak. Loka Accounting dapat digunakan sebagai aplikasi pembukuan mandiri. Integrasi Loka Kasir bersifat opsional.'],
   ['Apakah cocok untuk bisnis Indonesia?', 'Ya. Tersedia chart of accounts awal, format Rupiah, profil pajak Indonesia, periode fiskal, serta impor dan ekspor data untuk membantu proses akuntansi.'],
   ['Bisakah digunakan bersama tim?', 'Bisa. Pemilik dapat mengundang anggota, mengatur peran dan wewenang, mengaktifkan MFA, serta meninjau jejak perubahan.'],
@@ -161,7 +161,7 @@ export function LandingPage({ onLogin, onRegister, onSubscribe }: LandingPagePro
       <section className="landing-pricing" id="pricing">
         <div className="pricing-copy"><p className="landing-kicker"><span /> HARGA SEDERHANA</p><h2>Satu harga. Semua fitur penting.</h2><p>Tidak perlu memilih modul satu per satu. Satu langganan membuka seluruh kemampuan Loka Accounting untuk satu organisasi.</p></div>
         <article className="pricing-card">
-          <div className="pricing-card-head"><div><small>LOKA ACCOUNTING</small><h3>Business</h3></div><span>Paket lengkap</span></div>
+          <div className="pricing-card-head"><div><small>LOKA ACCOUNTING</small><h3>Business</h3></div><span>30 hari trial</span></div>
           <div className="pricing-amount"><strong>Rp300.000</strong><span>/ bulan</span></div>
           <p>Dibayar per bulan dan tidak diperpanjang otomatis.</p>
           <ul><li>✓ Seluruh modul akuntansi dan laporan</li><li>✓ Pengguna dan kontrol akses tim</li><li>✓ Persediaan, aset, proyek, dan anggaran</li><li>✓ Rekonsiliasi bank dan audit trail</li><li>✓ Integrasi Loka Kasir opsional</li></ul>

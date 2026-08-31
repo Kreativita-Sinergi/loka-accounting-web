@@ -4,7 +4,7 @@ import type { ApiEnvelope } from '../types/accounting'
 export interface AccountingSubscription {
   organization_id: string
   plan: 'MONTHLY'
-  status: 'INACTIVE' | 'ACTIVE' | 'EXPIRED'
+  status: 'TRIAL' | 'INACTIVE' | 'ACTIVE' | 'EXPIRED'
   price_amount: number
   currency: 'IDR'
   current_period_start: string | null
