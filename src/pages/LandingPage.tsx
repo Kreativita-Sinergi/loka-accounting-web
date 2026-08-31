@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+
 type LandingPageProps = {
   onLogin: () => void
   onRegister: () => void
@@ -64,9 +66,18 @@ const faqs = [
 ]
 
 export function LandingPage({ onLogin, onRegister, onSubscribe }: LandingPageProps) {
+  const [navScrolled, setNavScrolled] = useState(false)
+
+  useEffect(() => {
+    const updateNavigation = () => setNavScrolled(window.scrollY > 32)
+    updateNavigation()
+    window.addEventListener('scroll', updateNavigation, { passive: true })
+    return () => window.removeEventListener('scroll', updateNavigation)
+  }, [])
+
   return (
     <main className="accounting-landing">
-      <header className="landing-nav">
+      <header className={`landing-nav${navScrolled ? ' is-scrolled' : ''}`}>
         <a className="landing-brand" href="#top" aria-label="Loka Accounting — kembali ke atas">
           <img src="/loka-icon.svg" alt="" />
           <span><strong>Loka</strong> Accounting</span>

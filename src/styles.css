@@ -541,16 +541,27 @@
 
 .landing-nav {
   position: fixed;
-  top: 14px;
+  top: 0;
   right: 24px;
   left: 24px;
   width: min(1240px, calc(100% - 48px));
-  min-height: 64px;
+  min-height: 82px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  transition: top .3s ease, min-height .3s ease, padding .3s ease, border-color .3s ease, border-radius .3s ease, background-color .3s ease, box-shadow .3s ease;
+}
+
+.landing-nav.is-scrolled {
+  top: 12px;
+  min-height: 62px;
   padding: 0 12px 0 18px;
-  border: 1px solid rgb(154 177 204 / 34%);
+  border-color: rgb(154 177 204 / 38%);
   border-radius: 16px;
-  background: rgb(255 255 255 / 86%);
-  box-shadow: 0 12px 38px rgb(23 53 89 / 8%);
+  background: rgb(255 255 255 / 88%);
+  box-shadow: 0 14px 42px rgb(23 53 89 / 12%);
   backdrop-filter: blur(18px);
 }
 
@@ -764,7 +775,7 @@
   .landing-section-heading, .integration-section, .landing-security, .landing-faq, .landing-pricing { gap: 55px; }
 }
 @media (max-width: 760px) {
-  .landing-nav { top: 9px; right: 12px; left: 12px; width: calc(100% - 24px); min-height: 58px; padding-left: 12px; border-radius: 13px; }.landing-brand { font-size: 14px; }.landing-brand img { width: 30px; height: 30px; }.landing-link-button { display: none; }.landing-button.compact { min-height: 36px; padding: 0 12px; }
+  .landing-nav { top: 0; right: 12px; left: 12px; width: calc(100% - 24px); min-height: 68px; padding: 0; }.landing-nav.is-scrolled { top: 8px; min-height: 56px; padding: 0 9px 0 12px; border-radius: 13px; }.landing-brand { font-size: 14px; }.landing-brand img { width: 30px; height: 30px; }.landing-link-button { display: none; }.landing-button.compact { min-height: 36px; padding: 0 12px; }
   .landing-hero { grid-template-columns: minmax(0, 1fr); gap: 42px; min-height: 0; padding: 118px 20px 65px; }.landing-hero h1 { font-size: clamp(39px, 12vw, 56px); }.landing-lead { font-size: 14px; }.landing-hero-actions .landing-button { width: 100%; }.landing-assurances { display: grid; }
   .landing-trial-pill { margin-bottom: 22px; font-size: 10px; }.landing-product-preview { width: 100%; transform: none; }.preview-body { grid-template-columns: 34px 1fr; min-height: 330px; }.preview-body aside { gap: 12px; font-size: 9px; }.preview-content { padding: 16px 12px; }.preview-heading { align-items: start; }.preview-heading strong { font-size: 13px; }.preview-metrics { grid-template-columns: 1fr 1fr; }.preview-metrics article:last-child { display: none; }.preview-metrics article { min-height: 85px; padding: 10px; }.preview-metrics strong { font-size: 13px; }.preview-lower { grid-template-columns: 1fr; }.preview-check { display: none !important; }.preview-chart { min-height: 145px !important; }.preview-chart svg { height: 85px; }.preview-float { right: -7px; bottom: 18px; min-width: 180px; }.preview-float.secondary { display: none; }
   .landing-proof div { gap: 18px 28px; }.landing-proof div span::after { display: none; }.landing-value-flow { grid-template-columns: 1fr; gap: 13px; width: calc(100% - 36px); margin-top: 38px; padding: 20px; }.landing-value-flow > i { display: none; }.landing-section { width: calc(100% - 36px); padding: 75px 0; }.landing-section-heading, .integration-section, .landing-security, .landing-faq, .landing-workflow, .landing-pricing { grid-template-columns: 1fr; gap: 38px; }.landing-section-heading { margin-bottom: 35px; }.landing-feature-grid { grid-template-columns: 1fr; }.landing-feature-grid article { min-height: 0; padding: 28px; }.feature-card-top { margin-bottom: 25px; }.landing-pricing { padding: 75px 20px; }.pricing-card { padding: 35px 22px 28px; }.pricing-card-head > span { margin-right: 0; }.pricing-popular { padding: 8px 11px; font-size: 7px; }
