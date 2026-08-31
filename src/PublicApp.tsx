@@ -35,7 +35,7 @@ export default function PublicApp() {
     return <AuthPage initialMode={path === '/register' ? 'register' : 'login'} onAuthenticated={completeAuthentication} onBack={() => navigate('/')} />
   }
 
-  return <LandingPage onLogin={() => navigate('/login')} onRegister={() => navigate('/register')} />
+  return <LandingPage onLogin={() => navigate('/login')} onRegister={() => navigate('/register')} onSubscribe={() => { sessionStorage.setItem('open_accounting_billing', '1'); navigate('/register') }} />
 }
 
 function AppLoading() {

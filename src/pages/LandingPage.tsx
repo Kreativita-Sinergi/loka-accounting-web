@@ -1,6 +1,7 @@
 type LandingPageProps = {
   onLogin: () => void
   onRegister: () => void
+  onSubscribe: () => void
 }
 
 const featureGroups = [
@@ -43,13 +44,14 @@ const featureGroups = [
 ]
 
 const faqs = [
+  ['Berapa biaya Loka Accounting?', 'Rp300.000 per organisasi per bulan. Pembayaran dilakukan per bulan melalui payment gateway dan tidak diperpanjang otomatis.'],
   ['Apakah harus memakai Loka Kasir?', 'Tidak. Loka Accounting dapat digunakan sebagai aplikasi pembukuan mandiri. Integrasi Loka Kasir bersifat opsional.'],
   ['Apakah cocok untuk bisnis Indonesia?', 'Ya. Tersedia chart of accounts awal, format Rupiah, profil pajak Indonesia, periode fiskal, serta impor dan ekspor data untuk membantu proses akuntansi.'],
   ['Bisakah digunakan bersama tim?', 'Bisa. Pemilik dapat mengundang anggota, mengatur peran dan wewenang, mengaktifkan MFA, serta meninjau jejak perubahan.'],
   ['Bagaimana memindahkan data yang sudah ada?', 'Gunakan template impor untuk akun dan data operasional yang didukung. Data laporan juga dapat diekspor untuk kebutuhan pemeriksaan lebih lanjut.'],
 ]
 
-export function LandingPage({ onLogin, onRegister }: LandingPageProps) {
+export function LandingPage({ onLogin, onRegister, onSubscribe }: LandingPageProps) {
   return (
     <main className="accounting-landing">
       <header className="landing-nav">
@@ -60,7 +62,7 @@ export function LandingPage({ onLogin, onRegister }: LandingPageProps) {
         <nav aria-label="Navigasi utama">
           <a href="#features">Fitur</a>
           <a href="#workflow">Cara kerja</a>
-          <a href="#security">Keamanan</a>
+          <a href="#pricing">Harga</a>
           <a href="#faq">FAQ</a>
         </nav>
         <div className="landing-nav-actions">
@@ -156,6 +158,18 @@ export function LandingPage({ onLogin, onRegister }: LandingPageProps) {
         </div>
       </section>
 
+      <section className="landing-pricing" id="pricing">
+        <div className="pricing-copy"><p className="landing-kicker"><span /> HARGA SEDERHANA</p><h2>Satu harga. Semua fitur penting.</h2><p>Tidak perlu memilih modul satu per satu. Satu langganan membuka seluruh kemampuan Loka Accounting untuk satu organisasi.</p></div>
+        <article className="pricing-card">
+          <div className="pricing-card-head"><div><small>LOKA ACCOUNTING</small><h3>Business</h3></div><span>Paket lengkap</span></div>
+          <div className="pricing-amount"><strong>Rp300.000</strong><span>/ bulan</span></div>
+          <p>Dibayar per bulan dan tidak diperpanjang otomatis.</p>
+          <ul><li>✓ Seluruh modul akuntansi dan laporan</li><li>✓ Pengguna dan kontrol akses tim</li><li>✓ Persediaan, aset, proyek, dan anggaran</li><li>✓ Rekonsiliasi bank dan audit trail</li><li>✓ Integrasi Loka Kasir opsional</li></ul>
+          <button className="landing-button" type="button" onClick={onSubscribe}>Mulai berlangganan <span>→</span></button>
+          <small>Pembayaran aman melalui payment gateway setelah membuat organisasi.</small>
+        </article>
+      </section>
+
       <section className="landing-section landing-faq" id="faq">
         <div><p className="landing-kicker"><span /> PERTANYAAN UMUM</p><h2>Yang perlu diketahui sebelum mulai.</h2><p>Informasi ringkas untuk memastikan Loka Accounting sesuai dengan cara tim Anda bekerja.</p></div>
         <div>{faqs.map(([question, answer], index) => <details key={question} open={index === 0}><summary>{question}<span>+</span></summary><p>{answer}</p></details>)}</div>
@@ -165,7 +179,7 @@ export function LandingPage({ onLogin, onRegister }: LandingPageProps) {
         <p className="landing-kicker light"><span /> MULAI SEKARANG</p>
         <h2>Rapikan pembukuan.<br />Pahami bisnis lebih cepat.</h2>
         <p>Buat organisasi Loka Accounting dan ikuti panduan penyiapan langsung dari aplikasi.</p>
-        <div><button className="landing-button inverse" type="button" onClick={onRegister}>Buat organisasi <span>→</span></button><button className="landing-link-button inverse" type="button" onClick={onLogin}>Sudah punya akun? Masuk</button></div>
+        <div><button className="landing-button inverse" type="button" onClick={onSubscribe}>Berlangganan Rp300.000 <span>→</span></button><button className="landing-link-button inverse" type="button" onClick={onLogin}>Sudah punya akun? Masuk</button></div>
       </section>
 
       <footer className="landing-footer">

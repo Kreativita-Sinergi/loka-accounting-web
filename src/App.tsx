@@ -19,6 +19,7 @@ import { ModulePage } from './pages/ModulePage'
 import { AdvancedPage } from './pages/AdvancedPage'
 import { AuthPage } from './pages/AuthPage'
 import { LandingPage } from './pages/LandingPage'
+import { BillingWidget } from './components/BillingWidget'
 import { ProductsPage } from './pages/ProductsPage'
 import { DocumentsPage } from './pages/DocumentsPage'
 import { ControlsPage } from './pages/ControlsPage'
@@ -134,7 +135,7 @@ export default function App() {
     if (invited || publicPath === '/login' || publicPath === '/register') {
       return <AuthPage initialMode={publicPath === '/register' ? 'register' : 'login'} onAuthenticated={authenticated} onBack={() => navigate('/')} />
     }
-    return <LandingPage onLogin={() => navigate('/login')} onRegister={() => navigate('/register')} />
+    return <LandingPage onLogin={() => navigate('/login')} onRegister={() => navigate('/register')} onSubscribe={() => { sessionStorage.setItem('open_accounting_billing', '1'); navigate('/register') }} />
   }
   const activeAccounts = accounts.filter((account) => account.is_active)
   const scale = settings?.currency_scale ?? 0
@@ -204,6 +205,7 @@ export default function App() {
             </TabContext.Provider>
           ))}
         </Shell>
+        <BillingWidget profile={profile} />
       </NotificationProvider>
     </AccessProvider>
   )
