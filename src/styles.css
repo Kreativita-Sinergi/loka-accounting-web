@@ -534,6 +534,44 @@
 .billing-launcher { position: fixed; right: 20px; bottom: 18px; z-index: 45; display: flex; align-items: center; gap: 10px; min-height: 48px; border: 1px solid #c9d7e5; border-radius: 12px; padding: 7px 13px 7px 8px; background: #fff; color: #18334f; box-shadow: 0 14px 35px rgb(15 42 76 / 18%); cursor: pointer; }.billing-launcher > span { display: grid; width: 33px; height: 33px; place-items: center; border-radius: 8px; background: #e9f2ff; color: #1660c7; }.billing-launcher div { display: grid; gap: 2px; text-align: left; }.billing-launcher small { color: #77869a; font-size: 7px; font-weight: 800; letter-spacing: .12em; }.billing-launcher strong { font-size: 10px; }.billing-launcher.is-active > span { background: #dcf7ec; color: #11835a; }.billing-launcher.is-trial { border-color: #efcf9d; }.billing-launcher.is-trial > span { background: #fff2dc; color: #ae6708; }
 .billing-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; overflow-y: auto; padding: 25px; background: rgb(8 24 42 / 62%); backdrop-filter: blur(4px); }.billing-modal { position: relative; width: min(470px, 100%); border-radius: 16px; padding: 38px; background: #fff; box-shadow: 0 32px 80px rgb(3 20 39 / 28%); }.billing-close { position: absolute; top: 14px; right: 14px; display: grid; width: 30px; height: 30px; place-items: center; border: 0; border-radius: 8px; background: #f1f4f7; color: #627085; cursor: pointer; font-size: 18px; }.billing-modal h2 { margin: 7px 30px 0 0; color: #102840; font-size: 25px; line-height: 1.15; letter-spacing: -.035em; }.billing-price { display: flex; align-items: baseline; gap: 6px; margin: 25px 0 5px; }.billing-price strong { color: #155eef; font-size: 35px; letter-spacing: -.045em; }.billing-price span { color: #728094; font-size: 11px; }.billing-description { margin: 0; color: #758397; font-size: 10px; line-height: 1.6; }.billing-modal > ul { display: grid; gap: 8px; margin: 23px 0; padding: 20px 0; border-block: 1px solid #e3e8ef; color: #4a5c71; list-style: none; font-size: 10px; }.billing-modal > ul li::before { content: '✓'; margin-right: 8px; color: #15865f; }.billing-status { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; border: 1px solid; border-radius: 10px; padding: 11px; }.billing-status > span { display: grid; width: 28px; height: 28px; flex: 0 0 auto; place-items: center; border-radius: 50%; }.billing-status div { display: grid; gap: 3px; }.billing-status strong { font-size: 10px; }.billing-status small { color: #68778b; font-size: 8px; }.billing-status.success { border-color: #bce4d4; background: #f0faf6; color: #147455; }.billing-status.success > span { background: #d8f3e8; }.billing-status.trial { border-color: #efd19e; background: #fff8eb; color: #9a5c08; }.billing-status.trial > span { background: #ffedcf; }.billing-status.pending { border-color: #bfd5ee; background: #f2f7fd; color: #175caa; }.billing-status.pending > span { background: #dcecff; }.billing-status.pending a { margin-left: auto; color: #155eef; font-size: 8px; font-weight: 750; }.billing-pay { width: 100%; }.billing-pay:disabled { cursor: wait; opacity: .6; }.billing-footnote { display: block; margin-top: 12px; color: #8b96a5; text-align: center; font-size: 8px; line-height: 1.5; }
 
+.billing-pay {
+  display: inline-flex;
+  width: 100%;
+  min-height: 49px;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  border: 1px solid #1f64e5;
+  border-radius: 8px;
+  padding: 0 22px;
+  background: #1f64e5;
+  box-shadow: 0 12px 24px rgb(31 100 229 / 20%);
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 750;
+  transition: background-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+
+.billing-pay:hover:not(:disabled) {
+  background: #1556cf;
+  box-shadow: 0 14px 28px rgb(31 100 229 / 28%);
+  transform: translateY(-1px);
+}
+
+.billing-pay:focus-visible {
+  outline: 3px solid rgb(31 100 229 / 28%);
+  outline-offset: 2px;
+}
+
+.billing-pay:disabled {
+  border-color: #93b4eb;
+  background: #93b4eb;
+  color: #fff;
+  cursor: wait;
+  opacity: 1;
+}
+
 @media (max-width: 1050px) {
   .landing-nav { grid-template-columns: 1fr auto; }.landing-nav nav { display: none; }
   .landing-hero { grid-template-columns: 1fr; padding-top: 145px; }.landing-hero-copy { max-width: 720px; }.landing-product-preview { width: min(760px, 94%); margin: 10px auto 0; }

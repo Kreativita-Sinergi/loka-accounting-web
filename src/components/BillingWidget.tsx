@@ -76,7 +76,7 @@ export function BillingWidget({ profile }: { profile: IdentityProfile }) {
         {order?.status === 'PENDING' && <div className="billing-status pending"><span>↗</span><div><strong>Menunggu pembayaran</strong><small>Selesaikan checkout pada halaman pembayaran yang terbuka.</small></div><a href={order.payment_url} target="_blank" rel="noreferrer">Buka lagi</a></div>}
         {order?.status === 'PAID' && <div className="billing-status success"><span>✓</span><div><strong>Pembayaran berhasil</strong><small>Masa aktif organisasi sudah diperbarui.</small></div></div>}
         {error && <div className="auth-error">{error}</div>}
-        <button className="landing-button billing-pay" type="button" disabled={loading || order?.status === 'PENDING'} onClick={() => void checkout()}>{loading ? 'Menyiapkan pembayaran…' : active ? 'Perpanjang 1 bulan' : 'Bayar Rp300.000'} <span>→</span></button>
+        <button className="billing-pay" type="button" disabled={loading || order?.status === 'PENDING'} onClick={() => void checkout()}>{loading ? 'Menyiapkan pembayaran…' : active ? 'Perpanjang 1 bulan' : 'Bayar Rp300.000'} <span>→</span></button>
         <small className="billing-footnote">Checkout diproses melalui payment gateway. Status akan diperbarui otomatis setelah pembayaran dikonfirmasi.</small>
       </section>
     </div>}
