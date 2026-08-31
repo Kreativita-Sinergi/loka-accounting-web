@@ -18,6 +18,7 @@ import { OperationsPage } from './pages/OperationsPage'
 import { ModulePage } from './pages/ModulePage'
 import { AdvancedPage } from './pages/AdvancedPage'
 import { AuthPage } from './pages/AuthPage'
+import { LandingPage } from './pages/LandingPage'
 import { ProductsPage } from './pages/ProductsPage'
 import { DocumentsPage } from './pages/DocumentsPage'
 import { ControlsPage } from './pages/ControlsPage'
@@ -37,6 +38,7 @@ import type { Account, AccountingSettings, ApiEnvelope } from './types/accountin
 
 export default function App() {
   const [profile, setProfile] = useState<IdentityProfile | null>(() => getStoredProfile())
+  const [publicPath, setPublicPath] = useState(() => window.location.pathname)
   const { tabs, active, open, close, setActive, setDirty, rename, reorder } = useTabs()
   const [settings, setSettings] = useState<AccountingSettings | null>(null)
   const [accounts, setAccounts] = useState<Account[]>([])
@@ -71,6 +73,18 @@ export default function App() {
     window.addEventListener('loka:unauthorized', disconnect)
     return () => window.removeEventListener('loka:unauthorized', disconnect)
   }, [])
+
+  useEffect(() => {
+    const navigateBack = () => setPublicPath(window.location.pathname)
+    window.addEventListener('popstate', navigateBack)
+    return () => window.removeEventListener('popstate', navigateBack)
+  }, [])
+
+  function navigate(path: string) {
+    window.history.pushState({}, '', path)
+    setPublicPath(path)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   async function initialize() {
     setLoading(true)
@@ -115,7 +129,13 @@ export default function App() {
 
   function authenticated(session: AuthSession) { onboardingRouted.current = false; setLoading(true); setProfile(session.profile) }
   function logout() { clearSession(); setSettings(null); setAccounts([]); setOnboarding(null); onboardingRouted.current = false; setProfile(null) }
-  if (!profile) return <AuthPage onAuthenticated={authenticated} />
+  if (!profile) {
+    const invited = new URLSearchParams(window.location.search).has('invite')
+    if (invited || publicPath === '/login' || publicPath === '/register') {
+      return <AuthPage initialMode={publicPath === '/register' ? 'register' : 'login'} onAuthenticated={authenticated} onBack={() => navigate('/')} />
+    }
+    return <LandingPage onLogin={() => navigate('/login')} onRegister={() => navigate('/register')} />
+  }
   const activeAccounts = accounts.filter((account) => account.is_active)
   const scale = settings?.currency_scale ?? 0
 

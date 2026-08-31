@@ -4,9 +4,9 @@ import { acceptInvitation, login, register, saveSession, type AuthSession } from
 import type { ApiEnvelope } from '../types/accounting'
 import { Button } from '../components/ui'
 
-export function AuthPage({ onAuthenticated }: { onAuthenticated: (session: AuthSession) => void }) {
+export function AuthPage({ onAuthenticated, initialMode = 'login', onBack }: { onAuthenticated: (session: AuthSession) => void; initialMode?: 'login' | 'register'; onBack?: () => void }) {
   const invitationToken = new URLSearchParams(window.location.search).get('invite') ?? ''
-  const [mode, setMode] = useState<'login' | 'register' | 'invitation'>(invitationToken ? 'invitation' : 'login')
+  const [mode, setMode] = useState<'login' | 'register' | 'invitation'>(invitationToken ? 'invitation' : initialMode)
   const [organizationName, setOrganizationName] = useState('')
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -45,6 +45,7 @@ export function AuthPage({ onAuthenticated }: { onAuthenticated: (session: AuthS
       <small>© {new Date().getFullYear()} Loka Accounting</small>
     </section>
     <section className="connect-form"><div>
+      {onBack && <button className="auth-back" type="button" onClick={onBack}>← Kembali ke beranda</button>}
       <p className="eyebrow">INDEPENDENT ACCOUNTING</p>
       <h2>{mode === 'login' ? 'Masuk ke Accounting' : mode === 'invitation' ? 'Terima undangan tim' : 'Buat organisasi baru'}</h2>
       <p>{mode === 'login' ? 'Gunakan akun Loka Accounting Anda.' : mode === 'invitation' ? 'Lengkapi profil untuk bergabung ke organisasi.' : 'Siapkan workspace dan chart of accounts Indonesia dalam satu langkah.'}</p>
