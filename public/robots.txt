@@ -1,0 +1,6 @@
+# Aplikasinya satu halaman: seluruh layar setelah login hidup di URL yang sama
+# dan tidak pernah terindeks. Yang perlu dirayapi hanyalah "/".
+User-agent: *
+Allow: /
+
+Sitemap: https://lokatech.id/sitemap.xml

@@ -4,12 +4,127 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0b2f5b" />
-    <meta name="description" content="Loka Accounting membantu bisnis Indonesia mengelola transaksi, laporan keuangan, kas dan bank, persediaan, aset, serta kontrol tim dalam satu sistem." />
+
+    <title>Loka Accounting — Software Akuntansi Online untuk Bisnis Indonesia</title>
+    <meta name="description" content="Software akuntansi online untuk bisnis Indonesia: jurnal, buku besar, kas dan bank, persediaan, aset, hingga laporan laba rugi dan neraca dalam satu sistem. Trial 30 hari." />
+
+    <!-- Situs ini dilayani di apex DAN di www. Tanpa canonical, keduanya terindeks
+         sebagai dua halaman berisi sama dan saling melemahkan peringkat. Apex yang
+         dipilih; www dialihkan 308 ke sini lewat vercel.json. -->
+    <link rel="canonical" href="https://lokatech.id/" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Loka Accounting" />
+    <meta property="og:locale" content="id_ID" />
+    <meta property="og:url" content="https://lokatech.id/" />
     <meta property="og:title" content="Loka Accounting — Pembukuan rapi, keputusan lebih pasti" />
     <meta property="og:description" content="Dari transaksi harian sampai laporan keuangan dalam satu alur yang dapat ditelusuri." />
-    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lokatech.id/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Loka Accounting — pembukuan rapi, bisnis melaju pasti" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Loka Accounting — Pembukuan rapi, keputusan lebih pasti" />
+    <meta name="twitter:description" content="Dari transaksi harian sampai laporan keuangan dalam satu alur yang dapat ditelusuri." />
+    <meta name="twitter:image" content="https://lokatech.id/og-image.png" />
+
     <link rel="icon" href="/loka-icon.svg" />
-    <title>Loka Accounting — Pembukuan Bisnis Indonesia</title>
+    <link rel="apple-touch-icon" href="/loka-icon.svg" />
+
+    <!-- Structured data. Isinya wajib mencerminkan apa yang benar-benar tampil di
+         LandingPage.tsx — harga, masa trial, dan kelima FAQ. Kalau copy di sana
+         berubah, ubah juga di sini, karena markup yang tidak cocok dengan halaman
+         adalah pelanggaran pedoman Google, bukan sekadar data basi. -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://lokatech.id/#app",
+          "name": "Loka Accounting",
+          "url": "https://lokatech.id/",
+          "applicationCategory": "BusinessApplication",
+          "applicationSubCategory": "Accounting Software",
+          "operatingSystem": "Web",
+          "inLanguage": "id-ID",
+          "description": "Software akuntansi online untuk bisnis Indonesia: jurnal, buku besar, kas dan bank, persediaan, aset tetap, serta laporan laba rugi, neraca, dan arus kas.",
+          "image": "https://lokatech.id/og-image.png",
+          "featureList": [
+            "Laporan keuangan: laba rugi, neraca, arus kas, buku besar, neraca saldo",
+            "Penjualan dan pembelian: penawaran, pesanan, invoice, retur, umur piutang dan utang",
+            "Kas dan bank: penerimaan, pembayaran, transfer, rekonsiliasi bank",
+            "Persediaan dan aset: kartu stok, gudang, penyesuaian, aset tetap",
+            "Kontrol: peran, kunci periode, jejak audit, persetujuan, autentikasi dua faktor",
+            "Dimensi: proyek, departemen, anggaran, pajak, mata uang"
+          ],
+          "offers": {
+            "@type": "Offer",
+            "price": "300000",
+            "priceCurrency": "IDR",
+            "description": "Per organisasi per bulan, setelah trial 30 hari.",
+            "availability": "https://schema.org/InStock"
+          },
+          "isRelatedTo": {
+            "@type": "SoftwareApplication",
+            "name": "Loka Kasir",
+            "applicationCategory": "BusinessApplication",
+            "url": "https://www.lokakasir.id"
+          },
+          "publisher": { "@id": "https://lokatech.id/#publisher" }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://lokatech.id/#website",
+          "url": "https://lokatech.id/",
+          "name": "Loka Accounting",
+          "inLanguage": "id-ID",
+          "about": { "@id": "https://lokatech.id/#app" },
+          "publisher": { "@id": "https://lokatech.id/#publisher" }
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://lokatech.id/#publisher",
+          "name": "Kreativita Sinergi",
+          "url": "https://www.kreativitasinergi.com",
+          "email": "help@lokakasir.id"
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://lokatech.id/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Berapa biaya Loka Accounting?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Anda mendapat trial 30 hari. Setelah itu biayanya Rp300.000 per organisasi per bulan, dibayar melalui payment gateway dan tidak diperpanjang otomatis." }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah harus memakai Loka Kasir?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Tidak. Loka Accounting dapat digunakan sebagai aplikasi pembukuan mandiri. Integrasi Loka Kasir bersifat opsional." }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah cocok untuk bisnis Indonesia?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Ya. Tersedia chart of accounts awal, format Rupiah, profil pajak Indonesia, periode fiskal, serta impor dan ekspor data untuk membantu proses akuntansi." }
+            },
+            {
+              "@type": "Question",
+              "name": "Bisakah digunakan bersama tim?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Bisa. Pemilik dapat mengundang anggota, mengatur peran dan wewenang, mengaktifkan MFA, serta meninjau jejak perubahan." }
+            },
+            {
+              "@type": "Question",
+              "name": "Bagaimana memindahkan data yang sudah ada?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Gunakan template impor untuk akun dan data operasional yang didukung. Data laporan juga dapat diekspor untuk kebutuhan pemeriksaan lebih lanjut." }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
