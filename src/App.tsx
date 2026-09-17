@@ -9,6 +9,7 @@ import { NotificationProvider } from './lib/notifications'
 import { AccessDeniedPage } from './pages/AccessDeniedPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { AccountsPage } from './pages/AccountsPage'
+import { ActivityPage } from './pages/ActivityPage'
 import { JournalPage } from './pages/JournalPage'
 import { OverviewPage } from './pages/OverviewPage'
 import { CompanyInfoPage } from './pages/CompanyInfoPage'
@@ -151,6 +152,7 @@ export default function App() {
       case 'settings.setup': return settings && onboarding ? <GetStartedPage settings={settings} onboarding={onboarding} accounts={activeAccounts} onChanged={(value) => { setOnboarding(value); void getSettings().then(setSettings) }} onNavigate={open} onNotice={setNotice} /> : null
       case 'settings.preference': return <AdvancedPage accounts={activeAccounts} onNotice={setNotice} />
       case 'settings.import': return <ImportPage onNotice={setNotice} />
+      case 'settings.activity': return <ActivityPage />
       case 'company.info': return <CompanyInfoPage profile={profile!} onNotice={setNotice} />
       case 'settings.user': case 'settings.role': case 'settings.numbering':
         return <ControlsPage profile={profile!} onNotice={setNotice} />

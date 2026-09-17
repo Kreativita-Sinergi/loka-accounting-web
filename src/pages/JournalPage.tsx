@@ -1,17 +1,38 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Account, JournalLineInput, LedgerRow } from '../types/accounting'
-import { getLedger } from '../api/accounting'
+import { amendJournal, getLedger, reverseJournal } from '../api/accounting'
 import { useLedgerRefresh } from '../lib/refresh'
 import { decimal, formatDate, formatMoney } from '../lib/money'
 import { useTabHandle } from '../store/tabs'
 import { Badge, Button, DataEntryGuide, PageHeader } from '../components/ui'
 import { ListView, type ListColumn } from '../components/ListView'
-import { Modal, messageOf } from '../components/Modal'
+import { ConfirmDialog, Modal, messageOf, useConfirm } from '../components/Modal'
+import { useCan } from '../lib/rbac'
+import { signedTotals } from '../lib/journal'
 
 const emptyLine = (): JournalLineInput => ({ account_id: '', description: '', debit: '0', credit: '0' })
 
 const today = () => new Date().toISOString().slice(0, 10)
 const monthStart = () => `${new Date().toISOString().slice(0, 7)}-01`
+
+/**
+ * Wewenang yang wajib dimiliki peran untuk membatalkan jurnal. Sama persis
+ * dengan yang dijaga router backend (`POST /journals/:id/reverse`), jadi peran
+ * tanpa wewenang ini tidak melihat tombolnya sekaligus ditolak servernya.
+ */
+const REVERSE_PERMISSION = 'accounting.journal.reverse'
+
+/**
+ * Hanya jurnal manual dan saldo awal (`MJ-…`) yang boleh dibatalkan dari sini.
+ * Jurnal `OP-…` dan `IN-…` lahir dari dokumen atau transaksi kas — membatalkan
+ * jurnalnya saja akan membuat dokumen asalnya berbeda dengan buku besar, jadi
+ * pembatalannya harus lewat modul asalnya. `RV-…` sendiri adalah pembatalan.
+ */
+function reversalBlock(journal: PostedJournal): string | false {
+  if (journal.number.startsWith('RV-')) return 'Jurnal ini sendiri sudah jurnal pembatalan'
+  if (journal.number.startsWith('MJ-')) return false
+  return 'Batalkan lewat dokumen atau transaksi asalnya'
+}
 
 /**
  * Satu jurnal yang sudah diposting, disusun dari baris buku besar. Setiap
@@ -57,6 +78,10 @@ export function JournalPage({ accounts, scale, onSubmit }: {
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [detail, setDetail] = useState<PostedJournal | null>(null)
+  const canReverse = useCan(REVERSE_PERMISSION)
+  const reversal = useConfirm<PostedJournal>()
+  /** Jurnal yang sedang diubah; null berarti form membuat jurnal baru. */
+  const [editing, setEditing] = useState<PostedJournal | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -85,7 +110,24 @@ export function JournalPage({ accounts, scale, onSubmit }: {
   }, [journals, search])
 
   if (view === 'form') {
-    return <JournalForm accounts={accounts} onCancel={() => setView('list')} onSubmit={async (input) => { await onSubmit(input); await load(); setView('list') }} />
+    return <JournalForm
+      accounts={accounts}
+      editing={editing}
+      onCancel={() => { setView('list'); setEditing(null) }}
+      onSubmit={async (input) => {
+        if (editing) await amendJournal(editing.id, input)
+        else await onSubmit(input)
+        await load()
+        setView('list')
+        setEditing(null)
+      }}
+    />
+  }
+
+  function startEdit(journal: PostedJournal) {
+    setDetail(null)
+    setEditing(journal)
+    setView('form')
   }
 
   const columns: Array<ListColumn<PostedJournal>> = [
@@ -102,7 +144,7 @@ export function JournalPage({ accounts, scale, onSubmit }: {
       <PageHeader
         eyebrow="DOUBLE ENTRY"
         title="Jurnal umum"
-        description="Semua jurnal yang sudah diposting — baik dari jurnal manual maupun dari modul lain seperti Kas Masuk, Kas Keluar, dan faktur."
+        description="Semua jurnal yang sudah diposting — baik dari jurnal manual maupun dari modul lain seperti Kas Masuk, Kas Keluar, dan faktur. Jurnal manual dan saldo awal dapat dihapus lewat menu aksi oleh peran yang berwenang."
         action={<Badge tone="info">{visible.length} jurnal</Badge>}
       />
       <ListView
@@ -118,7 +160,21 @@ export function JournalPage({ accounts, scale, onSubmit }: {
         createLabel="Jurnal baru"
         onRefresh={() => void load()}
         onPrint={() => window.print()}
-        rowActions={[{ label: 'Lihat rincian jurnal', icon: 'journal', readOnly: true, onSelect: setDetail }]}
+        rowActions={[
+          { label: 'Lihat rincian jurnal', icon: 'journal', readOnly: true, onSelect: setDetail },
+          ...(canReverse ? [{
+            label: 'Ubah jurnal',
+            icon: 'edit' as const,
+            onSelect: startEdit,
+            disabled: reversalBlock,
+          }, {
+            label: 'Hapus jurnal (posting pembatalan)',
+            icon: 'trash' as const,
+            danger: true,
+            onSelect: (journal: PostedJournal) => { setDetail(null); reversal.open(journal) },
+            disabled: reversalBlock,
+          }] : []),
+        ]}
         onRowOpen={setDetail}
         empty={error ?? 'Belum ada jurnal yang diposting pada rentang tanggal ini.'}
         extraToolbar={
@@ -130,13 +186,52 @@ export function JournalPage({ accounts, scale, onSubmit }: {
         }
       />
 
-      <JournalDetail journal={detail} scale={scale} onClose={() => setDetail(null)} />
+      <JournalDetail
+        journal={detail}
+        scale={scale}
+        onClose={() => setDetail(null)}
+        onReverse={canReverse ? (journal) => { setDetail(null); reversal.open(journal) } : undefined}
+        onEdit={canReverse ? startEdit : undefined}
+      />
+
+      <ConfirmDialog
+        open={reversal.target !== null}
+        tone="danger"
+        title="Hapus jurnal ini?"
+        confirmLabel="Hapus jurnal"
+        confirmationWord={reversal.target?.number}
+        confirmationHint={<>Ketik nomor jurnal <strong>{reversal.target?.number}</strong> untuk konfirmasi</>}
+        busy={reversal.busy}
+        error={reversal.error}
+        onClose={reversal.close}
+        onConfirm={() => reversal.run(async (journal) => {
+          await reverseJournal(journal.id, {
+            date: journal.transaction_date,
+            description: `Pembatalan ${journal.number}${journal.description ? ` — ${journal.description}` : ''}`,
+          })
+          await load()
+        })}
+        description={<>
+          Pengaruh <strong>{reversal.target?.number}</strong> terhadap saldo akun akan dihapus dengan memposting
+          jurnal pembatalan <strong>RV-…</strong> senilai {formatMoney(reversal.target?.debit ?? 0, scale)} pada
+          tanggal {reversal.target ? formatDate(reversal.target.transaction_date) : ''}. Jurnal aslinya tetap
+          tersimpan sebagai jejak audit dan tidak dapat dibatalkan dua kali.
+        </>}
+      />
     </section>
   )
 }
 
-function JournalDetail({ journal, scale, onClose }: { journal: PostedJournal | null; scale: number; onClose: () => void }) {
+function JournalDetail({ journal, scale, onClose, onReverse, onEdit }: {
+  journal: PostedJournal | null
+  scale: number
+  onClose: () => void
+  /** Keduanya tidak diisi untuk peran tanpa wewenang mengubah jurnal. */
+  onReverse?: (journal: PostedJournal) => void
+  onEdit?: (journal: PostedJournal) => void
+}) {
   if (!journal) return null
+  const blocked = reversalBlock(journal)
   return (
     <Modal
       open
@@ -145,6 +240,35 @@ function JournalDetail({ journal, scale, onClose }: { journal: PostedJournal | n
       title={journal.number}
       description={`${formatDate(journal.transaction_date)} · sudah diposting ke buku besar`}
       onClose={onClose}
+      footer={(onEdit || onReverse) && (
+        <>
+          {onEdit && (
+            <Button
+              type="button"
+              variant="secondary"
+              icon="edit"
+              disabled={blocked !== false}
+              title={blocked || undefined}
+              onClick={() => onEdit(journal)}
+            >
+              Ubah jurnal
+            </Button>
+          )}
+          {onReverse && (
+            <Button
+              type="button"
+              variant="ghost"
+              icon="trash"
+              className="text-red-700 hover:text-red-800"
+              disabled={blocked !== false}
+              title={blocked || undefined}
+              onClick={() => onReverse(journal)}
+            >
+              Hapus jurnal
+            </Button>
+          )}
+        </>
+      )}
     >
       {journal.description && <p className="modal-note mb-4">{journal.description}</p>}
       <div className="table-wrap">
@@ -171,32 +295,51 @@ function JournalDetail({ journal, scale, onClose }: { journal: PostedJournal | n
   )
 }
 
-function JournalForm({ accounts, onCancel, onSubmit }: {
+/** Baris buku besar sebuah jurnal dikembalikan ke bentuk isian form. */
+function linesOf(journal: PostedJournal): JournalLineInput[] {
+  return journal.lines.map((line) => ({
+    account_id: line.account_id,
+    description: line.description,
+    debit: String(decimal(line.debit)),
+    credit: String(decimal(line.credit)),
+  }))
+}
+
+function JournalForm({ accounts, editing, onCancel, onSubmit }: {
   accounts: Account[]
+  /** Jurnal yang sedang dikoreksi; null berarti jurnal baru. */
+  editing: PostedJournal | null
   onCancel: () => void
   onSubmit: (input: { date: string; description: string; lines: JournalLineInput[] }) => Promise<void>
 }) {
-  const [date, setDate] = useState(today())
-  const [description, setDescription] = useState('')
-  const [lines, setLines] = useState<JournalLineInput[]>([emptyLine(), emptyLine()])
+  const [date, setDate] = useState(editing?.transaction_date ?? today())
+  const [description, setDescription] = useState(editing?.description ?? '')
+  const [lines, setLines] = useState<JournalLineInput[]>(editing ? linesOf(editing) : [emptyLine(), emptyLine()])
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  useTabHandle(description !== '' || lines.some((line) => line.account_id !== ''), 'Jurnal baru')
+  useTabHandle(description !== '' || lines.some((line) => line.account_id !== ''), editing ? `Ubah ${editing.number}` : 'Jurnal baru')
 
   function updateLine(index: number, patch: Partial<JournalLineInput>) {
     setLines((current) => current.map((line, lineIndex) => lineIndex === index ? { ...line, ...patch } : line))
   }
 
-  const debitTotal = lines.reduce((total, line) => total + (Number(line.debit) || 0), 0)
-  const creditTotal = lines.reduce((total, line) => total + (Number(line.credit) || 0), 0)
+  // Total dihitung dari baris yang sudah dinormalkan, sehingga nominal minus
+  // terlihat pindah sisi persis seperti yang nanti diposting.
+  const { debit: debitTotal, credit: creditTotal } = signedTotals(lines)
   const balanced = debitTotal > 0 && debitTotal === creditTotal
 
   async function submit() {
     setSaving(true)
+    setError(null)
     try {
       await onSubmit({ date, description, lines })
-      setDescription('')
-      setLines([emptyLine(), emptyLine()])
+      if (!editing) {
+        setDescription('')
+        setLines([emptyLine(), emptyLine()])
+      }
+    } catch (caught) {
+      setError(messageOf(caught, 'Jurnal gagal disimpan.'))
     } finally {
       setSaving(false)
     }
@@ -204,8 +347,25 @@ function JournalForm({ accounts, onCancel, onSubmit }: {
 
   return (
     <section>
-      <PageHeader eyebrow="DOUBLE ENTRY" title="Jurnal manual" description="Pastikan debit dan kredit seimbang. Jurnal langsung diposting dan tidak dapat diedit setelahnya." />
-      <DataEntryGuide steps={['Pilih tanggal transaksi dan isi keterangan yang menjelaskan tujuan jurnal.', 'Pilih akun pada setiap baris, lalu isi nominal hanya di kolom Debit atau Kredit.', 'Pastikan total Debit sama dengan Kredit. Tambahkan baris bila diperlukan, lalu klik “Post jurnal”.']} note="Jurnal langsung diposting dan tidak dapat diedit; periksa akun dan nominal sebelum menyimpan." />
+      <PageHeader
+        eyebrow="DOUBLE ENTRY"
+        title={editing ? `Ubah jurnal ${editing.number}` : 'Jurnal manual'}
+        description={editing
+          ? 'Jurnal lama akan dibatalkan dan jurnal penggantinya diposting dalam satu langkah, sehingga saldo akun langsung mengikuti isian di bawah ini.'
+          : 'Pastikan debit dan kredit seimbang. Jurnal langsung diposting; perubahan setelahnya dilakukan lewat menu Ubah jurnal.'}
+      />
+      <DataEntryGuide
+        steps={[
+          'Pilih tanggal transaksi dan isi keterangan yang menjelaskan tujuan jurnal.',
+          'Pilih akun pada setiap baris, lalu isi nominal hanya di kolom Debit atau Kredit.',
+          'Saldo minus cukup ditulis dengan tanda minus, misalnya -5000 di kolom Debit. Nilainya otomatis dipindahkan ke kolom Kredit karena pembukuan tidak mengenal nominal negatif.',
+          'Pastikan total Debit sama dengan Kredit. Tambahkan baris bila diperlukan, lalu klik “Post jurnal”.',
+        ]}
+        note={editing
+          ? 'Mengubah jurnal tidak menghapus riwayatnya: jurnal asli tetap tersimpan bersama jurnal pembatalannya, dan perubahan ini tercatat di Log Aktivitas.'
+          : 'Jurnal langsung diposting; periksa akun dan nominal sebelum menyimpan.'}
+      />
+      {error && <p className="modal-error" role="alert">{error}</p>}
       <div className="panel form-panel">
         <div className="form-grid"><label>Tanggal<input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label><label>Keterangan<input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Contoh: Setoran modal awal" /></label></div>
         <div className="journal-table">
@@ -223,7 +383,7 @@ function JournalForm({ accounts, onCancel, onSubmit }: {
           ))}
           </div>
         </div>
-        <div className="form-actions"><Button variant="secondary" icon="plus" type="button" onClick={() => setLines((current) => [...current, emptyLine()])}>Tambah baris</Button><div className="journal-balance"><span>Debit<strong>{debitTotal.toLocaleString('id-ID')}</strong></span><span>Kredit<strong>{creditTotal.toLocaleString('id-ID')}</strong></span></div><Button variant="secondary" type="button" onClick={onCancel}>Kembali ke daftar</Button><Button disabled={saving || !description || !balanced} onClick={submit}>{saving ? 'Memposting…' : 'Post jurnal'}</Button></div>
+        <div className="form-actions"><Button variant="secondary" icon="plus" type="button" onClick={() => setLines((current) => [...current, emptyLine()])}>Tambah baris</Button><div className="journal-balance"><span>Debit<strong>{debitTotal.toLocaleString('id-ID')}</strong></span><span>Kredit<strong>{creditTotal.toLocaleString('id-ID')}</strong></span></div><Button variant="secondary" type="button" onClick={onCancel}>Kembali ke daftar</Button><Button disabled={saving || !description || !balanced} onClick={submit}>{saving ? 'Memposting…' : editing ? 'Simpan perubahan' : 'Post jurnal'}</Button></div>
       </div>
     </section>
   )

@@ -81,6 +81,7 @@ export interface LedgerRow {
   journal_number: string
   transaction_date: string
   description: string
+  account_id: string
   account_code: string
   account_name: string
   outlet_id: string | null

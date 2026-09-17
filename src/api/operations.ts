@@ -3,7 +3,7 @@ import { notifyLedgerChanged } from '../lib/refresh'
 import { getPaged, type PageRequest } from './paging'
 import type { ApiEnvelope } from '../types/accounting'
 import type { Attachment, CashHistoryRow, CashTransaction, DocumentJournalRow, ItemBrand, ItemCategory } from '../types/operations'
-import type { APIKey, Approval, ApprovalPolicy, BusinessDocument, DocumentSequence, InventoryBalance, InventoryReservation, Invitation, Item, Onboarding, OrganizationMember, OrganizationProfile, OrganizationRole, SecuritySettings, Unit, UnitConversion, Warehouse, Webhook } from '../types/operations'
+import type { AuditPage, APIKey, Approval, ApprovalPolicy, BusinessDocument, DocumentSequence, InventoryBalance, InventoryReservation, Invitation, Item, Onboarding, OrganizationMember, OrganizationProfile, OrganizationRole, SecuritySettings, Unit, UnitConversion, Warehouse, Webhook } from '../types/operations'
 
 const data = async <T>(request: Promise<{ data: ApiEnvelope<T> }>) => (await request).data.data
 
@@ -44,6 +44,13 @@ export const stockOpname = (input: Record<string, unknown>) => posted(api.post('
 export const listReservations = () => data<InventoryReservation[]>(api.get('/inventory/reservations'))
 export const reserveInventory = (input: Record<string, unknown>) => data<InventoryReservation>(api.post('/inventory/reservations', input))
 export const releaseReservation = (id: string) => data(api.post(`/inventory/reservations/${id}/release`))
+
+/**
+ * Jejak audit organisasi, terbaru lebih dulu. Hanya peran dengan wewenang
+ * `accounting.audit.view` yang boleh membacanya (dijaga router backend).
+ */
+export const listAuditLogs = (page: number, limit: number) =>
+  data<AuditPage>(api.get('/audit-logs', { params: { page, limit } }))
 
 export const getSecurity = () => data<SecuritySettings>(api.get('/organization/security'))
 export const getCompanyProfile = () => data<OrganizationProfile>(api.get('/organization/profile'))

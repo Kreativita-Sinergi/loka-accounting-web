@@ -40,6 +40,21 @@ export type SecuritySettings = { require_2fa: boolean; approval_threshold_minor:
 export type Invitation = { id: string; email: string; role_code: string; status: string; expires_at: string }
 export type Approval = { id: string; entity_type: string; entity_id: string; amount_minor: number; status: string; requested_at: string }
 export type DocumentSequence = { id: string; document_type: string; prefix: string; next_number: number; padding: number; reset_policy: string }
+/** Satu baris jejak audit (`entity.AuditLog`) seperti dikirim `GET /audit-logs`. */
+export type AuditLog = {
+  id: string
+  actor_id: string | null
+  actor_type: string
+  action: string
+  entity_type: string
+  entity_id: string
+  metadata?: Record<string, string> | null
+  ip_address: string | null
+  created_at: string
+}
+
+export type AuditPage = { items: AuditLog[]; page: number; limit: number; total: number }
+
 export type APIKey = { id: string; name: string; key_prefix: string; permissions: string[]; is_active: boolean; created_at: string }
 export type Webhook = { id: string; name: string; endpoint_url: string; subscribed_events: string[]; is_active: boolean }
 export type Onboarding = { business_id: string; business_type: 'SERVICE' | 'RETAIL' | 'DISTRIBUTION' | 'MANUFACTURING' | 'OTHER'; enabled_workflows: string[]; completed_steps: string[]; skipped_steps: string[]; current_step: number; started_at: string; completed_at: string | null; dismissed_at: string | null; updated_at: string }

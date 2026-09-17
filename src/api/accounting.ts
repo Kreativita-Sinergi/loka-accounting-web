@@ -1,5 +1,6 @@
 import { api } from './client'
 import { notifyLedgerChanged } from '../lib/refresh'
+import { normalizeLines } from '../lib/journal'
 import { getPaged, type PageRequest } from './paging'
 import type {
   Account,
@@ -23,7 +24,11 @@ export async function getSettings() {
   return data.data
 }
 export async function updateSettings(input: { timezone: string; fiscal_year_start_month: number; enabled_modules: string[] }) { const { data } = await api.put<ApiEnvelope<AccountingSettings>>('/settings', input); return data.data }
-export async function postOpeningBalance(input: { transaction_date: string; description: string; lines: JournalLineInput[] }) { const { data } = await api.post<ApiEnvelope<unknown>>('/opening-balances', input); notifyLedgerChanged(); return data.data }
+/**
+ * Saldo awal. Nominal minus dinormalkan lebih dulu (lihat `lib/journal.ts`):
+ * saldo negatif berarti akunnya berada di sisi seberang, bukan angka negatif.
+ */
+export async function postOpeningBalance(input: { transaction_date: string; description: string; lines: JournalLineInput[] }) { const { data } = await api.post<ApiEnvelope<unknown>>('/opening-balances', { ...input, lines: normalizeLines(input.lines) }); notifyLedgerChanged(); return data.data }
 
 export async function getLocalization() { const { data } = await api.get<ApiEnvelope<LocalizationProfile>>('/localization/profile'); return data.data }
 export async function saveLocalization(input: Partial<LocalizationProfile>) { const { data } = await api.put<ApiEnvelope<LocalizationProfile>>('/localization/profile', input); return data.data }
@@ -211,7 +216,43 @@ export async function createJournal(input: {
     transaction_date: input.date,
     description: input.description,
     post: true,
-    lines: input.lines,
+    lines: normalizeLines(input.lines),
+  })
+  notifyLedgerChanged()
+  return data.data
+}
+
+/**
+ * Mengubah isi jurnal yang sudah diposting. Backend membatalkan jurnal lama dan
+ * memposting penggantinya dalam satu transaksi, jadi tidak ada keadaan antara
+ * di mana saldo jurnal lama sudah hilang tetapi penggantinya belum ada.
+ * Wewenangnya sama dengan penghapusan: `accounting.journal.reverse`.
+ */
+export async function amendJournal(id: string, input: {
+  date: string
+  description: string
+  lines: JournalLineInput[]
+}) {
+  const { data } = await api.post<ApiEnvelope<unknown>>(`/journals/${id}/amend`, {
+    transaction_date: input.date,
+    description: input.description,
+    lines: normalizeLines(input.lines),
+  })
+  notifyLedgerChanged()
+  return data.data
+}
+
+/**
+ * Membatalkan satu jurnal yang sudah diposting. Jurnal terposting tidak pernah
+ * dihapus dari buku besar — backend membuat jurnal `RV-…` berisi kebalikan
+ * setiap barisnya, sehingga saldo akun kembali seperti sebelum jurnal itu ada
+ * dan jejak auditnya tetap utuh. Hanya peran dengan wewenang
+ * `accounting.journal.reverse` yang diizinkan.
+ */
+export async function reverseJournal(id: string, input: { date: string; description: string }) {
+  const { data } = await api.post<ApiEnvelope<unknown>>(`/journals/${id}/reverse`, {
+    transaction_date: input.date,
+    description: input.description,
   })
   notifyLedgerChanged()
   return data.data
