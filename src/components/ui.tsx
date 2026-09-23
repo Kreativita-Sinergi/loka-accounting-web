@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from 'react'
+import { useState, type ButtonHTMLAttributes, type HTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react'
 import { Icon, type IconName } from './Icon'
 
 export function cx(...values: Array<string | false | null | undefined>) {
@@ -39,4 +39,49 @@ export function DataEntryGuide({ steps, note, title = 'Cara menambah data' }: { 
 
 export function EmptyState({ children, icon = 'empty' }: { children: ReactNode; icon?: IconName }) {
   return <div className="grid min-h-36 place-items-center p-9 text-center text-xs text-slate-400"><div><Icon name={icon} className="mx-auto mb-2 size-6" />{children}</div></div>
+}
+
+/** Teks isian uang Indonesia ("1.250.000,5") menjadi angka polos untuk API ("1250000.5"). */
+export function normalizeMoney(value: string) {
+  return value.replace(/\s/g, '').replace(/\./g, '').replace(',', '.')
+}
+
+/** Angka polos ("1250000.5") menjadi tampilan bertitik ribuan ("1.250.000,5"). */
+export function formatMoneyInput(value: string, allowNegative = false) {
+  const negative = allowNegative && value.trim().startsWith('-')
+  const [whole, fraction] = value.replace(/[^0-9.]/g, '').split('.')
+  const grouped = (whole || '').replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  return `${negative ? '-' : ''}${grouped}${fraction !== undefined ? ',' + fraction : ''}`
+}
+
+/**
+ * Isian nominal dengan titik ribuan saat mengetik. Nilai yang dikirim lewat
+ * `name` (FormData) maupun `onChange` selalu angka polos bertitik desimal,
+ * karena server menolak "5.000.000".
+ */
+export function MoneyInput({ name, value, defaultValue = '', onChange, allowNegative = false, ...rest }: {
+  name?: string
+  value?: string
+  defaultValue?: string
+  onChange?: (value: string) => void
+  allowNegative?: boolean
+} & Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'defaultValue' | 'onChange' | 'name'>) {
+  const [local, setLocal] = useState(defaultValue)
+  const raw = value ?? local
+  return (
+    <>
+      <input
+        {...rest}
+        inputMode="decimal"
+        value={formatMoneyInput(raw, allowNegative)}
+        onChange={(event) => {
+          const next = normalizeMoney(event.target.value)
+          const clean = (allowNegative && next.startsWith('-') ? '-' : '') + next.replace(/[^0-9.]/g, '')
+          setLocal(clean)
+          onChange?.(clean)
+        }}
+      />
+      {name && <input type="hidden" name={name} value={raw} />}
+    </>
+  )
 }

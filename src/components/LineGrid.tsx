@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Icon } from './Icon'
-import { cx } from './ui'
+import { cx, MoneyInput } from './ui'
 import { formatMoney, lineTotal } from '../lib/money'
 
 export type DocumentLine = {
@@ -132,7 +132,7 @@ export function LineGrid({
                   <td className="mono">{option?.code ?? '—'}</td>
                   <td><input className="number" value={line.quantity} inputMode="decimal" onChange={(event) => update(index, { quantity: event.target.value })} onKeyDown={(event) => keyboard(event, index)} /></td>
                   <td className="line-unit">{option?.unit ?? '—'}</td>
-                  <td><input className="number" value={line.unit_price} inputMode="decimal" onChange={(event) => update(index, { unit_price: event.target.value })} onKeyDown={(event) => keyboard(event, index)} /></td>
+                  <td><MoneyInput className="number" value={line.unit_price} onChange={(value) => update(index, { unit_price: value })} onKeyDown={(event) => keyboard(event, index)} /></td>
                   <td><input className="number" value={line.discount} inputMode="decimal" onChange={(event) => update(index, { discount: event.target.value })} onKeyDown={(event) => keyboard(event, index)} /></td>
                   {showWarehouse && (
                     <td>

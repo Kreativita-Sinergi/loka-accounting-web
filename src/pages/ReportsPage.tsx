@@ -411,5 +411,5 @@ export function quantity(value: string): string {
 
 function messageOf(caught: unknown): string {
   const response = (caught as { response?: { data?: { error?: { details?: string }; message?: string } } }).response
-  return response?.data?.error?.details ?? response?.data?.message ?? 'Laporan gagal disusun.'
+  return response?.data?.message || response?.data?.error?.details || 'Laporan gagal disusun.'
 }

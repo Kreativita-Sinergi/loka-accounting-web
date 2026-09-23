@@ -234,7 +234,7 @@ function TabPanel({ tabKey, hidden, children }: { tabKey: PageKey; hidden: boole
 function showError(error: unknown, setNotice: (message: string) => void) {
   if (error instanceof AxiosError) {
     const body = error.response?.data as ApiEnvelope<unknown> | undefined
-    setNotice(body?.error?.details ?? body?.message ?? 'Permintaan gagal.')
+    setNotice(body?.message || body?.error?.details || 'Permintaan gagal.')
     return
   }
   setNotice('Terjadi kesalahan yang tidak dikenal.')

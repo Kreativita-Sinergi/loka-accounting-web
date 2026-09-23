@@ -4,7 +4,7 @@ import { amendJournal, getLedger, reverseJournal } from '../api/accounting'
 import { useLedgerRefresh } from '../lib/refresh'
 import { decimal, formatDate, formatMoney } from '../lib/money'
 import { useTabHandle } from '../store/tabs'
-import { Badge, Button, DataEntryGuide, PageHeader } from '../components/ui'
+import { Badge, Button, DataEntryGuide, PageHeader, MoneyInput } from '../components/ui'
 import { ListView, type ListColumn } from '../components/ListView'
 import { ConfirmDialog, Modal, messageOf, useConfirm } from '../components/Modal'
 import { useCan } from '../lib/rbac'
@@ -372,8 +372,8 @@ function JournalForm({ accounts, editing, onCancel, onSubmit }: {
               <span className="line-number">{index + 1}</span>
               <select value={line.account_id} onChange={(event) => updateLine(index, { account_id: event.target.value })}><option value="">Pilih akun</option>{accounts.filter((account) => account.is_active).map((account) => <option value={account.id} key={account.id}>{account.code} — {account.name}</option>)}</select>
               <input value={line.description} onChange={(event) => updateLine(index, { description: event.target.value })} placeholder="Keterangan baris" />
-              <input aria-label={`Debit baris ${index + 1}`} inputMode="decimal" value={line.debit} onChange={(event) => updateLine(index, { debit: event.target.value })} />
-              <input aria-label={`Kredit baris ${index + 1}`} inputMode="decimal" value={line.credit} onChange={(event) => updateLine(index, { credit: event.target.value })} />
+              <MoneyInput aria-label={`Debit baris ${index + 1}`} value={line.debit} onChange={(value) => updateLine(index, { debit: value })} />
+              <MoneyInput aria-label={`Kredit baris ${index + 1}`} value={line.credit} onChange={(value) => updateLine(index, { credit: value })} />
               <button className="line-remove" type="button" aria-label={`Hapus baris ${index + 1}`} disabled={lines.length <= 2} onClick={() => setLines((current) => current.filter((_, lineIndex) => lineIndex !== index))}>×</button>
             </div>
           ))}

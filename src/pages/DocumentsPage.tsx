@@ -7,7 +7,7 @@ import { listContacts } from '../api/accounting'
 import { listProjects } from '../api/projects'
 import { openDocumentPrint } from '../api/print'
 import type { Project } from '../types/reports'
-import { Badge, Button, DataEntryGuide, PageHeader } from '../components/ui'
+import { Badge, Button, DataEntryGuide, PageHeader, MoneyInput } from '../components/ui'
 import { AddButton, DataTable, TablePanel, type Column } from '../components/DataTable'
 import { ListView, type ListColumn } from '../components/ListView'
 import { JournalPeek } from '../components/JournalPeek'
@@ -421,14 +421,14 @@ export function DocumentsPage({ documentType, initialAction, scale, onNotice }: 
                 <input name="quantity_delta" inputMode="decimal" placeholder={inventoryAction.kind === 'opening' ? '100' : '10 untuk tambah, -2 untuk kurang'} required />
               </label>
               <label>Harga pokok per unit
-                <input name="unit_cost" inputMode="decimal" defaultValue="0" />
+                <MoneyInput name="unit_cost" defaultValue="0" />
                 <small>Wajib untuk stok bertambah. Pengurangan memakai harga pokok rata-rata.</small>
               </label>
               <label>Keterangan<input name="memo" placeholder={inventoryAction.kind === 'opening' ? 'Stok awal per tanggal mulai' : 'Barang rusak, selisih hitung, dll.'} /></label>
             </>}
             {inventoryAction?.kind === 'opname' && <>
               <label>Hasil hitung<input name="counted" inputMode="decimal" required /></label>
-              <label>Biaya surplus per unit<input name="unit_cost" defaultValue="0" inputMode="numeric" /></label>
+              <label>Biaya surplus per unit<MoneyInput name="unit_cost" defaultValue="0" /></label>
             </>}
             {inventoryAction?.kind === 'reserve' && <label>Kuantitas<input name="quantity" inputMode="decimal" required /></label>}
           </div>

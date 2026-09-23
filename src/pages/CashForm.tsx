@@ -1,3 +1,4 @@
+import { MoneyInput } from '../components/ui'
 import { useState } from 'react'
 import { ActionRail, DocumentShell, IconTabs, LookupField, type IconTab } from '../components/FormShell'
 import { messageOf } from '../components/Modal'
@@ -167,8 +168,8 @@ export function CashForm({ kind, scale, cashAccounts, accounts, contacts, onCanc
         <div className="doc-panel">
           {panel === 'lines' && (isTransfer ? (
             <div className="doc-grid">
-              <label className="doc-field">Nilai transfer <b>*</b><input value={amount} inputMode="decimal" onChange={(event) => touch(setAmount)(event.target.value)} /></label>
-              <label className="doc-field">Biaya transfer<input value={fee} inputMode="decimal" onChange={(event) => touch(setFee)(event.target.value)} /></label>
+              <label className="doc-field">Nilai transfer <b>*</b><MoneyInput value={amount} onChange={touch(setAmount)} /></label>
+              <label className="doc-field">Biaya transfer<MoneyInput value={fee} onChange={touch(setFee)} /></label>
               {decimal(fee) > 0 && (
                 <label className="doc-field">Akun biaya <b>*</b>
                   <select value={feeAccountId} onChange={(event) => touch(setFeeAccountId)(event.target.value)}>
@@ -213,7 +214,7 @@ export function CashForm({ kind, scale, cashAccounts, accounts, contacts, onCanc
                           </select>
                         </td>
                         <td><input value={line.description} onChange={(event) => updateLine(index, { description: event.target.value })} placeholder="Keterangan baris" /></td>
-                        <td><input className="number" value={line.amount} inputMode="decimal" onChange={(event) => updateLine(index, { amount: event.target.value })} /></td>
+                        <td><MoneyInput className="number" value={line.amount} onChange={(value) => updateLine(index, { amount: value })} /></td>
                         <td>
                           <button type="button" className="line-remove" onClick={() => { setDirty(true); setLines((current) => current.filter((_, position) => position !== index)) }} disabled={lines.length === 1} aria-label="Hapus baris">
                             <Icon name="close" />

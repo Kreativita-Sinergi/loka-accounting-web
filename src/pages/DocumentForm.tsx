@@ -198,7 +198,7 @@ export function DocumentForm({
           const item = items.find((candidate) => candidate.id === line.item_id)
           // Diskon dokumen dibagi ke tiap baris, lalu diskon & pajak dibulatkan
           // ke skala mata uang: server menolak pecahan di bawah skala (IDR = 0).
-          const round = (value: number) => Number(value.toFixed(scale))
+          const round = (value: number) => Number(value.toFixed(currency === 'IDR' ? scale : 2))
           const gross = decimal(line.quantity) * decimal(line.unit_price)
           const net = round(lineTotal(line) * (1 - decimal(documentDiscount) / 100))
           return {

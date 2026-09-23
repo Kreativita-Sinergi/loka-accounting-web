@@ -237,5 +237,7 @@ export function useConfirm<T>() {
 /** messageOf pulls the human readable reason out of an API error envelope. */
 export function messageOf(error: unknown, fallback = 'Permintaan gagal diproses.'): string {
   const response = (error as { response?: { data?: { error?: { details?: string }; message?: string } } }).response
-  return response?.data?.error?.details ?? response?.data?.message ?? fallback
+  // Server menaruh kalimat untuk pengguna di `message`; `details` berisi galat
+  // teknis (SQL, nama kolom) yang hanya dipakai bila message kosong.
+  return response?.data?.message || response?.data?.error?.details || fallback
 }

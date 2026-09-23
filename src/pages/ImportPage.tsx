@@ -91,5 +91,5 @@ export function ImportPage({ onNotice }: { onNotice: (message: string) => void }
 
 function detailOf(error: unknown, fallback: string): string {
   const response = (error as { response?: { data?: { error?: { details?: string }; message?: string } } }).response
-  return response?.data?.error?.details ?? response?.data?.message ?? fallback
+  return response?.data?.message || response?.data?.error?.details || fallback
 }
