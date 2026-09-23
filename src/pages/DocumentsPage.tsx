@@ -46,9 +46,9 @@ function advanceLabel(status: string) {
   return 'Selesaikan dokumen'
 }
 
-type InventoryAction = 'adjust' | 'transfer' | 'opname' | 'reserve'
+type InventoryAction = 'opening' | 'adjust' | 'transfer' | 'opname' | 'reserve'
 
-export function DocumentsPage({ documentType, scale, onNotice }: { documentType?: string; scale: number; onNotice: (value: string) => void }) {
+export function DocumentsPage({ documentType, initialAction, scale, onNotice }: { documentType?: string; initialAction?: InventoryAction; scale: number; onNotice: (value: string) => void }) {
   const [documents, setDocuments] = useState<BusinessDocument[]>([])
   const [items, setItems] = useState<Item[]>([])
   const [warehouses, setWarehouses] = useState<Warehouse[]>([])
@@ -110,6 +110,9 @@ export function DocumentsPage({ documentType, scale, onNotice }: { documentType?
   const activeItems = items.filter((item) => item.is_active)
   const inventoryItems = activeItems.filter((item) => item.item_type === 'INVENTORY')
   const activeWarehouses = warehouses.filter((warehouse) => warehouse.is_active)
+  // Tombol persediaan yang mati tanpa alasan membingungkan; alasannya ditampilkan.
+  const inventoryBlock = inventoryItems.length === 0 ? 'Buat barang berjenis "Barang persediaan" lebih dulu di menu Barang & Jasa.'
+    : activeWarehouses.length === 0 ? 'Buat gudang lebih dulu di menu Gudang.' : ''
   const openSalesOrders = documents.filter((document) => document.document_type === 'SALES_ORDER' && !['COMPLETED', 'CANCELLED'].includes(document.status))
   const itemLabel = (id: string) => { const item = items.find((candidate) => candidate.id === id); return item ? `${item.sku} · ${item.name}` : id.slice(0, 8) }
   const documentNumber = (id: string) => documents.find((document) => document.id === id)?.number ?? id.slice(0, 8)
@@ -129,6 +132,15 @@ export function DocumentsPage({ documentType, scale, onNotice }: { documentType?
       rows.map((document) => [document.number, document.document_type, document.document_date.slice(0, 10), document.currency_code, document.status, fromMinor(document.total_minor, scale)]))
     onNotice(`${rows.length} dokumen diekspor ke CSV.`)
   }
+
+  // Menu Persediaan (mis. Penyesuaian Persediaan) langsung membuka formnya
+  // begitu master barang & gudang termuat.
+  const [initialOpened, setInitialOpened] = useState(false)
+  useEffect(() => {
+    if (!initialAction || initialOpened || loading || inventoryBlock) return
+    setInitialOpened(true)
+    openInventory(initialAction)
+  }, [initialAction, initialOpened, loading, inventoryBlock])
 
   function openInventory(kind: InventoryAction, balance: InventoryBalance | null = null) {
     setInventoryAction({ kind, balance })
@@ -165,6 +177,7 @@ export function DocumentsPage({ documentType, scale, onNotice }: { documentType?
   ]
 
   const inventoryTitles: Record<InventoryAction, string> = {
+    opening: 'Stok awal barang',
     adjust: 'Penyesuaian persediaan',
     transfer: 'Transfer antar gudang',
     opname: 'Stock opname',
@@ -210,6 +223,7 @@ export function DocumentsPage({ documentType, scale, onNotice }: { documentType?
         description="Siklus dokumen terpadu dari penawaran dan pesanan sampai pengiriman, penerimaan, invoice, serta retur."
         action={<div className="page-actions">
           <Button variant="secondary" icon="refresh" onClick={() => openInventory('transfer')} disabled={inventoryItems.length === 0 || activeWarehouses.length < 2}>Transfer stok</Button>
+          <Button variant="secondary" icon="plus" onClick={() => openInventory('opening')} disabled={Boolean(inventoryBlock)} title={inventoryBlock || undefined}>Stok awal</Button>
           <Button variant="secondary" icon="check" onClick={() => openInventory('opname')} disabled={inventoryItems.length === 0 || activeWarehouses.length === 0}>Stock opname</Button>
           <AddButton onClick={() => { setPrefill(null); setFormKey((value) => value + 1); setView('form'); setFormError(null) }}>Dokumen baru</AddButton>
         </div>}
@@ -275,8 +289,12 @@ export function DocumentsPage({ documentType, scale, onNotice }: { documentType?
         title="Saldo per gudang"
         description="Kuantitas dan valuasi stok saat ini."
         badge={`${balances.length} posisi`}
-        action={<Button variant="secondary" icon="plus" onClick={() => openInventory('adjust')} disabled={inventoryItems.length === 0 || activeWarehouses.length === 0}>Penyesuaian</Button>}
+        action={<div className="page-actions">
+          <Button variant="secondary" icon="plus" onClick={() => openInventory('opening')} disabled={Boolean(inventoryBlock)} title={inventoryBlock || undefined}>Stok awal</Button>
+          <Button variant="secondary" icon="edit" onClick={() => openInventory('adjust')} disabled={Boolean(inventoryBlock)} title={inventoryBlock || undefined}>Penyesuaian</Button>
+        </div>}
       >
+        {!loading && inventoryBlock && <p className="modal-note">{inventoryBlock}</p>}
         <DataTable
           columns={balanceColumns}
           rows={balances}
@@ -315,7 +333,8 @@ export function DocumentsPage({ documentType, scale, onNotice }: { documentType?
         formKey={`${inventoryAction?.kind}-${inventoryAction?.balance?.item_id ?? 'new'}`}
         eyebrow="PERSEDIAAN"
         title={inventoryAction ? inventoryTitles[inventoryAction.kind] : ''}
-        description={inventoryAction?.kind === 'adjust' ? 'Setiap perubahan menjadi movement append-only dan stok negatif ditolak.'
+        description={inventoryAction?.kind === 'opening' ? 'Stok yang sudah ada sebelum memakai Loka Accounting. Nilainya dijurnal: Persediaan pada Ekuitas Saldo Awal.'
+          : inventoryAction?.kind === 'adjust' ? 'Penambahan dinilai dengan harga pokok per unit; pengurangan memakai harga pokok rata-rata. Selisihnya dijurnal ke Beban Lain-lain.'
           : inventoryAction?.kind === 'transfer' ? 'Transfer mengurangi stok gudang asal dan menambah gudang tujuan dalam satu transaksi.'
           : inventoryAction?.kind === 'opname' ? 'Selisih antara hasil hitung dan saldo sistem dicatat sebagai movement.'
           : 'Reservasi menahan stok untuk sales order tanpa mengurangi saldo.'}
@@ -326,13 +345,16 @@ export function DocumentsPage({ documentType, scale, onNotice }: { documentType?
         onSubmit={(values) => {
           if (!inventoryAction) return
           const { kind } = inventoryAction
-          if (kind === 'adjust') {
+          if (kind === 'adjust' || kind === 'opening') {
             return save(() => adjustInventory({
+              purpose: kind === 'opening' ? 'OPENING' : 'ADJUSTMENT',
               item_id: String(values.get('item_id')),
               warehouse_id: String(values.get('warehouse_id')),
+              date: String(values.get('date') || ''),
               quantity_delta: String(values.get('quantity_delta')),
-              value_delta: String(values.get('value_delta')),
-            }), 'Penyesuaian stok berhasil dicatat.', () => setInventoryAction(null))
+              unit_cost: String(values.get('unit_cost') || '0'),
+              memo: String(values.get('memo') || ''),
+            }), kind === 'opening' ? 'Stok awal tercatat dan jurnalnya sudah diposting.' : 'Penyesuaian stok tercatat dan jurnalnya sudah diposting.', () => setInventoryAction(null))
           }
           if (kind === 'transfer') {
             return save(() => transferInventory({
@@ -393,9 +415,16 @@ export function DocumentsPage({ documentType, scale, onNotice }: { documentType?
                 {activeWarehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.code} · {warehouse.name}</option>)}
               </select>
             </label>
-            {inventoryAction?.kind === 'adjust' && <>
-              <label>Perubahan kuantitas<input name="quantity_delta" placeholder="10 atau -2" required /></label>
-              <label>Perubahan nilai<input name="value_delta" defaultValue="0" required /></label>
+            {(inventoryAction?.kind === 'adjust' || inventoryAction?.kind === 'opening') && <>
+              <label>Tanggal<input type="date" name="date" defaultValue={new Date().toISOString().slice(0, 10)} required /></label>
+              <label>{inventoryAction.kind === 'opening' ? 'Kuantitas' : 'Perubahan kuantitas'}
+                <input name="quantity_delta" inputMode="decimal" placeholder={inventoryAction.kind === 'opening' ? '100' : '10 untuk tambah, -2 untuk kurang'} required />
+              </label>
+              <label>Harga pokok per unit
+                <input name="unit_cost" inputMode="decimal" defaultValue="0" />
+                <small>Wajib untuk stok bertambah. Pengurangan memakai harga pokok rata-rata.</small>
+              </label>
+              <label>Keterangan<input name="memo" placeholder={inventoryAction.kind === 'opening' ? 'Stok awal per tanggal mulai' : 'Barang rusak, selisih hitung, dll.'} /></label>
             </>}
             {inventoryAction?.kind === 'opname' && <>
               <label>Hasil hitung<input name="counted" inputMode="decimal" required /></label>

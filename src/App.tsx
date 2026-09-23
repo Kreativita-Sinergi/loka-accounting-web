@@ -178,7 +178,9 @@ export default function App() {
       case 'purchase.receipt': return <DocumentsPage documentType="GOODS_RECEIPT" scale={scale} onNotice={setNotice} />
       case 'purchase.invoice': return <DocumentsPage documentType="PURCHASE_INVOICE" scale={scale} onNotice={setNotice} />
       case 'purchase.return': return <DocumentsPage documentType="PURCHASE_RETURN" scale={scale} onNotice={setNotice} />
-      case 'inventory.transfer': case 'inventory.adjustment': case 'inventory.opnameresult': case 'inventory.stockbywarehouse':
+      case 'inventory.opening': return <DocumentsPage initialAction="opening" scale={scale} onNotice={setNotice} />
+      case 'inventory.adjustment': return <DocumentsPage initialAction="adjust" scale={scale} onNotice={setNotice} />
+      case 'inventory.transfer': case 'inventory.opnameresult': case 'inventory.stockbywarehouse':
         return <DocumentsPage scale={scale} onNotice={setNotice} />
       case 'inventory.category': return <ItemMasterPage kind="category" accounts={activeAccounts} onNotice={setNotice} />
       case 'inventory.brand': return <ItemMasterPage kind="brand" accounts={activeAccounts} onNotice={setNotice} />

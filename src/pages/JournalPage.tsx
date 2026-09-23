@@ -166,13 +166,13 @@ export function JournalPage({ accounts, scale, onSubmit }: {
             label: 'Ubah jurnal',
             icon: 'edit' as const,
             onSelect: startEdit,
-            disabled: reversalBlock,
+            when: (journal: PostedJournal) => reversalBlock(journal) === false,
           }, {
             label: 'Hapus jurnal (posting pembatalan)',
             icon: 'trash' as const,
             danger: true,
             onSelect: (journal: PostedJournal) => { setDetail(null); reversal.open(journal) },
-            disabled: reversalBlock,
+            when: (journal: PostedJournal) => reversalBlock(journal) === false,
           }] : []),
         ]}
         onRowOpen={setDetail}
@@ -240,15 +240,13 @@ function JournalDetail({ journal, scale, onClose, onReverse, onEdit }: {
       title={journal.number}
       description={`${formatDate(journal.transaction_date)} · sudah diposting ke buku besar`}
       onClose={onClose}
-      footer={(onEdit || onReverse) && (
+      footer={(onEdit || onReverse) && (blocked !== false ? <p className="modal-note">{blocked}.</p> : (
         <>
           {onEdit && (
             <Button
               type="button"
               variant="secondary"
               icon="edit"
-              disabled={blocked !== false}
-              title={blocked || undefined}
               onClick={() => onEdit(journal)}
             >
               Ubah jurnal
@@ -260,15 +258,13 @@ function JournalDetail({ journal, scale, onClose, onReverse, onEdit }: {
               variant="ghost"
               icon="trash"
               className="text-red-700 hover:text-red-800"
-              disabled={blocked !== false}
-              title={blocked || undefined}
               onClick={() => onReverse(journal)}
             >
               Hapus jurnal
             </Button>
           )}
         </>
-      )}
+      ))}
     >
       {journal.description && <p className="modal-note mb-4">{journal.description}</p>}
       <div className="table-wrap">

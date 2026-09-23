@@ -85,6 +85,9 @@ export function DocumentForm({
   const [documentDiscount, setDocumentDiscount] = useState('0')
   const [notes, setNotes] = useState('')
   const [lines, setLines] = useState<DocumentLine[]>([emptyLine()])
+  // Dokumen hulu yang isinya disalin; server memakainya untuk tahu apakah
+  // stok sudah keluar/masuk lewat Pengiriman atau Penerimaan Barang.
+  const [sourceDocumentId, setSourceDocumentId] = useState(prefill?.sourceId ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [dirty, setDirty] = useState(false)
@@ -143,7 +146,9 @@ export function DocumentForm({
 
   /** Menyalin isi dokumen hulu ke form ini. */
   function applySource(source: BusinessDocument) {
+    setSourceDocumentId(source.id)
     if (source.contact_id) setContactId(source.contact_id)
+    if (source.warehouse_id) setWarehouseId(source.warehouse_id)
     if (source.currency_code) setCurrency(source.currency_code)
     const sourceLines = source.lines ?? []
     if (sourceLines.length === 0) {
@@ -184,14 +189,18 @@ export function DocumentForm({
         exchange_rate_numerator: currency === 'IDR' ? 0 : Number(rateNumerator),
         exchange_rate_denominator: currency === 'IDR' ? 0 : Number(rateDenominator),
         warehouse_id: warehouseId || null,
+        source_document_id: sourceDocumentId || null,
         document_date: documentDate,
         due_date: dueDate || null,
         number: autoNumber ? '' : number,
         notes,
         lines: filled.map((line) => {
           const item = items.find((candidate) => candidate.id === line.item_id)
+          // Diskon dokumen dibagi ke tiap baris, lalu diskon & pajak dibulatkan
+          // ke skala mata uang: server menolak pecahan di bawah skala (IDR = 0).
+          const round = (value: number) => Number(value.toFixed(scale))
           const gross = decimal(line.quantity) * decimal(line.unit_price)
-          const net = lineTotal(line)
+          const net = round(lineTotal(line) * (1 - decimal(documentDiscount) / 100))
           return {
             item_id: item?.id ?? null,
             unit_id: item?.base_unit_id ?? null,
@@ -199,8 +208,8 @@ export function DocumentForm({
             description: line.description || line.note,
             quantity: line.quantity,
             unit_price: line.unit_price,
-            discount: String(gross - net),
-            tax: String(net * (decimal(taxPercent) / 100)),
+            discount: String(Math.max(0, round(gross - net))),
+            tax: String(round(net * (decimal(taxPercent) / 100))),
           }
         }),
       })
@@ -210,6 +219,7 @@ export function DocumentForm({
       if (again) {
         setSaved(null)
         setLines([emptyLine()])
+        setSourceDocumentId('')
         setContactId('')
         setNumber('')
         setNotes('')

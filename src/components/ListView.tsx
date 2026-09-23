@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { usePersisted } from '../lib/persist'
 import { useCanWrite } from '../lib/rbac'
 import { compareValues, nodeText } from '../lib/tableSort'
@@ -117,13 +117,17 @@ export function ListView<T>({
   const [draft, setDraft] = useState(search)
   const [context, setContext] = useState<{ row: T; x: number; y: number } | null>(null)
   const columnBox = useRef<HTMLDivElement>(null)
+  const contextBox = useRef<HTMLDivElement>(null)
+  const [contextPosition, setContextPosition] = useState<{ left: number; top: number } | null>(null)
 
   useEffect(() => setDraft(search), [search])
   useEffect(() => { if (!server) setLocalPage(1) }, [search, rows.length, localPageSize, server])
   useEffect(() => {
     if (!columnPanel && !context) return
     const dismiss = (event: MouseEvent) => {
-      if (context) setContext(null)
+      // Menekan item menu tidak boleh menutup menu lebih dulu: menu yang
+      // hilang pada mousedown membuat click-nya tidak pernah sampai.
+      if (context && !contextBox.current?.contains(event.target as Node)) setContext(null)
       if (columnPanel && !columnBox.current?.contains(event.target as Node)) setColumnPanel(false)
     }
     const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') { setColumnPanel(false); setContext(null) } }
@@ -131,6 +135,20 @@ export function ListView<T>({
     window.addEventListener('keydown', escape)
     return () => { window.removeEventListener('mousedown', dismiss); window.removeEventListener('keydown', escape) }
   }, [columnPanel, context])
+
+  // Menu dibuka di titik klik, lalu digeser agar seluruhnya tetap di layar —
+  // tombol aksi berada di tepi kanan tabel, jadi tanpa ini labelnya terpotong.
+  useLayoutEffect(() => {
+    if (!context) { setContextPosition(null); return }
+    const box = contextBox.current?.getBoundingClientRect()
+    const margin = 8
+    const width = box?.width ?? 0
+    const height = box?.height ?? 0
+    setContextPosition({
+      left: Math.max(margin, Math.min(context.x, window.innerWidth - width - margin)),
+      top: context.y + height + margin > window.innerHeight ? Math.max(margin, context.y - height) : context.y,
+    })
+  }, [context])
 
   const visibleColumns = columns.filter((column) => !hidden.includes(column.key))
 
@@ -276,7 +294,7 @@ export function ListView<T>({
       )}
 
       {context && contextActions.length > 0 && (
-        <div className="context-menu" style={{ left: context.x, top: context.y }} role="menu">
+        <div ref={contextBox} className="context-menu" style={{ left: contextPosition?.left ?? context.x, top: contextPosition?.top ?? context.y, visibility: contextPosition ? 'visible' : 'hidden' }} role="menu">
           {contextActions.map((action, index) => {
             const blocked = action.disabled?.(context.row) || false
             const label = typeof action.label === 'function' ? action.label(context.row) : action.label

@@ -158,6 +158,7 @@ export const modules: MenuModule[] = [
       tile('inventory.brand', 'Merek Barang', 'tag', 'master', 'Merek barang'),
       tile('inventory.request', 'Permintaan Barang', 'journal', 'transaction', 'Permintaan dari gudang'),
       tile('inventory.transfer', 'Pemindahan Barang', 'operations', 'transaction', 'Transfer antar gudang'),
+      tile('inventory.opening', 'Stok Awal Barang', 'plus', 'transaction', 'Stok yang sudah ada sebelum mulai'),
       tile('inventory.adjustment', 'Penyesuaian Persediaan', 'edit', 'transaction', 'Koreksi kuantitas dan nilai'),
       tile('inventory.joborder', 'Pekerjaan Pesanan', 'manufacturing', 'transaction', 'Job order produksi'),
       tile('inventory.material', 'Penambahan Bahan Baku', 'boxes', 'transaction', 'Ambil bahan untuk produksi'),
