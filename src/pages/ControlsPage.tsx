@@ -9,11 +9,13 @@ import type { IdentityProfile } from '../api/auth'
 import { Badge, Button, DataEntryGuide, PageHeader } from '../components/ui'
 import { AddButton, DataTable, StatusPill, TablePanel, type Column } from '../components/DataTable'
 import { ConfirmDialog, FormModal, messageOf, useConfirm } from '../components/Modal'
+import { useAccess } from '../lib/rbac'
 import type { APIKey, Approval, ApprovalPolicy, DocumentSequence, Invitation, OrganizationMember, OrganizationRole, SecuritySettings, Webhook } from '../types/operations'
 
 const documentTypes = ['SALES_QUOTE', 'SALES_ORDER', 'DELIVERY', 'SALES_INVOICE', 'SALES_RETURN', 'PURCHASE_ORDER', 'GOODS_RECEIPT', 'PURCHASE_INVOICE', 'PURCHASE_RETURN']
 
 export function ControlsPage({ profile, onNotice }: { profile: IdentityProfile; onNotice: (value: string) => void }) {
+  const { isSuperAdmin, role: currentRole } = useAccess()
   const [security, setSecurity] = useState<SecuritySettings | null>(null)
   const [invitations, setInvitations] = useState<Invitation[]>([])
   const [members, setMembers] = useState<OrganizationMember[]>([])
@@ -123,7 +125,7 @@ export function ControlsPage({ profile, onNotice }: { profile: IdentityProfile; 
       cell: (role) => <span className="flex items-center gap-2">
         <strong>{role.label}</strong>
         {role.is_super_admin && <Badge tone="info">Super admin</Badge>}
-        {role.code === profile.role_code && <Badge tone="success">Peran Anda</Badge>}
+        {role.code === currentRole?.code && <Badge tone="success">Peran Anda</Badge>}
       </span>,
     },
     { header: 'Kode', className: 'mono', width: '140px', sortValue: (role) => role.code, cell: (role) => role.code },
@@ -257,7 +259,7 @@ export function ControlsPage({ profile, onNotice }: { profile: IdentityProfile; 
           keyOf={(member) => member.user_id}
           loading={loading}
           empty="Belum ada anggota."
-          rowActions={[
+          rowActions={isSuperAdmin ? [
             {
               label: 'Ubah peran',
               icon: 'compliance',
@@ -270,13 +272,13 @@ export function ControlsPage({ profile, onNotice }: { profile: IdentityProfile; 
               onSelect: memberStatus.open,
               disabled: (member) => member.user_id === profile.user_id && 'Anda tidak dapat menonaktifkan akun sendiri',
             },
-          ]}
+          ] : []}
         />
       </TablePanel>
 
       <TablePanel
         title="Peran & hak akses"
-        description="Katalog peran bawaan sistem. Pembuat organisasi otomatis menjadi super admin, dan hanya super admin yang dapat memindahkan anggota antarperan."
+        description="Semua peran memiliki akses CRUD awal. Pemilik dapat menyesuaikannya lewat menu Akses CRUD."
         badge={`${roles.length} peran`}
         badgeTone="info"
       >
@@ -433,7 +435,7 @@ export function ControlsPage({ profile, onNotice }: { profile: IdentityProfile; 
         )}
       >
         <label>Email<input type="email" name="email" required /></label>
-        <label>Peran<select name="role_code" defaultValue="READ_ONLY">{roles.map((role) => <option key={role.code} value={role.code}>{role.label}</option>)}</select></label>
+        <label>Peran<select name="role_code" defaultValue="READ_ONLY">{roles.filter((role) => isSuperAdmin || role.code !== 'OWNER').map((role) => <option key={role.code} value={role.code}>{role.label}</option>)}</select></label>
         <p className="modal-note">Wewenang tiap peran dapat dilihat pada panel “Peran & hak akses”.</p>
       </FormModal>
 

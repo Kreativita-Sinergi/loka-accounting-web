@@ -3,7 +3,7 @@ import { notifyLedgerChanged } from '../lib/refresh'
 import { getPaged, type PageRequest } from './paging'
 import type { ApiEnvelope } from '../types/accounting'
 import type { Attachment, CashHistoryRow, CashTransaction, DocumentJournalRow, ItemBrand, ItemCategory } from '../types/operations'
-import type { AuditPage, APIKey, Approval, ApprovalPolicy, BusinessDocument, DocumentSequence, InventoryBalance, InventoryReservation, Invitation, Item, Onboarding, OrganizationMember, OrganizationProfile, OrganizationRole, SecuritySettings, Unit, UnitConversion, Warehouse, Webhook } from '../types/operations'
+import type { AccessRule, AuditPage, APIKey, Approval, ApprovalPolicy, BusinessDocument, DocumentSequence, InventoryBalance, InventoryReservation, Invitation, Item, Onboarding, OrganizationMember, OrganizationProfile, OrganizationRole, SecuritySettings, Unit, UnitConversion, Warehouse, Webhook } from '../types/operations'
 
 const data = async <T>(request: Promise<{ data: ApiEnvelope<T> }>) => (await request).data.data
 
@@ -62,6 +62,9 @@ export const listMembers = () => data<OrganizationMember[]>(api.get('/organizati
 export const setMemberActive = (id: string, active: boolean) => data(api.patch(`/organization/members/${id}/status`, { active }))
 export const setMemberRole = (id: string, roleCode: string) => data(api.patch(`/organization/members/${id}/role`, { role_code: roleCode }))
 export const listRoles = () => data<OrganizationRole[]>(api.get('/organization/roles'))
+export const listAccessRules = () => data<AccessRule[]>(api.get('/organization/access-rules'))
+export const myAccessRules = () => data<{ role_code: string; rules: AccessRule[] }>(api.get('/organization/my-access'))
+export const saveAccessRule = (input: AccessRule) => data<AccessRule>(api.put('/organization/access-rules', input))
 export const setupMFA = (email: string) => data<{ secret: string; otpauth_url: string }>(api.post('/auth/mfa/setup', { email }))
 export const confirmMFA = (code: string) => data<{ recovery_codes: string[] }>(api.post('/auth/mfa/confirm', { code }))
 export const disableMFA = (code: string) => data(api.delete('/auth/mfa', { data: { code } }))

@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from 'react'
-import { useCanWrite } from '../lib/rbac'
+import { useCanWrite, useWriteAccess, type WriteAccess } from '../lib/rbac'
 import { compareValues, matchesQuery, nodeText } from '../lib/tableSort'
 import { Icon, type IconName } from './Icon'
 import { Badge, Button, EmptyState, cx } from './ui'
@@ -31,11 +31,12 @@ export type RowAction<T> = {
    * dianggap mengubah data dan disembunyikan dari peran tanpa wewenang tulis.
    */
   readOnly?: boolean
+  operation?: keyof WriteAccess
 }
 
 /** Menyaring aksi baris sesuai wewenang tulis peran yang sedang masuk. */
-export function allowedActions<T>(actions: Array<RowAction<T>>, canWrite: boolean) {
-  return canWrite ? actions : actions.filter((action) => action.readOnly)
+export function allowedActions<T>(actions: Array<RowAction<T>>, access: WriteAccess) {
+  return actions.filter((action) => action.readOnly || access[action.operation ?? (action.danger ? 'delete' : 'update')])
 }
 
 /**
@@ -209,8 +210,8 @@ export function RowMenu<T>({ row, actions }: { row: T; actions: Array<RowAction<
   const [open, setOpen] = useState(false)
   const wrapper = useRef<HTMLDivElement>(null)
   const menuId = useId()
-  const canWrite = useCanWrite()
-  const visible = allowedActions(actions, canWrite).filter((action) => !action.when || action.when(row))
+  const access = useWriteAccess()
+  const visible = allowedActions(actions, access).filter((action) => !action.when || action.when(row))
 
   useEffect(() => {
     if (!open) return

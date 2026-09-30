@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { usePersisted } from '../lib/persist'
-import { useCanWrite } from '../lib/rbac'
+import { useCanWrite, useWriteAccess } from '../lib/rbac'
 import { compareValues, nodeText } from '../lib/tableSort'
 import { EmptyState, cx } from './ui'
 import { Icon, type IconName } from './Icon'
@@ -112,7 +112,8 @@ export function ListView<T>({
   // RBAC (§3.5): peran tanpa wewenang tulis tidak melihat tombol tambah,
   // impor, maupun aksi baris yang mengubah data.
   const canWrite = useCanWrite()
-  const writeActions = useMemo(() => allowedActions(rowActions, canWrite), [rowActions, canWrite])
+  const access = useWriteAccess()
+  const writeActions = useMemo(() => allowedActions(rowActions, access), [rowActions, access])
   const [columnPanel, setColumnPanel] = useState(false)
   const [draft, setDraft] = useState(search)
   const [context, setContext] = useState<{ row: T; x: number; y: number } | null>(null)

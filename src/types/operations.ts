@@ -110,3 +110,14 @@ export type OrganizationRole = {
   permissions: string[]
   is_super_admin: boolean
 }
+
+export type AccessRule = {
+  subject_type: 'ROLE' | 'USER'
+  subject_id: string
+  resource: string
+  can_create: boolean
+  can_read: boolean
+  can_update: boolean
+  can_delete: boolean
+  updated_at?: string
+}

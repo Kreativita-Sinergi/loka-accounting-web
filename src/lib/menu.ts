@@ -84,6 +84,7 @@ export const modules: MenuModule[] = [
       tile('settings.import', 'Impor Data', 'download', 'setting', 'Impor dari Excel/CSV'),
       tile('settings.user', 'Pengguna', 'accounts', 'master', 'Pengguna dan undangan'),
       tile('settings.role', 'Peran & Hak Akses', 'compliance', 'setting', 'Wewenang per peran'),
+      tile('settings.access', 'Akses CRUD', 'compliance', 'setting', 'Atur izin per akun dan peran'),
       tile('settings.activity', 'Log Aktivitas', 'ledger', 'report', 'Riwayat perubahan data'),
     ],
   },
@@ -219,6 +220,11 @@ for (const module of modules) {
     item.write = override.write ?? fallback.write
     if (!tileIndex.has(item.key)) tileIndex.set(item.key, item)
   }
+}
+
+for (const key of ['settings.access', 'settings.activity']) {
+  const item = tileIndex.get(key)
+  if (item) item.view = 'owner'
 }
 
 for (const item of systemTiles) tileIndex.set(item.key, item)

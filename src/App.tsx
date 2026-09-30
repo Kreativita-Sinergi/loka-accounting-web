@@ -10,6 +10,7 @@ import { AccessDeniedPage } from './pages/AccessDeniedPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { AccountsPage } from './pages/AccountsPage'
 import { ActivityPage } from './pages/ActivityPage'
+import { AccessPage } from './pages/AccessPage'
 import { JournalPage } from './pages/JournalPage'
 import { OverviewPage } from './pages/OverviewPage'
 import { CompanyInfoPage } from './pages/CompanyInfoPage'
@@ -153,6 +154,7 @@ export default function App() {
       case 'settings.preference': return <AdvancedPage accounts={activeAccounts} onNotice={setNotice} />
       case 'settings.import': return <ImportPage onNotice={setNotice} />
       case 'settings.activity': return <ActivityPage />
+      case 'settings.access': return <AccessPage />
       case 'company.info': return <CompanyInfoPage profile={profile!} onNotice={setNotice} />
       case 'settings.user': case 'settings.role': case 'settings.numbering':
         return <ControlsPage profile={profile!} onNotice={setNotice} />
@@ -220,11 +222,11 @@ export default function App() {
  * tulis bagi komponen daftar bersama di dalamnya.
  */
 function TabPanel({ tabKey, hidden, children }: { tabKey: PageKey; hidden: boolean; children: ReactNode }) {
-  const { can, role } = useAccess()
+  const { can, canCrud, role } = useAccess()
   const tile = tileOf(tabKey)
   return (
     <div className="tab-panel" hidden={hidden}>
-      <WriteAccessProvider value={can(tile.write)}>
+      <WriteAccessProvider value={{ create: canCrud(tile.write, 'create'), update: canCrud(tile.write, 'update'), delete: canCrud(tile.write, 'delete') }}>
         {can(tile.view) ? children : <AccessDeniedPage tile={tile} role={role} />}
       </WriteAccessProvider>
     </div>

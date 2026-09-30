@@ -6,13 +6,16 @@ import { ListView, type ListColumn } from '../components/ListView'
 import { Modal, messageOf } from '../components/Modal'
 
 /**
- * Log Aktivitas: jejak audit organisasi (`GET /audit-logs`). Barisnya ditulis
- * backend di dalam transaksi yang sama dengan perubahan datanya, sehingga
- * tindakan yang gagal atau di-rollback tidak pernah muncul di sini.
+ * Log Aktivitas: jejak audit organisasi (`GET /audit-logs`). Perubahan API
+ * dan lognya disimpan dalam transaksi yang sama. Jurnal juga mempunyai
+ * rincian audit khusus yang ditulis oleh layanan jurnal.
  */
 
 /** Nama aksi backend → kalimat Indonesia. Aksi tak dikenal tampil apa adanya. */
 const actionLabels: Record<string, string> = {
+  API_CREATE: 'Data ditambahkan',
+  API_UPDATE: 'Data diperbarui',
+  API_DELETE: 'Data dihapus',
   JOURNAL_CREATED: 'Jurnal dibuat',
   JOURNAL_POSTED: 'Jurnal diposting',
   JOURNAL_REVERSED: 'Jurnal dihapus (dibatalkan)',
@@ -32,6 +35,7 @@ const actionLabels: Record<string, string> = {
 }
 
 const entityLabels: Record<string, string> = {
+  API_REQUEST: 'Perubahan data',
   JOURNAL_ENTRY: 'Jurnal',
   ACCOUNTING_PERIOD: 'Periode',
   FISCAL_PERIOD: 'Tahun buku',
@@ -46,7 +50,7 @@ const entityLabels: Record<string, string> = {
 }
 
 /** Aksi yang menghapus atau membatalkan data; ditandai agar mudah ditemukan. */
-const destructiveActions = new Set(['JOURNAL_REVERSED', 'JOURNAL_AMENDED'])
+const destructiveActions = new Set(['JOURNAL_REVERSED', 'JOURNAL_AMENDED', 'API_DELETE'])
 
 const labelOf = (map: Record<string, string>, value: string) => map[value] ?? value
 
@@ -144,7 +148,7 @@ export function ActivityPage() {
       <PageHeader
         eyebrow="AUDIT TRAIL"
         title="Log aktivitas"
-        description="Riwayat perubahan data yang dicatat backend, termasuk siapa yang membuat, memposting, dan menghapus jurnal. Baris di sini tidak dapat diubah maupun dihapus."
+        description="Riwayat perubahan data yang dicatat backend, termasuk siapa yang membuat, mengubah, dan menghapus data. Baris di sini tidak dapat diubah maupun dihapus."
         action={<Badge tone="info">{total} aktivitas</Badge>}
       />
       <ListView
