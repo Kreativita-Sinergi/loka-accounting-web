@@ -4,11 +4,12 @@ import { amendJournal, getLedger, reverseJournal } from '../api/accounting'
 import { useLedgerRefresh } from '../lib/refresh'
 import { decimal, formatDate, formatMoney } from '../lib/money'
 import { useTabHandle } from '../store/tabs'
-import { Badge, Button, DataEntryGuide, PageHeader, MoneyInput } from '../components/ui'
+import { Badge, Button, PageHeader, MoneyInput } from '../components/ui'
 import { ListView, type ListColumn } from '../components/ListView'
 import { ConfirmDialog, Modal, messageOf, useConfirm } from '../components/Modal'
 import { useWriteAccess } from '../lib/rbac'
 import { signedTotals } from '../lib/journal'
+import { CancelledJournalFilter, useShowCancelledJournals } from '../components/CancelledJournalFilter'
 
 const emptyLine = (): JournalLineInput => ({ account_id: '', description: '', debit: '0', credit: '0' })
 
@@ -22,6 +23,7 @@ const monthStart = () => `${new Date().toISOString().slice(0, 7)}-01`
  * pembatalannya harus lewat modul asalnya. `RV-…` sendiri adalah pembatalan.
  */
 function reversalBlock(journal: PostedJournal): string | false {
+  if (journal.is_cancelled) return 'Jurnal ini sudah dibatalkan'
   if (journal.number.startsWith('RV-')) return 'Jurnal ini sendiri sudah jurnal pembatalan'
   if (journal.number.startsWith('MJ-')) return false
   return 'Batalkan lewat dokumen atau transaksi asalnya'
@@ -33,6 +35,7 @@ function reversalBlock(journal: PostedJournal): string | false {
  * menghasilkan satu entri di sini, jadi daftar ini adalah jurnal umum.
  */
 type PostedJournal = {
+  is_cancelled?: boolean
   id: string
   number: string
   transaction_date: string
@@ -47,6 +50,7 @@ function groupJournals(rows: LedgerRow[]): PostedJournal[] {
   for (const row of rows) {
     const current = byJournal.get(row.journal_id) ?? {
       id: row.journal_id, number: row.journal_number, transaction_date: row.transaction_date,
+      is_cancelled: row.is_cancelled,
       description: row.description, debit: 0, credit: 0, lines: [],
     }
     current.debit += decimal(row.debit)
@@ -63,6 +67,7 @@ export function JournalPage({ accounts, scale, onSubmit }: {
   scale: number
   onSubmit: (input: { date: string; description: string; lines: JournalLineInput[] }) => Promise<void>
 }) {
+  const [showCancelled, setShowCancelled] = useShowCancelledJournals()
   const [view, setView] = useState<'list' | 'form'>('list')
   const [start, setStart] = useState(monthStart())
   const [end, setEnd] = useState(today())
@@ -79,14 +84,14 @@ export function JournalPage({ accounts, scale, onSubmit }: {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      setRows(await getLedger(start, end) ?? [])
+      setRows(await getLedger(start, end, !showCancelled) ?? [])
       setError(null)
     } catch (caught) {
       setError(messageOf(caught, 'Daftar jurnal gagal dimuat.'))
     } finally {
       setLoading(false)
     }
-  }, [start, end])
+  }, [start, end, showCancelled])
 
   useEffect(() => { void load() }, [load])
   // Jurnal dari modul lain (Kas Masuk/Keluar, faktur, persediaan) muncul di
@@ -176,6 +181,7 @@ export function JournalPage({ accounts, scale, onSubmit }: {
             <input type="date" value={start} onChange={(event) => setStart(event.target.value)} className="!min-h-8 !w-36" aria-label="Tanggal awal" />
             <span className="text-[11px] text-[color:var(--fg-muted)]">s/d</span>
             <input type="date" value={end} onChange={(event) => setEnd(event.target.value)} className="!min-h-8 !w-36" aria-label="Tanggal akhir" />
+            <CancelledJournalFilter checked={showCancelled} onChange={setShowCancelled} />
           </span>
         }
       />
@@ -343,17 +349,6 @@ function JournalForm({ accounts, editing, onCancel, onSubmit }: {
         description={editing
           ? 'Jurnal lama akan dibatalkan dan jurnal penggantinya diposting dalam satu langkah, sehingga saldo akun langsung mengikuti isian di bawah ini.'
           : 'Pastikan debit dan kredit seimbang. Jurnal langsung diposting; perubahan setelahnya dilakukan lewat menu Ubah jurnal.'}
-      />
-      <DataEntryGuide
-        steps={[
-          'Pilih tanggal transaksi dan isi keterangan yang menjelaskan tujuan jurnal.',
-          'Pilih akun pada setiap baris, lalu isi nominal hanya di kolom Debit atau Kredit.',
-          'Saldo minus cukup ditulis dengan tanda minus, misalnya -5000 di kolom Debit. Nilainya otomatis dipindahkan ke kolom Kredit karena pembukuan tidak mengenal nominal negatif.',
-          'Pastikan total Debit sama dengan Kredit. Tambahkan baris bila diperlukan, lalu klik “Post jurnal”.',
-        ]}
-        note={editing
-          ? 'Mengubah jurnal tidak menghapus riwayatnya: jurnal asli tetap tersimpan bersama jurnal pembatalannya, dan perubahan ini tercatat di Log Aktivitas.'
-          : 'Jurnal langsung diposting; periksa akun dan nominal sebelum menyimpan.'}
       />
       {error && <p className="modal-error" role="alert">{error}</p>}
       <div className="panel form-panel">

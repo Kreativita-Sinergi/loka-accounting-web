@@ -3,7 +3,7 @@ import { createFixedAsset, depreciateAsset, disposeAsset, listDisposals, listFix
 import { getFixedAssetRegister } from '../api/analytics'
 import type { Account } from '../types/accounting'
 import type { AssetDisposal, FixedAsset, FixedAssetRegisterReport } from '../types/reports'
-import { Badge, DataEntryGuide, PageHeader } from '../components/ui'
+import { Badge, PageHeader } from '../components/ui'
 import { AddButton, DataTable, TablePanel, type Column } from '../components/DataTable'
 import { ConfirmDialog, FormModal, messageOf, useConfirm } from '../components/Modal'
 import { amount } from './ReportsPage'
@@ -99,15 +99,6 @@ export function AssetsPage({ accounts, onNotice }: { accounts: Account[]; onNoti
         title="Aset tetap"
         description="Perolehan, penyusutan bulanan, penilaian ulang atau penurunan nilai, dan pelepasan aset — semuanya langsung membentuk jurnal."
         action={<AddButton onClick={() => { setAcquireOpen(true); setFormError(null) }} disabled={missingAccounts} title={missingAccounts ? 'Buat akun aset dan akun beban lebih dulu' : undefined}>Catat aset</AddButton>}
-      />
-      <DataEntryGuide
-        steps={[
-          'Klik “Catat aset”, isi identitas aset, tanggal dan harga perolehan, nilai residu, serta umur manfaat.',
-          'Pilih metode penyusutan dan tiga akun: aset, akumulasi penyusutan, dan beban penyusutan.',
-          'Gunakan menu aksi (titik tiga) pada baris aset untuk menjalankan penyusutan bulanan.',
-          'Gunakan “Penilaian ulang” atau “Lepas aset” pada menu yang sama hanya ketika kejadian tersebut benar-benar terjadi.',
-        ]}
-        note="Semua tindakan aset membentuk jurnal dan tidak dapat dibatalkan. Periksa tanggal, nominal, dan akun sebelum menyimpan."
       />
 
       <TablePanel

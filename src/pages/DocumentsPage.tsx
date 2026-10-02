@@ -7,7 +7,7 @@ import { listContacts } from '../api/accounting'
 import { listProjects } from '../api/projects'
 import { openDocumentPrint } from '../api/print'
 import type { Project } from '../types/reports'
-import { Badge, Button, DataEntryGuide, PageHeader, MoneyInput } from '../components/ui'
+import { Badge, Button, PageHeader, MoneyInput } from '../components/ui'
 import { AddButton, DataTable, TablePanel, type Column } from '../components/DataTable'
 import { ListView, type ListColumn } from '../components/ListView'
 import { JournalPeek } from '../components/JournalPeek'
@@ -227,15 +227,6 @@ export function DocumentsPage({ documentType, initialAction, scale, onNotice }: 
           <Button variant="secondary" icon="check" onClick={() => openInventory('opname')} disabled={inventoryItems.length === 0 || activeWarehouses.length === 0}>Stock opname</Button>
           <AddButton onClick={() => { setPrefill(null); setFormKey((value) => value + 1); setView('form'); setFormError(null) }}>Dokumen baru</AddButton>
         </div>}
-      />
-      <DataEntryGuide
-        steps={[
-          'Klik “Dokumen baru”, pilih jenis dokumen, tanggal, kontak, produk, dan gudang yang sesuai.',
-          'Isi kuantitas, harga, diskon atau pajak; gunakan kurs hanya untuk transaksi valuta asing.',
-          'Gunakan menu aksi (titik tiga) pada baris dokumen untuk mengajukan, menyelesaikan, atau mencetaknya.',
-          'Gunakan menu aksi (titik tiga) pada saldo gudang untuk penyesuaian, transfer, opname, atau reservasi stok.',
-        ]}
-        note="Master kontak, produk, dan gudang sebaiknya dibuat terlebih dahulu. Penyelesaian dokumen membentuk jurnal dan pergerakan stok secara atomik."
       />
 
       <ListView

@@ -20,6 +20,7 @@ export type ReportFilters = {
   warehouse_id?: string
   account_id?: string
   project_id?: string
+  hide_cancelled?: boolean
 }
 
 function params(filters: ReportFilters) {

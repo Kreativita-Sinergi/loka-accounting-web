@@ -6,7 +6,7 @@ import {
   saveSecurity, saveSequence, setMemberActive, setMemberRole, setWebhookActive, setupMFA, updateWebhook,
 } from '../api/operations'
 import type { IdentityProfile } from '../api/auth'
-import { Badge, Button, DataEntryGuide, PageHeader } from '../components/ui'
+import { Badge, Button, PageHeader } from '../components/ui'
 import { AddButton, DataTable, StatusPill, TablePanel, type Column } from '../components/DataTable'
 import { ConfirmDialog, FormModal, messageOf, useConfirm } from '../components/Modal'
 import { useAccess } from '../lib/rbac'
@@ -189,15 +189,6 @@ export function ControlsPage({ profile, onNotice }: { profile: IdentityProfile; 
           <Button variant="secondary" icon="settings" onClick={() => { setSecurityOpen(true); setFormError(null) }}>Kebijakan keamanan</Button>
           <AddButton onClick={() => { setInviteOpen(true); setFormError(null) }}>Undang anggota</AddButton>
         </div>}
-      />
-      <DataEntryGuide
-        steps={[
-          'Klik “Undang anggota” untuk menambah rekan tim dan pilih peran sesuai akses yang dibutuhkan.',
-          'Atur format nomor dokumen dan kebijakan approval sebelum transaksi rutin dimulai.',
-          'Gunakan API key untuk integrasi server; salin rahasianya saat ditampilkan karena hanya muncul sekali.',
-          'Gunakan menu aksi (titik tiga) pada setiap baris untuk Ubah, Nonaktifkan, Cabut, atau Hapus permanen.',
-        ]}
-        note="Perubahan keamanan dan integrasi berdampak ke seluruh organisasi; berikan akses minimum yang diperlukan."
       />
 
       <div className="split-grid">

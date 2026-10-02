@@ -7,12 +7,13 @@ import { useServerList } from '../lib/serverList'
 import { requestTab } from '../lib/menu'
 import { useLedgerRefresh } from '../lib/refresh'
 import { decimal, formatDate, formatMoney } from '../lib/money'
-import { Badge, Button, DataEntryGuide, EmptyState, PageHeader } from '../components/ui'
+import { Badge, Button, EmptyState, PageHeader } from '../components/ui'
 import { amount } from './ReportsPage'
 import { StatusPill } from '../components/DataTable'
 import { ListView, type ListColumn } from '../components/ListView'
 import { usePersisted } from '../lib/persist'
 import { ConfirmDialog, FormModal, Modal, messageOf, useConfirm } from '../components/Modal'
+import { CancelledJournalFilter, useShowCancelledJournals } from '../components/CancelledJournalFilter'
 
 const today = () => new Date().toISOString().slice(0, 10)
 const monthStart = () => `${new Date().toISOString().slice(0, 7)}-01`
@@ -173,16 +174,6 @@ export function AccountsPage({ accounts, scale, onCreate, onUpdate, onStatusChan
         description="Struktur akun organisasi untuk pencatatan dan laporan keuangan."
         action={<div className="page-actions"><Badge>{accounts.length} akun</Badge></div>}
       />
-      <DataEntryGuide
-        steps={[
-          'Klik “Akun baru” untuk membuka form penambahan akun.',
-          'Gunakan menu aksi (titik tiga) pada baris tabel untuk Ubah, Nonaktifkan, Aktifkan, atau Hapus permanen.',
-          'Klik satu baris untuk membuka detail akun: saldo awal, mutasi, dan saldo akhir beserta jurnal pembentuknya.',
-          'Nonaktifkan adalah pengganti hapus: akun tetap ada dalam histori tetapi tidak tersedia untuk transaksi baru.',
-          'Hapus permanen hanya tersedia untuk akun nonaktif dan akan ditolak jika akun masih dipakai data lain.',
-        ]}
-        note="Akun bertanda “Sistem” dipakai otomatis oleh modul lain — penjualan, pembelian, kas, pajak, dan persediaan merujuknya saat memposting jurnal. Karena itu akun sistem hanya dapat diubah namanya, dan tidak dapat dinonaktifkan maupun dihapus. Akun yang Anda buat sendiri bebas dinonaktifkan."
-      />
 
       <ListView
         storageKey="accounts"
@@ -303,6 +294,7 @@ function AccountDetail({ account, scale, onClose, onEdit }: {
   onClose: () => void
   onEdit: (account: Account) => void
 }) {
+  const [showCancelled, setShowCancelled] = useShowCancelledJournals()
   const [start, setStart] = useState(monthStart())
   const [end, setEnd] = useState(today())
   const [report, setReport] = useState<GeneralLedgerAccount | null>(null)
@@ -314,7 +306,7 @@ function AccountDetail({ account, scale, onClose, onEdit }: {
     if (!accountId) return
     setLoading(true)
     try {
-      const value = await getGeneralLedger({ account_id: accountId, start_date: start, end_date: end })
+      const value = await getGeneralLedger({ account_id: accountId, start_date: start, end_date: end, hide_cancelled: !showCancelled })
       setReport(value.accounts.find((row) => row.account_id === accountId) ?? null)
       setError(null)
     } catch (caught) {
@@ -323,7 +315,7 @@ function AccountDetail({ account, scale, onClose, onEdit }: {
     } finally {
       setLoading(false)
     }
-  }, [accountId, start, end])
+  }, [accountId, start, end, showCancelled])
 
   useEffect(() => { void load() }, [load])
   useLedgerRefresh(() => void load())
@@ -348,6 +340,7 @@ function AccountDetail({ account, scale, onClose, onEdit }: {
         <input type="date" value={start} onChange={(event) => setStart(event.target.value)} className="!min-h-8 !w-36" aria-label="Tanggal awal" />
         <span className="text-[11px] text-[color:var(--fg-muted)]">s/d</span>
         <input type="date" value={end} onChange={(event) => setEnd(event.target.value)} className="!min-h-8 !w-36" aria-label="Tanggal akhir" />
+        <CancelledJournalFilter checked={showCancelled} onChange={setShowCancelled} />
       </div>
 
       <div className="doc-grid mb-4">

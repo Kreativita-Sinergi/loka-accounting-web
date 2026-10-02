@@ -43,8 +43,8 @@ export async function saveFXRate(input: Record<string, unknown>) { const { data 
 export async function saveForeignBalance(input: Record<string, unknown>) { const { data } = await api.put<ApiEnvelope<unknown>>('/fx/balances', input); return data.data }
 export async function remeasureFX(input: Record<string, unknown>) { const { data } = await api.post<ApiEnvelope<unknown>>('/fx/remeasurements', input); return data.data }
 
-export async function getLedger(startDate: string, endDate: string) {
-  const { data } = await api.get<ApiEnvelope<LedgerRow[]>>('/ledger', { params: { start_date: startDate, end_date: endDate } })
+export async function getLedger(startDate: string, endDate: string, hideCancelled = false) {
+  const { data } = await api.get<ApiEnvelope<LedgerRow[]>>('/ledger', { params: { start_date: startDate, end_date: endDate, hide_cancelled: hideCancelled } })
   return data.data
 }
 
@@ -155,9 +155,9 @@ export async function deleteDimension(id: string) {
   return data.data
 }
 
-export async function downloadExport(path: 'accounts' | 'ledger', startDate?: string, endDate?: string) {
+export async function downloadExport(path: 'accounts' | 'ledger', startDate?: string, endDate?: string, hideCancelled = false) {
   const { data } = await api.get<Blob>(`/exports/${path}.csv`, {
-    params: path === 'ledger' ? { start_date: startDate, end_date: endDate } : undefined,
+    params: path === 'ledger' ? { start_date: startDate, end_date: endDate, hide_cancelled: hideCancelled } : undefined,
     responseType: 'blob',
   })
   const url = URL.createObjectURL(data)

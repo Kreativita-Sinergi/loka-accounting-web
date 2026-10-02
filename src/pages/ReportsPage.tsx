@@ -28,6 +28,7 @@ import type {
   StockCardReport,
 } from '../types/reports'
 import { Badge, Button, EmptyState, PageHeader } from '../components/ui'
+import { CancelledJournalFilter, useShowCancelledJournals } from '../components/CancelledJournalFilter'
 
 type ReportKey =
   | 'profit-loss' | 'balance-sheet' | 'trial-balance' | 'cash-flow-indirect' | 'general-ledger'
@@ -70,6 +71,7 @@ const windowedReports = new Set<ReportKey>([
 ])
 
 export function ReportsPage() {
+  const [showCancelled, setShowCancelled] = useShowCancelledJournals()
   const today = new Date().toISOString().slice(0, 10)
   const [report, setReport] = useState<ReportKey>('profit-loss')
   const [startDate, setStartDate] = useState(`${today.slice(0, 8)}01`)
@@ -94,7 +96,8 @@ export function ReportsPage() {
     end_date: endDate,
     item_id: itemId || undefined,
     warehouse_id: warehouseId || undefined,
-  }), [report, startDate, endDate, itemId, warehouseId])
+    hide_cancelled: report === 'general-ledger' ? !showCancelled : undefined,
+  }), [report, startDate, endDate, itemId, warehouseId, showCancelled])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -165,6 +168,7 @@ export function ReportsPage() {
             </select></label>
           )}
         </div>
+        {report === 'general-ledger' && <CancelledJournalFilter checked={showCancelled} onChange={setShowCancelled} />}
       </div>
 
       <div className="panel report-panel">

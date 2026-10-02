@@ -4,11 +4,13 @@ import type { LedgerRow } from '../types/accounting'
 import { useLedgerRefresh } from '../lib/refresh'
 import { Button, PageHeader } from '../components/ui'
 import { DataTable, SearchInput, TablePanel, type Column } from '../components/DataTable'
+import { CancelledJournalFilter, useShowCancelledJournals } from '../components/CancelledJournalFilter'
 
 const today = new Date().toISOString().slice(0, 10)
 const firstDay = `${today.slice(0, 8)}01`
 
 export function LedgerPage() {
+  const [showCancelled, setShowCancelled] = useShowCancelledJournals()
   const [start, setStart] = useState(firstDay)
   const [end, setEnd] = useState(today)
   const [rows, setRows] = useState<LedgerRow[]>([])
@@ -17,8 +19,8 @@ export function LedgerPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    try { setRows(await getLedger(start, end)) } finally { setLoading(false) }
-  }, [start, end])
+    try { setRows(await getLedger(start, end, !showCancelled)) } finally { setLoading(false) }
+  }, [start, end, showCancelled])
 
   useEffect(() => { void load() }, [load])
   // Tab tetap ter-mount saat pengguna pindah ke Kas Masuk/Keluar, jadi buku
@@ -46,12 +48,12 @@ export function LedgerPage() {
       <PageHeader
         eyebrow="GENERAL LEDGER"
         title="Buku besar"
-        description="Semua pergerakan akun dari jurnal yang sudah diposting."
+        description="Pergerakan akun dari jurnal yang diposting. Pasangan jurnal yang dibatalkan pada tanggal yang sama disembunyikan secara bawaan; riwayat tetap tersimpan."
         action={<div className="date-filter">
           <input aria-label="Tanggal awal" type="date" value={start} onChange={(event) => setStart(event.target.value)} />
           <input aria-label="Tanggal akhir" type="date" value={end} onChange={(event) => setEnd(event.target.value)} />
           <Button variant="secondary" onClick={() => void load()}>Terapkan</Button>
-          <Button icon="download" onClick={() => void downloadExport('ledger', start, end)}>CSV</Button>
+          <Button icon="download" onClick={() => void downloadExport('ledger', start, end, !showCancelled)}>CSV</Button>
         </div>}
       />
 
@@ -61,7 +63,7 @@ export function LedgerPage() {
         badge={`${visible.length} baris`}
         badgeTone="info"
         className="!mt-0"
-        toolbar={<SearchInput value={search} onChange={setSearch} placeholder="Cari nomor jurnal, akun, atau deskripsi…" />}
+        toolbar={<div className="flex flex-wrap items-center gap-3"><SearchInput value={search} onChange={setSearch} placeholder="Cari nomor jurnal, akun, atau deskripsi…" /><CancelledJournalFilter checked={showCancelled} onChange={setShowCancelled} /></div>}
       >
         <DataTable
           search={false}

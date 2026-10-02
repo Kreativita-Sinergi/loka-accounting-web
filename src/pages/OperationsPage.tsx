@@ -4,7 +4,7 @@ import {
   getAging, listContacts, listPayables, listReceivables, setContactActive, updateContact,
 } from '../api/accounting'
 import type { Account, AgingReport, Contact, OpenItem } from '../types/accounting'
-import { Badge, Button, DataEntryGuide, PageHeader } from '../components/ui'
+import { Badge, Button, PageHeader } from '../components/ui'
 import { AddButton, DataTable, SearchInput, StatusPill, TablePanel, type Column } from '../components/DataTable'
 import { ConfirmDialog, FormModal, messageOf, useConfirm } from '../components/Modal'
 
@@ -109,15 +109,6 @@ export function OperationsPage({ accounts, onNotice }: { accounts: Account[]; on
           <Button variant="secondary" icon="plus" onClick={() => { setExpenseOpen(true); setFormError(null) }} disabled={expenseAccounts.length === 0}>Beban tunai</Button>
           <AddButton onClick={() => { setOpenItemOpen(true); setFormError(null) }} disabled={activeContacts.length === 0 || counterAccounts.length === 0} title={activeContacts.length === 0 ? 'Buat kontak lebih dulu' : undefined}>Piutang / utang</AddButton>
         </div>}
-      />
-      <DataEntryGuide
-        steps={[
-          'Buat kontak pelanggan atau supplier terlebih dahulu agar dapat dipilih pada transaksi.',
-          'Untuk pengeluaran langsung, klik “Beban tunai” lalu isi tanggal, deskripsi, nominal, dan akun beban.',
-          'Untuk transaksi belum lunas, klik “Piutang / utang” dan lengkapi kontak, tanggal, nominal, serta akun lawan.',
-          'Saat pembayaran terjadi, buka menu aksi (titik tiga) pada baris open item lalu pilih “Catat pembayaran”.',
-        ]}
-        note="Pembuatan beban, piutang, utang, dan pembayaran akan membentuk jurnal secara otomatis."
       />
 
       <div className="summary-grid">

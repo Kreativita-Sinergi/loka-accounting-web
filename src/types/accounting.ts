@@ -77,6 +77,7 @@ export interface BalanceSheet {
 }
 
 export interface LedgerRow {
+  is_cancelled?: boolean
   journal_id: string
   journal_number: string
   transaction_date: string

@@ -4,7 +4,7 @@ import {
   listPayrollRuns, listTaxPeriods, postPayroll, remeasureFX, saveForeignBalance, saveFXRate, saveLocalization,
 } from '../api/accounting'
 import type { Account, FXRate, LocalizationProfile, ManufacturingOrder, PayrollRun, StatutoryTaxPeriod } from '../types/accounting'
-import { Badge, Button, DataEntryGuide, PageHeader } from '../components/ui'
+import { Badge, Button, PageHeader } from '../components/ui'
 import { AddButton, DataTable, TablePanel, type Column } from '../components/DataTable'
 import { FormModal, messageOf } from '../components/Modal'
 
@@ -21,37 +21,9 @@ export function ModulePage({ kind, accounts, onNotice }: { kind: Kind; accounts:
   return <Currency accounts={accounts} onNotice={onNotice} />
 }
 
-const moduleGuides: Record<string, string[]> = {
-  'INDONESIA LOCALIZATION': [
-    'Klik “Identitas wajib pajak” untuk melengkapi nama legal, NPWP, dan status PKP.',
-    'Klik “Workpaper baru”, pilih jenis serta rentang periode pajak.',
-    'Isi pajak keluaran, pajak masukan, dan jumlah yang dipotong, lalu simpan.',
-    'Periksa hasilnya di daftar periode statutory sebelum review dan filing.',
-  ],
-  'PAYROLL ACCOUNTING': [
-    'Klik “Run payroll” lalu isi periode payroll dan tanggal pembayaran.',
-    'Masukkan identitas karyawan, gross, potongan, dan kontribusi perusahaan.',
-    'Pilih akun beban, utang payroll, dan akun pembayaran.',
-    'Periksa seluruh nilai lalu klik “Post payroll”; jurnal langsung terbentuk.',
-  ],
-  'MANUFACTURING ACCOUNTING': [
-    'Klik “Selesaikan order” lalu isi nomor order, produk, tanggal selesai, dan jumlah produksi.',
-    'Masukkan biaya material, tenaga kerja langsung, dan overhead.',
-    'Pilih akun barang jadi, bahan baku, serta akun absorpsi.',
-    'Periksa total biaya lalu simpan; biaya diserap ke persediaan barang jadi.',
-  ],
-  'MULTI-CURRENCY': [
-    'Klik “Kurs baru” untuk menyimpan kurs penutupan beserta tanggal dan sumbernya.',
-    'Klik “Saldo valuta” untuk mencatat saldo valuta dan carrying amount dalam rupiah.',
-    'Klik “Remeasure”, pilih kurs dan akun gain/loss.',
-    'Post remeasurement untuk mencatat selisih kurs pada penutupan periode.',
-  ],
-}
-
 function PageHead({ eyebrow, title, description, badge, action }: { eyebrow: string; title: string; description: string; badge: string; action?: ReactNode }) {
   return <>
     <PageHeader eyebrow={eyebrow} title={title} description={description} action={<div className="page-actions"><Badge tone="info">{badge}</Badge>{action}</div>} />
-    <DataEntryGuide steps={moduleGuides[eyebrow]} />
   </>
 }
 

@@ -3,7 +3,7 @@ import { createProject, getProjectProfitability, listProjects, updateProject } f
 import { listContacts } from '../api/accounting'
 import type { Contact } from '../types/accounting'
 import type { Project, ProjectProfitabilityReport } from '../types/reports'
-import { Badge, DataEntryGuide, PageHeader } from '../components/ui'
+import { Badge, PageHeader } from '../components/ui'
 import { AddButton, DataTable, TablePanel, type Column } from '../components/DataTable'
 import { FormModal, messageOf } from '../components/Modal'
 import { amount } from './ReportsPage'
@@ -93,15 +93,6 @@ export function ProjectsPage({ onNotice }: { onNotice: (message: string) => void
         title="Proyek"
         description="Tandai pendapatan dan biaya dengan proyek, lalu baca laba per proyek beserta selisih terhadap anggaran."
         action={<AddButton onClick={() => { setEditor({ project: null }); setFormError(null) }}>Proyek baru</AddButton>}
-      />
-      <DataEntryGuide
-        steps={[
-          'Klik “Proyek baru”, isi kode proyek yang unik dan nama proyek.',
-          'Tentukan periode, status, nilai kontrak, anggaran biaya, serta pelanggan jika ada.',
-          'Setelah tersimpan, pilih proyek tersebut pada dokumen penjualan atau pembelian.',
-          'Gunakan menu aksi (titik tiga) pada baris tabel untuk mengubah data proyek, termasuk statusnya.',
-        ]}
-        note="Proyek tidak dihapus permanen; ubah statusnya menjadi COMPLETED atau CANCELLED agar tidak lagi dipakai transaksi baru."
       />
 
       <div className="panel form-panel">

@@ -5,7 +5,7 @@ import {
   updateBankAccount, updateDimension, type Dimension,
 } from '../api/accounting'
 import type { Account, AccountMapping, BankAccount } from '../types/accounting'
-import { Button, DataEntryGuide, PageHeader } from '../components/ui'
+import { Button, PageHeader } from '../components/ui'
 import { AddButton, DataTable, StatusPill, TablePanel, type Column } from '../components/DataTable'
 import { ConfirmDialog, FormModal, messageOf, useConfirm } from '../components/Modal'
 
@@ -83,15 +83,6 @@ export function AdvancedPage({ accounts, onNotice }: { accounts: Account[]; onNo
           <Button variant="secondary" icon="download" onClick={() => void downloadExport('accounts')}>Export COA</Button>
           <AddButton onClick={() => { setBankEditor({ bank: null }); setFormError(null) }} disabled={cashAccounts.length === 0} title={cashAccounts.length === 0 ? 'Buat akun COA bertipe aset lebih dulu' : undefined}>Rekening bank</AddButton>
         </div>}
-      />
-      <DataEntryGuide
-        steps={[
-          'Klik “Rekening bank”, isi nama yang mudah dikenali lalu pilih akun COA kas atau bank yang sesuai.',
-          'Klik “Dimensi baru” untuk menambah dimensi analitik seperti PROJECT atau DEPARTMENT.',
-          'Gunakan menu aksi (titik tiga) pada setiap baris untuk Ubah, Nonaktifkan, Aktifkan, atau Hapus permanen.',
-          'Gunakan “Export COA” untuk menyerahkan daftar akun ke akuntan dalam format CSV.',
-        ]}
-        note="Buat akun COA bertipe aset lebih dahulu jika pilihan akun bank belum tersedia. Akun COA rekening bank tidak dapat diubah setelah rekening dibuat."
       />
 
       <TablePanel

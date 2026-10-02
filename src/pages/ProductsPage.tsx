@@ -4,7 +4,7 @@ import {
   listItems, listUnitConversions, listUnits, listWarehouses, saveUnitConversion,
   setItemActive, setUnitActive, setWarehouseActive, updateUnit, updateWarehouse,
 } from '../api/operations'
-import { Badge, Button, DataEntryGuide, EmptyState, PageHeader } from '../components/ui'
+import { Badge, Button, EmptyState, PageHeader } from '../components/ui'
 import { AddButton, DataTable, StatusPill, TablePanel, type Column } from '../components/DataTable'
 import { ListView, type ListColumn } from '../components/ListView'
 import { listItemsPaged } from '../api/operations'
@@ -154,15 +154,6 @@ export function ProductsPage({ accounts, onNotice }: { accounts: Account[]; onNo
           <Button variant="secondary" icon="plus" onClick={() => { setWarehouseEditor({ warehouse: null }); setFormError(null) }}>Gudang</Button>
           <AddButton onClick={() => openItemForm(null)} disabled={activeUnits.length === 0} title={activeUnits.length === 0 ? 'Buat satuan lebih dulu' : undefined}>Produk baru</AddButton>
         </div>}
-      />
-      <DataEntryGuide
-        steps={[
-          'Buat Satuan terlebih dahulu, misalnya PCS, KG, atau JAM.',
-          'Buat Gudang jika barang akan memiliki stok fisik.',
-          'Klik “Produk baru”, isi SKU dan nama, pilih satuan dasar serta tipe produk, lalu simpan.',
-          'Gunakan menu aksi (titik tiga) pada setiap baris untuk Ubah, Nonaktifkan, Aktifkan, atau Hapus permanen.',
-        ]}
-        note="Produk persediaan memerlukan akun persediaan dan akun HPP. Hapus permanen hanya tersedia untuk data nonaktif yang belum pernah dipakai transaksi."
       />
 
       <ListView
