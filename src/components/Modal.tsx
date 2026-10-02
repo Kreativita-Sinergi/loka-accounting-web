@@ -179,7 +179,7 @@ export function ConfirmDialog({
           <Button type="button" variant="ghost" onClick={onClose} disabled={busy}>Batal</Button>
           <Button
             type="button"
-            className={tone === 'danger' ? 'border-red-700 bg-red-700 hover:border-red-800 hover:bg-red-800' : undefined}
+            variant={tone === 'danger' ? 'danger' : 'primary'}
             disabled={busy || blocked}
             onClick={onConfirm}
           >

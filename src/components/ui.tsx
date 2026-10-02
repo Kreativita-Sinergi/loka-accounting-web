@@ -5,11 +5,12 @@ export function cx(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(' ')
 }
 
-export function Button({ variant = 'primary', icon, className, children, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost'; icon?: IconName }) {
+export function Button({ variant = 'primary', icon, className, children, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; icon?: IconName }) {
   const variants = {
     primary: 'border-[color:var(--accent)] bg-[color:var(--accent)] text-white hover:brightness-110',
     secondary: 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50',
     ghost: 'border-transparent bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-800',
+    danger: 'border-[color:var(--danger)] bg-[color:var(--danger)] text-white hover:brightness-90',
   }
   return <button className={cx('inline-flex min-h-8.5 items-center justify-center gap-2 rounded-md border px-3 py-1.5 text-[12px] font-bold shadow-xs transition disabled:pointer-events-none disabled:opacity-45', variants[variant], className)} {...props}>{icon && <Icon name={icon} className="size-4" />}{children}</button>
 }
