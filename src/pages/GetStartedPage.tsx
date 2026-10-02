@@ -6,17 +6,20 @@ import { Badge, Button, Card, MoneyInput, PageHeader, cx } from '../components/u
 import type { PageKey } from '../lib/menu'
 import type { Account, AccountingSettings, ApiEnvelope } from '../types/accounting'
 import type { Onboarding } from '../types/operations'
+import { AccessPage } from './AccessPage'
+import { useAccess } from '../lib/rbac'
 
 const steps = [
   ['company', 'Profil perusahaan', 'Legalitas dan identitas pajak'], ['books', 'Pengaturan buku', 'Periode fiskal dan zona waktu'],
   ['business', 'Jenis usaha', 'Sesuaikan workflow yang dipakai'], ['coa', 'Daftar akun', 'Review struktur chart of accounts'],
   ['opening', 'Saldo awal', 'Mulai dari posisi keuangan yang benar'], ['contacts', 'Kontak', 'Pelanggan atau supplier pertama'],
   ['catalog', 'Produk dan gudang', 'Opsional untuk usaha berbasis barang'], ['controls', 'Kontrol dokumen', 'Penomoran, bank, dan pajak'],
-  ['team', 'Undang tim', 'Akses accountant dan finance'], ['review', 'Siap digunakan', 'Review kesiapan workspace'],
+  ['team', 'Tim & hak akses', 'Atur izin setiap peran dan undang anggota'], ['review', 'Siap digunakan', 'Review kesiapan workspace'],
 ] as const
 const workflowOptions = [['SALES','Penjualan'],['PURCHASING','Pembelian'],['INVENTORY','Persediaan'],['PAYROLL','Payroll'],['MANUFACTURING','Manufaktur'],['MULTI_CURRENCY','Multi-currency'],['TAX','Pajak Indonesia']] as const
 
 export function GetStartedPage({ onboarding, settings, accounts, onChanged, onNavigate, onNotice }: { onboarding: Onboarding; settings: AccountingSettings; accounts: Account[]; onChanged: (value: Onboarding) => void; onNavigate: (page: PageKey) => void; onNotice: (value: string) => void }) {
+  const { isSuperAdmin, roles } = useAccess()
   const [draft, setDraft] = useState(onboarding); const [saving, setSaving] = useState(false); const [error, setError] = useState<string | null>(null)
   useEffect(() => setDraft(onboarding), [onboarding])
   const index = Math.max(0, Math.min(9, draft.current_step - 1)); const current = steps[index]; const progress = Math.round(((new Set([...draft.completed_steps, ...draft.skipped_steps])).size / steps.length) * 100)
@@ -56,7 +59,11 @@ export function GetStartedPage({ onboarding, settings, accounts, onChanged, onNa
         {current[0] === 'contacts' && <form className="setup-form" onSubmit={(e) => void contact(e)}><label>Nama pelanggan atau supplier<input name="name" required /></label><label>Tipe<select name="type"><option>CUSTOMER</option><option>SUPPLIER</option><option>BOTH</option></select></label><WizardActions saving={saving} onSkip={skip} /></form>}
         {current[0] === 'catalog' && <SetupChoice title={catalogNeeded ? 'Siapkan master operasional' : 'Tidak wajib untuk jenis usaha ini'} text={catalogNeeded ? 'Tambahkan satuan, barang atau jasa, dan gudang dari halaman master data. Setelah itu kembali untuk melanjutkan.' : 'Workflow yang dipilih tidak memerlukan katalog atau gudang. Langkah ini aman dilewati.'} primary={catalogNeeded ? 'Tandai sudah disiapkan' : 'Lewati langkah'} onPrimary={() => void (catalogNeeded ? complete('Master produk ditandai siap.') : skip())} secondary={catalogNeeded ? 'Buka produk & gudang' : undefined} onSecondary={() => onNavigate('inventory.item')} saving={saving} />}
         {current[0] === 'controls' && <SetupChoice title="Atur nomor, bank, pajak, dan approval" text="Konfigurasi yang dibutuhkan berbeda untuk setiap perusahaan. Buka kontrol organisasi untuk detail atau lanjutkan dengan default aman." primary="Gunakan default" onPrimary={() => void complete('Kontrol dasar siap digunakan.')} secondary="Buka kontrol organisasi" onSecondary={() => onNavigate('company.info')} saving={saving} />}
-        {current[0] === 'team' && <form className="setup-form" onSubmit={(e) => void invite(e)}><label>Email anggota<input type="email" name="email" required /></label><label>Peran<select name="role"><option>ACCOUNTANT</option><option>FINANCE</option><option>AUDITOR</option><option>READ_ONLY</option></select></label><WizardActions saving={saving} onSkip={skip} /></form>}
+        {current[0] === 'team' && <div className="space-y-6">
+          {isSuperAdmin ? <AccessPage embedded /> : <div className="setup-note">Hak akses peran diatur oleh pemilik organisasi.</div>}
+          <form className="setup-form" onSubmit={(e) => void invite(e)}><h3>Undang anggota tim</h3><label>Email anggota<input type="email" name="email" required /></label><label>Peran<select name="role" defaultValue="ACCOUNTANT" required>{roles.filter((role) => isSuperAdmin || !role.is_super_admin).map((role) => <option key={role.code} value={role.code}>{role.label}</option>)}</select></label><Button disabled={saving || roles.length === 0}>Undang & lanjutkan</Button></form>
+          <div className="setup-actions"><Button type="button" variant="ghost" disabled={saving} onClick={() => void skip()}>Lewati</Button><Button type="button" disabled={saving} onClick={() => void complete('Hak akses tim sudah ditinjau.')}>Lanjutkan tanpa undangan</Button></div>
+        </div>}
         {current[0] === 'review' && <div className="setup-review"><div className="readiness-grid"><div><span>Jenis usaha</span><strong>{draft.business_type}</strong></div><div><span>Workflow aktif</span><strong>{draft.enabled_workflows.length}</strong></div><div><span>Akun tersedia</span><strong>{accounts.length}</strong></div><div><span>Langkah teratasi</span><strong>{resolved.size}/10</strong></div></div><div className="setup-note">Konfigurasi dapat diubah kapan saja. Transaksi yang telah diposting tetap mengikuti audit dan period lock.</div><Button disabled={saving} onClick={() => void finish()}>{saving ? 'Menyelesaikan…' : 'Selesaikan setup'}</Button></div>}
       </Card></div>
   </section>

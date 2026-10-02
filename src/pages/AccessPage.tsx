@@ -30,7 +30,7 @@ function defaultRule(subjectType: AccessRule['subject_type'], subjectId: string,
   return { subject_type: subjectType, subject_id: subjectId, resource, can_create: true, can_read: true, can_update: true, can_delete: true }
 }
 
-export function AccessPage() {
+export function AccessPage({ embedded = false }: { embedded?: boolean }) {
   const [roles, setRoles] = useState<OrganizationRole[]>([])
   const [members, setMembers] = useState<OrganizationMember[]>([])
   const [rules, setRules] = useState<AccessRule[]>([])
@@ -42,7 +42,7 @@ export function AccessPage() {
 
   useEffect(() => {
     let active = true
-    Promise.all([listRoles(), listMembers(), listAccessRules()])
+    Promise.all([listRoles(), embedded ? Promise.resolve([]) : listMembers(), listAccessRules()])
       .then(([roleList, memberList, ruleList]) => {
         if (!active) return
         setRoles(roleList ?? []); setMembers(memberList ?? []); setRules(ruleList ?? [])
@@ -51,7 +51,7 @@ export function AccessPage() {
       .catch((caught) => { if (active) setError(messageOf(caught, 'Akses gagal dimuat.')) })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [])
+  }, [embedded])
 
   const choices = useMemo(() => subjectType === 'ROLE'
     ? roles.map((role) => ({ id: role.code, label: role.label }))
@@ -89,22 +89,49 @@ export function AccessPage() {
     } finally { setBusy('') }
   }
 
+  async function setRoleMode(readOnly: boolean) {
+    setBusy('all')
+    setError('')
+    try {
+      for (const resource of resources) {
+        const saved = await saveAccessRule({
+          ...effectiveRule(resource), subject_type: 'ROLE', subject_id: subjectId, resource,
+          can_read: true, can_create: !readOnly, can_update: !readOnly, can_delete: !readOnly,
+        })
+        setRules((current) => [...current.filter((rule) => !(rule.subject_type === 'ROLE' && rule.subject_id === saved.subject_id && rule.resource === resource)), saved])
+      }
+    } catch (caught) {
+      setError(messageOf(caught, 'Sebagian izin belum tersimpan. Periksa pengaturan lalu coba lagi.'))
+    } finally {
+      window.dispatchEvent(new Event('loka:access-changed'))
+      setBusy('')
+    }
+  }
+
   return <section>
-    <PageHeader eyebrow="OWNER" title="Akses CRUD" description="Atur hak tambah, baca, edit, dan hapus untuk setiap peran atau akun. Semua akses aktif secara bawaan. Aturan akun menggantikan aturan perannya." />
+    {embedded ? <div className="mb-4"><h3>Hak akses setiap peran</h3><p>Pilih peran, lalu nyalakan atau matikan izin per modul. Hanya baca mematikan izin tambah, ubah, dan hapus pada seluruh modul. Aturan khusus akun tetap menggantikan aturan peran.</p></div> : <PageHeader eyebrow="OWNER" title="Akses CRUD" description="Atur hak tambah, baca, edit, dan hapus untuk setiap peran atau akun. Semua akses aktif secara bawaan. Aturan akun menggantikan aturan perannya." />}
     <div className="panel form-panel mb-4 flex flex-wrap items-end gap-3">
-      <label>Atur untuk
-        <select value={subjectType} onChange={(event) => {
+      {!embedded && <label>Atur untuk
+        <select disabled={loading || Boolean(busy)} value={subjectType} onChange={(event) => {
           const type = event.target.value as AccessRule['subject_type']
           setSubjectType(type); setSubjectId(type === 'ROLE' ? roles[0]?.code ?? '' : members[0]?.user_id ?? '')
         }}><option value="ROLE">Peran</option><option value="USER">Akun</option></select>
-      </label>
+      </label>}
       <label>{subjectType === 'ROLE' ? 'Peran' : 'Akun'}
-        <select value={subjectId} onChange={(event) => setSubjectId(event.target.value)}>
+        <select disabled={loading || Boolean(busy)} value={subjectId} onChange={(event) => setSubjectId(event.target.value)}>
           {choices.map((choice) => <option key={choice.id} value={choice.id}>{choice.label}</option>)}
         </select>
       </label>
-      <Badge tone="info">Perubahan tersimpan otomatis</Badge>
+      <span role="status"><Badge tone="info">{loading ? 'Memuat izin…' : busy ? 'Menyimpan izin…' : 'Perubahan tersimpan otomatis'}</Badge></span>
+      {subjectType === 'ROLE' && <div className="flex flex-wrap gap-2">
+        <Button type="button" variant="secondary" disabled={loading || Boolean(busy) || !subjectId} onClick={() => void setRoleMode(true)}>Hanya baca</Button>
+        <Button type="button" variant="secondary" disabled={loading || Boolean(busy) || !subjectId} onClick={() => void setRoleMode(false)}>Aktifkan semua izin</Button>
+      </div>}
     </div>
+    {subjectType === 'ROLE' && !loading && subjectId && <p className="mb-3">{resources.every((resource) => {
+      const rule = effectiveRule(resource)
+      return rule.can_read && !rule.can_create && !rule.can_update && !rule.can_delete
+    }) ? 'Peran ini hanya dapat membaca data.' : 'Peran ini menggunakan izin sesuai pengaturan di bawah.'}</p>}
     {error && <p role="alert" className="mb-3 text-red-700">{error}</p>}
     <div className="panel overflow-x-auto">
       <table className="w-full">
@@ -115,7 +142,7 @@ export function AccessPage() {
           return <tr key={resource}>
             <td><strong>{resourceLabels[resource] ?? resource}</strong><small className="block mono">{resource}</small></td>
             {actions.map((action) => <td key={action.key} className="text-center">
-              <input type="checkbox" aria-label={`${action.label} ${resourceLabels[resource] ?? resource}`} checked={rule[action.key]} disabled={!subjectId || busy === resource} onChange={(event) => void change(resource, action.key, event.target.checked)} />
+              <input type="checkbox" role="switch" aria-label={`${action.label} ${resourceLabels[resource] ?? resource}`} checked={rule[action.key]} disabled={loading || !subjectId || Boolean(busy)} onChange={(event) => void change(resource, action.key, event.target.checked)} />
             </td>)}
             <td><small>{own ? 'Khusus ' + (subjectType === 'ROLE' ? 'peran' : 'akun') : subjectType === 'USER' ? 'Mengikuti peran' : 'Bawaan aktif'}</small></td>
           </tr>
@@ -123,6 +150,6 @@ export function AccessPage() {
       </table>
       {loading && <p className="p-4">Memuat aturan akses…</p>}
     </div>
-    <div className="mt-3"><Button variant="secondary" onClick={() => void listAccessRules().then(setRules).catch((caught) => setError(messageOf(caught)))}>Muat ulang</Button></div>
+    <div className="mt-3"><Button type="button" variant="secondary" disabled={Boolean(busy)} onClick={() => void listAccessRules().then(setRules).catch((caught) => setError(messageOf(caught)))}>Muat ulang</Button></div>
   </section>
 }

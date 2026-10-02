@@ -7,20 +7,13 @@ import { useTabHandle } from '../store/tabs'
 import { Badge, Button, DataEntryGuide, PageHeader, MoneyInput } from '../components/ui'
 import { ListView, type ListColumn } from '../components/ListView'
 import { ConfirmDialog, Modal, messageOf, useConfirm } from '../components/Modal'
-import { useCan } from '../lib/rbac'
+import { useWriteAccess } from '../lib/rbac'
 import { signedTotals } from '../lib/journal'
 
 const emptyLine = (): JournalLineInput => ({ account_id: '', description: '', debit: '0', credit: '0' })
 
 const today = () => new Date().toISOString().slice(0, 10)
 const monthStart = () => `${new Date().toISOString().slice(0, 7)}-01`
-
-/**
- * Wewenang yang wajib dimiliki peran untuk membatalkan jurnal. Sama persis
- * dengan yang dijaga router backend (`POST /journals/:id/reverse`), jadi peran
- * tanpa wewenang ini tidak melihat tombolnya sekaligus ditolak servernya.
- */
-const REVERSE_PERMISSION = 'accounting.journal.reverse'
 
 /**
  * Hanya jurnal manual dan saldo awal (`MJ-…`) yang boleh dibatalkan dari sini.
@@ -78,7 +71,7 @@ export function JournalPage({ accounts, scale, onSubmit }: {
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [detail, setDetail] = useState<PostedJournal | null>(null)
-  const canReverse = useCan(REVERSE_PERMISSION)
+  const { update: canEdit, delete: canReverse } = useWriteAccess()
   const reversal = useConfirm<PostedJournal>()
   /** Jurnal yang sedang diubah; null berarti form membuat jurnal baru. */
   const [editing, setEditing] = useState<PostedJournal | null>(null)
@@ -162,12 +155,13 @@ export function JournalPage({ accounts, scale, onSubmit }: {
         onPrint={() => window.print()}
         rowActions={[
           { label: 'Lihat rincian jurnal', icon: 'journal', readOnly: true, onSelect: setDetail },
-          ...(canReverse ? [{
+          ...(canEdit ? [{
             label: 'Ubah jurnal',
             icon: 'edit' as const,
             onSelect: startEdit,
             when: (journal: PostedJournal) => reversalBlock(journal) === false,
-          }, {
+          }] : []),
+          ...(canReverse ? [{
             label: 'Hapus jurnal (posting pembatalan)',
             icon: 'trash' as const,
             danger: true,
@@ -191,7 +185,7 @@ export function JournalPage({ accounts, scale, onSubmit }: {
         scale={scale}
         onClose={() => setDetail(null)}
         onReverse={canReverse ? (journal) => { setDetail(null); reversal.open(journal) } : undefined}
-        onEdit={canReverse ? startEdit : undefined}
+        onEdit={canEdit ? startEdit : undefined}
       />
 
       <ConfirmDialog
