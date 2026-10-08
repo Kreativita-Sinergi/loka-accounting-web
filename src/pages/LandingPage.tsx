@@ -198,7 +198,7 @@ export function LandingPage({ onLogin, onRegister, onSubscribe }: LandingPagePro
           <div className="pricing-popular">PAKET LENGKAP</div>
           <div className="pricing-card-head"><div><small>LOKA ACCOUNTING</small><h3>Business</h3></div><span>30 hari trial</span></div>
           <div className="pricing-amount"><strong>Rp300.000</strong><span>/ bulan</span></div>
-          <p>Dibayar per bulan dan tidak diperpanjang otomatis.</p>
+          <p>Dibayar per bulan dan tidak diperpanjang otomatis. Tanpa tambahan pajak.</p>
           <ul><li>✓ Seluruh modul akuntansi dan laporan</li><li>✓ Pengguna dan kontrol akses tim</li><li>✓ Persediaan, aset, proyek, dan anggaran</li><li>✓ Rekonsiliasi bank dan audit trail</li><li>✓ Integrasi Loka Kasir opsional</li></ul>
           <button className="landing-button" type="button" onClick={onSubscribe}>Coba gratis 30 hari <span>→</span></button>
           <small>Pembayaran aman melalui payment gateway setelah membuat organisasi.</small>

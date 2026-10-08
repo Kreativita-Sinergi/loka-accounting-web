@@ -34,3 +34,33 @@ export async function getBillingOrder(id: string) {
   const { data } = await api.get<ApiEnvelope<BillingCheckout>>(`/billing/orders/${id}`)
   return data.data
 }
+
+export interface BillingHistoryOrder {
+  id: string
+  amount: number
+  currency: 'IDR'
+  status: BillingCheckout['status']
+  created_at: string
+  paid_at: string | null
+  period_start: string | null
+  period_end: string | null
+  expired_at: string
+  payment_url: string | null
+}
+
+export async function listBillingOrders() {
+  const { data } = await api.get<ApiEnvelope<BillingHistoryOrder[]>>('/billing/orders')
+  return data.data
+}
+
+export async function downloadBillingInvoice(id: string) {
+  const { data } = await api.get<Blob>(`/billing/orders/${id}/invoice`, { responseType: 'blob' })
+  const url = URL.createObjectURL(data)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `invoice-LA-${id}.pdf`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+}

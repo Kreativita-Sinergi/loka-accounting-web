@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AxiosError } from 'axios'
-import { createBillingCheckout, getBillingOrder, getSubscription, type AccountingSubscription, type BillingCheckout } from '../api/billing'
+import { createBillingCheckout, getBillingOrder, getSubscription, listBillingOrders, type BillingHistoryOrder, type AccountingSubscription, type BillingCheckout } from '../api/billing'
+import { BillingHistory } from './BillingHistory'
 import type { IdentityProfile } from '../api/auth'
 import type { ApiEnvelope } from '../types/accounting'
 
@@ -8,9 +9,27 @@ export function BillingWidget({ profile }: { profile: IdentityProfile }) {
   const [open, setOpen] = useState(() => sessionStorage.getItem('open_accounting_billing') === '1' || new URLSearchParams(window.location.search).has('payment'))
   const [subscription, setSubscription] = useState<AccountingSubscription | null>(null)
   const [order, setOrder] = useState<BillingCheckout | null>(null)
+  const [history, setHistory] = useState<BillingHistoryOrder[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyError, setHistoryError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const isOwner = profile.role_code.toUpperCase() === 'OWNER'
+
+  const refreshHistory = useCallback(async () => {
+    if (!isOwner) return
+    setHistoryLoading(true); setHistoryError(null)
+    try {
+      const orders = await listBillingOrders()
+      setHistory(orders)
+      const pending = orders.find((item) => item.status === 'PENDING')
+      if (pending) setOrder({ order_id: pending.id, amount: pending.amount, currency: pending.currency, status: pending.status, payment_url: pending.payment_url ?? '', expired_at: pending.expired_at })
+      else setOrder((previous) => previous?.status === 'PENDING' ? null : previous)
+    } catch { setHistoryError('Riwayat langganan belum dapat dimuat. Silakan muat ulang.') }
+    finally { setHistoryLoading(false) }
+  }, [isOwner])
+
+  useEffect(() => { if (open) void refreshHistory() }, [open, refreshHistory])
 
   const refresh = useCallback(async () => {
     if (!isOwner) return
@@ -33,10 +52,11 @@ export function BillingWidget({ profile }: { profile: IdentityProfile }) {
       void getBillingOrder(order.order_id).then((next) => {
         setOrder(next)
         if (next.status === 'PAID') void refresh()
+        if (next.status !== 'PENDING') void refreshHistory()
       }).catch(() => undefined)
     }, 4000)
     return () => window.clearInterval(timer)
-  }, [open, order, refresh])
+  }, [open, order, refresh, refreshHistory])
 
   if (!isOwner) return null
 
@@ -46,6 +66,7 @@ export function BillingWidget({ profile }: { profile: IdentityProfile }) {
     try {
       const next = await createBillingCheckout()
       setOrder(next)
+      void refreshHistory()
       if (paymentWindow) {
         paymentWindow.opener = null
         paymentWindow.location.href = next.payment_url
@@ -69,7 +90,7 @@ export function BillingWidget({ profile }: { profile: IdentityProfile }) {
         <p className="eyebrow">LOKA ACCOUNTING</p>
         <h2 id="billing-title">Satu paket untuk pembukuan yang lengkap.</h2>
         <div className="billing-price"><strong>Rp300.000</strong><span>/ bulan</span></div>
-        <p className="billing-description">Pembayaran berlaku untuk satu organisasi selama satu bulan dan tidak diperpanjang otomatis.</p>
+        <p className="billing-description">Pembayaran berlaku untuk satu organisasi selama satu bulan dan tidak diperpanjang otomatis. Pajak tidak dikenakan; total pembayaran Rp300.000.</p>
         <ul><li>Seluruh modul Accounting</li><li>Kolaborasi dan kontrol akses tim</li><li>Laporan, ekspor, dan audit trail</li><li>Integrasi Loka Kasir opsional</li></ul>
         {trial && <div className="billing-status trial"><span>◷</span><div><strong>Masa trial aktif</strong><small>{trialDays} hari tersisa · berakhir {formatDate(subscription.current_period_end)}</small></div></div>}
         {active && <div className="billing-status success"><span>✓</span><div><strong>Langganan aktif</strong><small>Berlaku sampai {formatDate(subscription.current_period_end)}</small></div></div>}
@@ -78,6 +99,7 @@ export function BillingWidget({ profile }: { profile: IdentityProfile }) {
         {error && <div className="auth-error">{error}</div>}
         <button className="billing-pay" type="button" disabled={loading || order?.status === 'PENDING'} onClick={() => void checkout()}>{loading ? 'Menyiapkan pembayaran…' : active ? 'Perpanjang 1 bulan' : 'Bayar Rp300.000'} <span>→</span></button>
         <small className="billing-footnote">Checkout diproses melalui payment gateway. Status akan diperbarui otomatis setelah pembayaran dikonfirmasi.</small>
+        <BillingHistory orders={history} loading={historyLoading} error={historyError} onRefresh={() => void refreshHistory()} />
       </section>
     </div>}
   </>
