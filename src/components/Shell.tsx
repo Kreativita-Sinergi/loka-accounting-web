@@ -214,6 +214,7 @@ export function Shell({
   // melayang di luar kotaknya tidak boleh ikut terpotong.
   const [flyout, setFlyout] = useState<{ module: MenuModule; top: number; left: number } | null>(null)
   const [closing, setClosing] = useState<Tab | null>(null)
+  const [logoutOpen, setLogoutOpen] = useState(false)
   const [overflow, setOverflow] = useState(false)
   const [palette, setPalette] = useState(false)
   const railRef = useRef<HTMLDivElement>(null)
@@ -302,7 +303,7 @@ export function Shell({
           <span>{profile.organization_name}</span>
           <small>IDR · Indonesia · {role?.label ?? profile.role_code}</small>
         </div>
-        <button type="button" className="topbar-avatar" onClick={onLogout} title={`${profile.full_name} — klik untuk keluar`}>
+        <button type="button" className="topbar-avatar" onClick={() => setLogoutOpen(true)} aria-label={`Keluar dari akun ${profile.full_name}`} aria-haspopup="dialog" title={`${profile.full_name} — keluar dari akun`}>
           {profile.full_name.slice(0, 1).toUpperCase()}
         </button>
       </header>
@@ -375,6 +376,17 @@ export function Shell({
       </div>
 
       <MenuSearch open={palette} onClose={() => setPalette(false)} onOpenTile={onOpen} />
+
+      <ConfirmDialog
+        open={logoutOpen}
+        title="Keluar dari akun?"
+        confirmLabel="Keluar"
+        onClose={() => setLogoutOpen(false)}
+        onConfirm={() => { setLogoutOpen(false); onLogout() }}
+        description={tabs.some(tab => tab.dirty)
+          ? 'Ada perubahan yang belum disimpan. Simpan pekerjaan Anda sebelum keluar agar perubahan tidak hilang.'
+          : <>Anda akan keluar dari Sissi Accounting. Masuk kembali untuk mengakses <strong>{profile.organization_name}</strong>.</>}
+      />
 
       <ConfirmDialog
         open={closing !== null}

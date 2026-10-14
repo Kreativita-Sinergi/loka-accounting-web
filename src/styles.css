@@ -485,34 +485,6 @@
 
 @media(max-width:760px){.billing-launcher{right:12px;bottom:12px}.billing-modal{padding:30px 22px}}
 
-@layer components {
-  .connect-shell { @apply grid min-h-screen grid-cols-[minmax(440px,1.05fr)_minmax(420px,.95fr)] bg-white max-[800px]:grid-cols-1; }
-  .connect-hero { @apply relative flex min-h-screen flex-col justify-between overflow-hidden p-[clamp(38px,5vw,64px)] text-white max-[800px]:hidden; background: radial-gradient(circle at 82% 16%, #528bff 0, transparent 31%), linear-gradient(145deg, #155eef, #073483); }
-  .connect-hero::before { content: ''; @apply absolute -right-56 -bottom-44 size-130 rounded-full border border-white/15 shadow-[0_0_0_70px_rgb(255_255_255_/_3%),0_0_0_140px_rgb(255_255_255_/_2%)]; }
-  .connect-hero::after { content: ''; @apply absolute inset-0; background-image: linear-gradient(rgb(255 255 255 / 4%) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 4%) 1px, transparent 1px); background-size: 40px 40px; mask-image: linear-gradient(to bottom, #000, transparent 80%); }
-  .connect-hero > * { @apply relative z-1; }
-  .connect-hero > img { @apply size-13 rounded-xl border border-white/35 shadow-xl shadow-blue-950/30; }
-  .connect-hero span { @apply text-[10px] font-bold tracking-[.18em] text-blue-200; }
-  .connect-hero h1 { @apply mt-4 mb-4.5 max-w-2xl font-display text-[clamp(38px,4.5vw,62px)] leading-[1.04] font-extrabold tracking-[-2.4px]; }
-  .connect-hero p { @apply m-0 max-w-xl text-[17px] leading-relaxed text-blue-100; }
-  .connect-hero small { @apply text-[11px] text-blue-200; }
-  .connect-form { @apply grid min-h-screen place-items-center p-10 max-[800px]:p-6; }
-  .connect-form > div { @apply w-full max-w-105; }
-  .connect-form h2 { @apply mt-1.5 mb-2 font-display text-3xl font-extrabold tracking-tight text-slate-950; }
-  .connect-form > div > p:not(.eyebrow) { @apply mt-0 mb-6 text-[13px] leading-relaxed text-slate-500; }
-  .auth-tabs { @apply mb-5 grid grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1; }
-  .auth-tabs button { @apply min-h-9 rounded-lg border-0 bg-transparent text-[11px] font-bold text-slate-500; }
-  .auth-tabs button.active { @apply bg-white text-blue-800 shadow-sm; }
-  .auth-form { @apply grid gap-3.5; }
-  .auth-form button { @apply mt-1 w-full; }
-  .auth-error { @apply rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-[11px] leading-relaxed text-red-700; }
-  .security-note { @apply mt-5.5 flex gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-slate-600; }
-  .security-note > span { @apply grid size-5 shrink-0 place-items-center rounded-full bg-emerald-100 text-[11px] text-emerald-700; }
-  .security-note p, .security-note strong { @apply m-0 block; }
-  .security-note p { @apply text-[10px] leading-relaxed; }
-  .security-note strong { @apply mb-0.5 text-slate-700; }
-}
-
 /* ---- Pola halaman Bagian 04: LIST, FORM MASTER, FORM TRANSAKSI ---- */
 @layer components {
   .list-view { @apply overflow-hidden rounded-lg border bg-white shadow-panel; border-color: var(--border); }
@@ -846,28 +818,3 @@
 .billing-order-status.status-pending { color: #9a5c08; }
 .billing-history-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .billing-history-notice { border-radius: 7px; padding: 10px; background: #f0faf6; color: #147455; font-size: 11px; overflow-wrap: anywhere; }
-
-/* Sissi authentication follows the same paper and orange palette. */
-.connect-hero{background:#f3f0eb;color:#1f2326}
-.connect-hero::before,.connect-hero::after{display:none}
-.connect-hero>img{border:0;box-shadow:none;border-radius:0}
-.connect-hero span{color:#b84a12}.connect-hero p,.connect-hero small{color:#5b6064}
-.connect-form{background:#fbfaf8}.auth-tabs button.active{color:#b84a12;border-color:#b84a12;background:#fdeee5}
-/* Authentication shares the public page's type scale, surfaces, and controls. */
-.connect-shell{grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr)}
-.connect-hero{background:#202629;color:#f4f2ee}
-.connect-hero h1{font-size:clamp(34px,3.6vw,52px);font-weight:600;line-height:1.16;letter-spacing:-1.8px;max-width:520px}
-.connect-hero span{color:#fcd9bd;font-family:var(--font-mono);font-weight:400;font-size:9px}
-.connect-hero p{color:#a9b1b6;font-size:14px;line-height:1.85;max-width:440px}
-.connect-hero small{color:#a9b1b6;font-size:10px}
-.connect-form h2{font-size:28px;font-weight:600;letter-spacing:-1px;color:#1f2326}
-.connect-form .eyebrow{color:#b84a12;font-family:var(--font-mono);font-size:9px;font-weight:400;letter-spacing:.08em}
-.connect-form .auth-tabs{border-color:#e6e2dc;background:#f3f0eb;border-radius:8px}
-.connect-form .auth-tabs button{border-radius:5px;font-weight:500}
-.connect-form input{min-height:44px;border-color:#d3cec6;border-radius:7px;background:white;box-shadow:none;font-size:12px}
-.connect-form input:focus{border-color:#f1702c;--tw-ring-color:#f1702c18}
-.connect-form .auth-form>button{min-height:48px;border-radius:7px;border-color:#f1702c;background:#f1702c;font-weight:600}
-.connect-form .security-note{background:#f3f0eb;border-color:#e6e2dc;border-radius:8px}
-.connect-form .security-note>span{background:#fdeee5;color:#b84a12}
-.connect-form .auth-back:hover{color:#b84a12}
-@media(max-width:800px){.connect-shell{grid-template-columns:minmax(0,1fr)}}

@@ -39,17 +39,28 @@ export function Modal({
 }) {
   const titleId = useId()
   const panel = useRef<HTMLDivElement>(null)
+  const closeRef = useRef(onClose)
+  useEffect(() => { closeRef.current = onClose }, [onClose])
 
   useEffect(() => {
     if (!open) return
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); closeRef.current(); return }
+      if (event.key !== 'Tab') return
+      const controls = Array.from(panel.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled):not([type=hidden]), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex="0"]') ?? [])
+      const first = controls[0]
+      const last = controls[controls.length - 1]
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus() }
+    }
     window.addEventListener('keydown', onKeyDown)
     const focusTarget = panel.current?.querySelector<HTMLElement>('input:not([type=hidden]), select, textarea, button')
     focusTarget?.focus()
-    return () => { document.body.style.overflow = previous; window.removeEventListener('keydown', onKeyDown) }
-  }, [open, onClose])
+    return () => { document.body.style.overflow = previous; window.removeEventListener('keydown', onKeyDown); if (previousFocus?.isConnected) previousFocus.focus() }
+  }, [open])
 
   if (!open) return null
 

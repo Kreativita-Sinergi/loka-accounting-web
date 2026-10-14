@@ -131,7 +131,7 @@ export default function App() {
   }
 
   function authenticated(session: AuthSession) { onboardingRouted.current = false; setLoading(true); setProfile(session.profile) }
-  function logout() { clearSession(); setSettings(null); setAccounts([]); setOnboarding(null); onboardingRouted.current = false; setProfile(null) }
+  function logout() { clearSession(); setSettings(null); setAccounts([]); setOnboarding(null); onboardingRouted.current = false; navigate('/login'); setProfile(null) }
   if (!profile) {
     const invited = new URLSearchParams(window.location.search).has('invite')
     if (invited || publicPath === '/login' || publicPath === '/register') {
