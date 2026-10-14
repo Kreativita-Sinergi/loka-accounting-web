@@ -102,7 +102,7 @@ function Compliance({ onNotice }: { onNotice: (value: string) => void }) {
       />
       <div className="callout">
         <strong>Compliance guardrail</strong>
-        <span>Tarif dan perlakuan pajak berubah menurut objek serta tanggal efektif. Loka menyimpan workpaper dan jejak review; konsultasikan filing final dengan konsultan pajak.</span>
+        <span>Tarif dan perlakuan pajak berubah menurut objek serta tanggal efektif. Sissi Accounting menyimpan workpaper dan jejak review; konsultasikan filing final dengan konsultan pajak.</span>
       </div>
 
       <div className="panel form-panel">

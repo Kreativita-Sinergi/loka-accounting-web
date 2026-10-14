@@ -3,4 +3,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://lokatech.id/sitemap.xml
+Sitemap: https://accounting.sissi.id/sitemap.xml

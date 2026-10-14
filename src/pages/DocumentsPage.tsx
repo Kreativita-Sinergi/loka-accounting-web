@@ -324,7 +324,7 @@ export function DocumentsPage({ documentType, initialAction, scale, onNotice }: 
         formKey={`${inventoryAction?.kind}-${inventoryAction?.balance?.item_id ?? 'new'}`}
         eyebrow="PERSEDIAAN"
         title={inventoryAction ? inventoryTitles[inventoryAction.kind] : ''}
-        description={inventoryAction?.kind === 'opening' ? 'Stok yang sudah ada sebelum memakai Loka Accounting. Nilainya dijurnal: Persediaan pada Ekuitas Saldo Awal.'
+        description={inventoryAction?.kind === 'opening' ? 'Stok yang sudah ada sebelum memakai Sissi Accounting. Nilainya dijurnal: Persediaan pada Ekuitas Saldo Awal.'
           : inventoryAction?.kind === 'adjust' ? 'Penambahan dinilai dengan harga pokok per unit; pengurangan memakai harga pokok rata-rata. Selisihnya dijurnal ke Beban Lain-lain.'
           : inventoryAction?.kind === 'transfer' ? 'Transfer mengurangi stok gudang asal dan menambah gudang tujuan dalam satu transaksi.'
           : inventoryAction?.kind === 'opname' ? 'Selisih antara hasil hitung dan saldo sistem dicatat sebagai movement.'

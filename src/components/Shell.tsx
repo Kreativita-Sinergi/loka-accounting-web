@@ -290,8 +290,8 @@ export function Shell({
     <div className="app-shell">
       <header className="topbar">
         <div className="topbar-brand">
-          <img src="/loka-icon.svg" alt="Loka" />
-          <strong>Loka<span>Accounting</span></strong>
+          <img src="/brand/sissi-mark.svg" alt="Sissi" />
+          <strong>Sissi<span>Accounting</span></strong>
         </div>
         <div className="topbar-tools">
           <button type="button" title="Cari menu (Ctrl+K)" aria-label="Cari menu" onClick={() => setPalette(true)}><Icon name="search" /></button>

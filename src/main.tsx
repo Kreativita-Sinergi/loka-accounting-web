@@ -6,7 +6,7 @@ import AdminApp from './admin/AdminApp'
 
 const isAdmin = import.meta.env.VITE_APP_MODE === 'admin' || /^\/admin(?:\/|$)/.test(window.location.pathname)
 if (isAdmin) {
-  document.title = 'Loka Admin — Accounting'
+  document.title = 'Sissi Admin — Accounting'
   const robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]') || document.createElement('meta')
   robots.name = 'robots'
   robots.content = 'noindex, nofollow'

@@ -40,15 +40,15 @@ export function AuthPage({ onAuthenticated, initialMode = 'login', onBack }: { o
 
   return <main className="connect-shell">
     <section className="connect-hero">
-      <img src="/loka-icon.svg" alt="Loka" />
-      <div><span>LOKA BUSINESS SUITE</span><h1>Keuangan bisnis, berdiri sebagai sistemnya sendiri.</h1><p>Kelola ledger, pajak, payroll, produksi, dan multi-currency untuk organisasi Anda. Hubungkan POS hanya bila dibutuhkan.</p></div>
-      <small>© {new Date().getFullYear()} Loka Accounting</small>
+      <img src="/brand/sissi-mark.svg" alt="Sissi" />
+      <div><span>SISSI ACCOUNTING</span><h1>Keuangan bisnis, berdiri sebagai sistemnya sendiri.</h1><p>Kelola ledger, pajak, payroll, produksi, dan multi-currency untuk organisasi Anda. Hubungkan POS hanya bila dibutuhkan.</p></div>
+      <small>© {new Date().getFullYear()} Sissi Accounting</small>
     </section>
     <section className="connect-form"><div>
       {onBack && <button className="auth-back" type="button" onClick={onBack}>← Kembali ke beranda</button>}
       <p className="eyebrow">INDEPENDENT ACCOUNTING</p>
       <h2>{mode === 'login' ? 'Masuk ke Accounting' : mode === 'invitation' ? 'Terima undangan tim' : 'Buat organisasi baru'}</h2>
-      <p>{mode === 'login' ? 'Gunakan akun Loka Accounting Anda.' : mode === 'invitation' ? 'Lengkapi profil untuk bergabung ke organisasi.' : 'Siapkan workspace dan chart of accounts Indonesia dalam satu langkah.'}</p>
+      <p>{mode === 'login' ? 'Gunakan akun Sissi Accounting Anda.' : mode === 'invitation' ? 'Lengkapi profil untuk bergabung ke organisasi.' : 'Siapkan workspace dan chart of accounts Indonesia dalam satu langkah.'}</p>
       {mode !== 'invitation' && <div className="auth-tabs"><button type="button" className={mode === 'login' ? 'active' : ''} onClick={() => { setMode('login'); setError(null) }}>Masuk</button><button type="button" className={mode === 'register' ? 'active' : ''} onClick={() => { setMode('register'); setError(null) }}>Daftar</button></div>}
       <form className="auth-form" onSubmit={submit}>
         {mode === 'register' && <label>Nama organisasi<input value={organizationName} onChange={event => setOrganizationName(event.target.value)} placeholder="PT Contoh Indonesia" required /></label>}{mode !== 'login' && <label>Nama lengkap<input value={fullName} onChange={event => setFullName(event.target.value)} placeholder="Nama Anda" required /></label>}
@@ -58,7 +58,7 @@ export function AuthPage({ onAuthenticated, initialMode = 'login', onBack }: { o
         {error && <div className="auth-error">{error}</div>}
         <Button disabled={loading}>{loading ? 'Memproses…' : mode === 'login' ? 'Masuk ke Accounting' : mode === 'invitation' ? 'Gabung organisasi' : 'Buat organisasi'}</Button>
       </form>
-      <div className="security-note"><span>✓</span><p><strong>Aplikasi independen</strong>Akun dan organisasi dikelola Loka Accounting. Koneksi ke Loka Kasir adalah integrasi opsional.</p></div>
+      <div className="security-note"><span>✓</span><p><strong>Aplikasi independen</strong>Akun dan organisasi dikelola Sissi Accounting. Koneksi ke Sissi Kasir adalah integrasi opsional.</p></div>
     </div></section>
   </main>
 }

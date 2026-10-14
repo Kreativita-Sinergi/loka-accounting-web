@@ -39,5 +39,5 @@ export default function PublicApp() {
 }
 
 function AppLoading() {
-  return <main className="app-loading" role="status"><img src="/loka-icon.svg" alt="" /><span>Menyiapkan workspace…</span></main>
+  return <main className="app-loading" role="status"><img src="/brand/sissi-mark.svg" alt="" /><span>Menyiapkan workspace…</span></main>
 }

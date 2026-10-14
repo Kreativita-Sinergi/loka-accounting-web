@@ -87,11 +87,11 @@ export function BillingWidget({ profile }: { profile: IdentityProfile }) {
     {open && <div className="billing-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false) }}>
       <section className="billing-modal" role="dialog" aria-modal="true" aria-labelledby="billing-title">
         <button className="billing-close" type="button" aria-label="Tutup" onClick={() => setOpen(false)}>×</button>
-        <p className="eyebrow">LOKA ACCOUNTING</p>
+        <p className="eyebrow">SISSI ACCOUNTING</p>
         <h2 id="billing-title">Satu paket untuk pembukuan yang lengkap.</h2>
         <div className="billing-price"><strong>Rp300.000</strong><span>/ bulan</span></div>
         <p className="billing-description">Pembayaran berlaku untuk satu organisasi selama satu bulan dan tidak diperpanjang otomatis. Pajak tidak dikenakan; total pembayaran Rp300.000.</p>
-        <ul><li>Seluruh modul Accounting</li><li>Kolaborasi dan kontrol akses tim</li><li>Laporan, ekspor, dan audit trail</li><li>Integrasi Loka Kasir opsional</li></ul>
+        <ul><li>Seluruh modul Accounting</li><li>Kolaborasi dan kontrol akses tim</li><li>Laporan, ekspor, dan audit trail</li><li>Integrasi Sissi Kasir opsional</li></ul>
         {trial && <div className="billing-status trial"><span>◷</span><div><strong>Masa trial aktif</strong><small>{trialDays} hari tersisa · berakhir {formatDate(subscription.current_period_end)}</small></div></div>}
         {active && <div className="billing-status success"><span>✓</span><div><strong>Langganan aktif</strong><small>Berlaku sampai {formatDate(subscription.current_period_end)}</small></div></div>}
         {order?.status === 'PENDING' && <div className="billing-status pending"><span>↗</span><div><strong>Menunggu pembayaran</strong><small>Selesaikan checkout pada halaman pembayaran yang terbuka.</small></div><a href={order.payment_url} target="_blank" rel="noreferrer">Buka lagi</a></div>}

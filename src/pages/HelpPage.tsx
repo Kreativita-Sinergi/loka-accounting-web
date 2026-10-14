@@ -181,7 +181,7 @@ export function HelpPage() {
         <h2>Dukungan</h2>
         <div className="panel help-card help-support">
           <p>
-            Masih tersangkut? Kirim surel ke <a href="mailto:help@lokakasir.id">help@lokakasir.id</a> dan sertakan nama menu,
+            Masih tersangkut? Kirim surel ke <a href="mailto:sissikreatifteknologi@gmail.com">sissikreatifteknologi@gmail.com</a> dan sertakan nama menu,
             langkah yang Anda lakukan, serta pesan galat yang muncul.
           </p>
           <dl>
