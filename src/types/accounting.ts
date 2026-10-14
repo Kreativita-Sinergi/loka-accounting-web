@@ -18,6 +18,7 @@ export interface AccountingSettings {
 }
 
 export interface Account {
+  cash_flow_category?: string
   id: string
   code: string
   name: string

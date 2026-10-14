@@ -1,4 +1,8 @@
 import { useEffect, useState } from 'react'
+import { motion, MotionConfig, useReducedMotion } from 'motion/react'
+import { OrbitalScene } from '../components/OrbitalScene'
+import { Icon } from '../components/Icon'
+import './landing.css'
 
 type LandingPageProps = {
   onLogin: () => void
@@ -67,6 +71,9 @@ const faqs = [
 
 export function LandingPage({ onLogin, onRegister, onSubscribe }: LandingPageProps) {
   const [navScrolled, setNavScrolled] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const reduced = useReducedMotion()
+  const reveal = { initial: { opacity: 0, y: reduced ? 0 : 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, amount: 0.08 }, transition: { duration: 0.55 } }
 
   useEffect(() => {
     const updateNavigation = () => setNavScrolled(window.scrollY > 32)
@@ -76,13 +83,14 @@ export function LandingPage({ onLogin, onRegister, onSubscribe }: LandingPagePro
   }, [])
 
   return (
-    <main className="accounting-landing">
+    <MotionConfig reducedMotion="user"><main className="accounting-landing hightech-landing">
+      <a className="landing-skip" href="#features">Lompat ke fitur</a>
       <header className={`landing-nav${navScrolled ? ' is-scrolled' : ''}`}>
         <a className="landing-brand" href="#top" aria-label="Loka Accounting — kembali ke atas">
           <img src="/loka-icon.svg" alt="" />
           <span><strong>Loka</strong> Accounting</span>
         </a>
-        <nav aria-label="Navigasi utama">
+        <nav className={menuOpen ? 'is-open' : ''} aria-label="Navigasi utama" onClick={() => setMenuOpen(false)}>
           <a href="#features">Fitur</a>
           <a href="#workflow">Cara kerja</a>
           <a href="#pricing">Harga</a>
@@ -90,19 +98,20 @@ export function LandingPage({ onLogin, onRegister, onSubscribe }: LandingPagePro
         </nav>
         <div className="landing-nav-actions">
           <button className="landing-link-button" type="button" onClick={onLogin}>Masuk</button>
-          <button className="landing-button compact" type="button" onClick={onRegister}>Mulai sekarang</button>
+          <button className="landing-button compact" type="button" onClick={onRegister}>Mulai gratis ↗</button>
+          <button type="button" className="landing-menu" aria-label={menuOpen ? 'Tutup menu' : 'Buka menu'} aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}><Icon name={menuOpen ? 'close' : 'grid'} /></button>
         </div>
       </header>
 
-      <section className="landing-hero" id="top">
+      <motion.section {...reveal} className="landing-hero" id="top">
         <div className="landing-hero-copy">
           <div className="landing-trial-pill"><span>BARU</span> Trial 30 hari · Semua fitur langsung aktif</div>
           <p className="landing-kicker"><span /> AKUNTANSI UNTUK BISNIS INDONESIA</p>
-          <h1>Pembukuan rapi.<br /><em>Bisnis melaju pasti.</em></h1>
-          <p className="landing-lead">Satukan transaksi, stok, kas, aset, dan laporan keuangan dalam satu ruang kerja yang mudah dipahami—oleh pemilik maupun tim akuntansi.</p>
+          <h1>Angka lebih jelas.<br />Bisnis <em>melaju pasti.</em></h1>
+          <p className="landing-lead">Transaksi, kas, stok, dan laporan. Terhubung dalam satu ruang kerja keuangan untuk bisnis Indonesia.</p>
           <div className="landing-hero-actions">
             <button className="landing-button" type="button" onClick={onRegister}>Coba gratis 30 hari <span aria-hidden="true">→</span></button>
-            <button className="landing-button secondary" type="button" onClick={() => document.querySelector('#workflow')?.scrollIntoView({ behavior: 'smooth' })}>Lihat cara kerjanya</button>
+            <button className="landing-button secondary" type="button" onClick={() => document.querySelector('#workflow')?.scrollIntoView({ behavior: reduced ? 'instant' : 'smooth' })}>Lihat cara kerjanya</button>
           </div>
           <div className="landing-assurances" aria-label="Keunggulan utama">
             <span><b>✓</b> Tidak ada biaya saat trial</span>
@@ -111,9 +120,18 @@ export function LandingPage({ onLogin, onRegister, onSubscribe }: LandingPagePro
           </div>
         </div>
 
+        <div className="landing-orbital-visual"><div className="orbital-grid" /><OrbitalScene /><span className="orbital-label">TRANSAKSI → PEMBUKUAN</span><div className="orbital-metric"><small>LABA BERSIH / DATA CONTOH</small><strong>Rp64,8 jt <span>↑ 9,4%</span></strong><svg viewBox="0 0 180 35" fill="none" aria-hidden="true"><path d="M0 30 20 25 40 29 60 17 80 22 100 11 120 15 140 7 160 11 180 2" stroke="#69e7eb" strokeWidth="2" /></svg></div><div className="orbital-note"><Icon name="check" /><span>Angka saling terhubung<small>Kas · stok · laporan</small></span></div></div>
+      </motion.section>
+
+      <motion.section {...reveal} className="landing-proof" aria-label="Cakupan sistem">
+        <p>SATU RUANG KERJA UNTUK OPERASIONAL DAN KEUANGAN</p>
+        <div><span>Penjualan</span><span>Pembelian</span><span>Kas & Bank</span><span>Persediaan</span><span>Aset Tetap</span><span>Laporan</span></div>
+      </motion.section>
+
+      <motion.section {...reveal} className="landing-showcase" id="showcase"><div className="landing-section-heading"><div><p className="landing-kicker"><span /> RUANG KERJA KEUANGAN</p><h2>Semua terhubung.<br />Semua terukur.</h2></div><p>Lihat keadaan bisnis dari transaksi yang sama. Satu pandangan untuk keputusan berikutnya.</p></div>
         <div className="landing-product-preview" aria-label="Pratinjau dashboard Loka Accounting">
           <div className="preview-window">
-            <div className="preview-topbar"><img src="/loka-icon.svg" alt="" /><span>Loka Accounting</span><small><i /> Data tersinkron</small><b>OA</b></div>
+            <div className="preview-topbar"><img src="/loka-icon.svg" alt="" /><span>Loka Accounting</span><small><i /> Data contoh</small><b>OA</b></div>
             <div className="preview-body">
               <aside><b>◈</b><b>⌁</b><b>↗</b><b>▦</b><b>⚙</b></aside>
               <div className="preview-content">
@@ -124,7 +142,7 @@ export function LandingPage({ onLogin, onRegister, onSubscribe }: LandingPagePro
                   <article><small>KAS & BANK</small><strong>Rp183,2 jt</strong><span>4 rekening</span></article>
                 </div>
                 <div className="preview-lower">
-                  <article className="preview-chart"><div><small>ARUS KAS</small><strong>Pergerakan 6 bulan</strong></div><svg viewBox="0 0 440 150" role="img" aria-label="Grafik arus kas meningkat"><defs><linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#2563eb" stopOpacity=".24"/><stop offset="1" stopColor="#2563eb" stopOpacity="0"/></linearGradient></defs><path d="M0 124 C45 118 54 88 96 94 S150 110 188 70 S252 86 286 48 S354 66 440 20 L440 150 L0 150Z" fill="url(#chartFill)"/><path d="M0 124 C45 118 54 88 96 94 S150 110 188 70 S252 86 286 48 S354 66 440 20" fill="none" stroke="#2563eb" strokeWidth="4" strokeLinecap="round"/></svg></article>
+                  <article className="preview-chart"><div><small>ARUS KAS</small><strong>Pergerakan 6 bulan</strong></div><svg viewBox="0 0 440 150" role="img" aria-label="Grafik arus kas meningkat"><defs><linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#69e7eb" stopOpacity=".24"/><stop offset="1" stopColor="#69e7eb" stopOpacity="0"/></linearGradient></defs><path d="M0 124 C45 118 54 88 96 94 S150 110 188 70 S252 86 286 48 S354 66 440 20 L440 150 L0 150Z" fill="url(#chartFill)"/><path d="M0 124 C45 118 54 88 96 94 S150 110 188 70 S252 86 286 48 S354 66 440 20" fill="none" stroke="#69e7eb" strokeWidth="4" strokeLinecap="round"/></svg></article>
                   <article className="preview-check"><small>KONTROL HARI INI</small><p><span>✓</span> Rekonsiliasi bank</p><p><span>✓</span> Jurnal sudah seimbang</p><p><b>3</b> Invoice segera jatuh tempo</p></article>
                 </div>
               </div>
@@ -133,56 +151,51 @@ export function LandingPage({ onLogin, onRegister, onSubscribe }: LandingPagePro
           <div className="preview-float"><span>✓</span><div><small>PEMBUKUAN TERKENDALI</small><strong>Semua jurnal seimbang</strong></div></div>
           <div className="preview-float secondary"><span>↗</span><div><small>LABA BERSIH</small><strong>Naik 9,4% bulan ini</strong></div></div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="landing-proof" aria-label="Cakupan sistem">
-        <p>SATU RUANG KERJA UNTUK OPERASIONAL DAN KEUANGAN</p>
-        <div><span>Penjualan</span><span>Pembelian</span><span>Kas & Bank</span><span>Persediaan</span><span>Aset Tetap</span><span>Laporan</span></div>
-      </section>
-
-      <section className="landing-value-flow" aria-label="Alur nilai Loka Accounting">
+      <motion.section {...reveal} className="landing-value-flow" aria-label="Alur nilai Loka Accounting">
         <div><span>01</span><strong>Transaksi dicatat</strong><small>Input sekali dari aktivitas harian</small></div>
         <i>→</i>
         <div><span>02</span><strong>Jurnal tersusun</strong><small>Pencatatan tetap konsisten</small></div>
         <i>→</i>
         <div><span>03</span><strong>Laporan siap dibaca</strong><small>Angka bisnis selalu terhubung</small></div>
-      </section>
+      </motion.section>
 
-      <section className="landing-section" id="features">
+      <motion.section {...reveal} className="landing-section" id="features">
         <div className="landing-section-heading">
           <div><p className="landing-kicker"><span /> FITUR UTAMA</p><h2>Semua yang penting,<br />tersusun dalam satu sistem.</h2></div>
           <p>Setiap transaksi mengalir ke pencatatan dan laporan yang sama. Tim tidak perlu memindahkan angka berulang kali hanya untuk memahami kondisi bisnis.</p>
         </div>
         <div className="landing-feature-grid">
-          {featureGroups.map((feature) => <article key={feature.number}>
+          {featureGroups.map((feature, index) => <motion.article {...reveal} transition={{ duration: 0.5, delay: (index % 3) * 0.06 }} key={feature.number}>
             <div className="feature-card-top"><span className="feature-icon">{feature.icon}</span><span className="feature-number">{feature.number}</span></div>
             <small>{feature.eyebrow}</small>
             <h3>{feature.title}</h3>
             <p>{feature.description}</p>
             <ul>{feature.items.map(item => <li key={item}>✓ <span>{item}</span></li>)}</ul>
-          </article>)}
+          </motion.article>)}
         </div>
-      </section>
+      </motion.section>
 
-      <section className="landing-workflow" id="workflow">
+      <motion.section {...reveal} className="landing-workflow" id="workflow">
         <div className="workflow-intro"><p className="landing-kicker light"><span /> CARA KERJA</p><h2>Mulai tanpa membuat proses terasa berat.</h2><p>Wizard awal membantu menyiapkan organisasi. Setelah itu, transaksi harian otomatis menjadi dasar laporan dan kontrol keuangan.</p></div>
         <ol>
           <li><span>1</span><div><strong>Siapkan organisasi</strong><p>Lengkapi profil perusahaan, periode fiskal, mata uang, dan daftar akun.</p></div></li>
           <li><span>2</span><div><strong>Masukkan atau impor data</strong><p>Catat transaksi, impor data awal, atau hubungkan sumber yang dibutuhkan.</p></div></li>
           <li><span>3</span><div><strong>Pantau dan tutup buku</strong><p>Tinjau laporan, rekonsiliasi bank, lalu kunci periode ketika pembukuan selesai.</p></div></li>
         </ol>
-      </section>
+      </motion.section>
 
-      <section className="landing-section integration-section">
+      <motion.section {...reveal} className="landing-section integration-section">
         <div className="integration-visual" aria-hidden="true">
           <div className="integration-node pos"><img src="/loka-icon.svg" alt="" /><span>Loka Kasir<small>Transaksi penjualan</small></span></div>
           <div className="integration-line"><i>→</i></div>
           <div className="integration-node accounting"><img src="/loka-icon.svg" alt="" /><span>Loka Accounting<small>Pembukuan & laporan</small></span></div>
         </div>
         <div className="integration-copy"><p className="landing-kicker"><span /> TERHUBUNG BILA DIBUTUHKAN</p><h2>Pakai mandiri, atau hubungkan dengan Loka Kasir.</h2><p>Loka Accounting tidak bergantung pada POS. Saat integrasi diaktifkan, pemetaan akun membantu transaksi kasir masuk ke pembukuan dengan struktur yang konsisten.</p><ul><li>Kontrol pemetaan akun sumber</li><li>Pencatatan event integrasi dapat ditelusuri</li><li>Tetap bisa membuat jurnal dan transaksi mandiri</li></ul></div>
-      </section>
+      </motion.section>
 
-      <section className="landing-security" id="security">
+      <motion.section {...reveal} className="landing-security" id="security">
         <div><p className="landing-kicker light"><span /> KONTROL & KEAMANAN</p><h2>Angka penting perlu jejak yang jelas.</h2><p>Akses tim, perubahan data, dan penutupan periode dibangun agar pembukuan tetap tertib saat bisnis bertumbuh.</p></div>
         <div className="security-grid">
           <article><span>◎</span><strong>Hak akses per peran</strong><p>Batasi menu dan tindakan sesuai tanggung jawab anggota.</p></article>
@@ -190,9 +203,9 @@ export function LandingPage({ onLogin, onRegister, onSubscribe }: LandingPagePro
           <article><span>⊘</span><strong>Kunci periode</strong><p>Cegah perubahan tidak disengaja pada periode yang selesai.</p></article>
           <article><span>◇</span><strong>Autentikasi dua faktor</strong><p>Tambahkan perlindungan MFA pada akun pengguna.</p></article>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="landing-pricing" id="pricing">
+      <motion.section {...reveal} className="landing-pricing" id="pricing">
         <div className="pricing-copy"><p className="landing-kicker"><span /> HARGA SEDERHANA</p><h2>Satu harga. Semua fitur penting.</h2><p>Tidak perlu memilih modul satu per satu. Satu langganan membuka seluruh kemampuan Loka Accounting untuk satu organisasi.</p></div>
         <article className="pricing-card">
           <div className="pricing-popular">PAKET LENGKAP</div>
@@ -203,25 +216,25 @@ export function LandingPage({ onLogin, onRegister, onSubscribe }: LandingPagePro
           <button className="landing-button" type="button" onClick={onSubscribe}>Coba gratis 30 hari <span>→</span></button>
           <small>Pembayaran aman melalui payment gateway setelah membuat organisasi.</small>
         </article>
-      </section>
+      </motion.section>
 
-      <section className="landing-section landing-faq" id="faq">
+      <motion.section {...reveal} className="landing-section landing-faq" id="faq">
         <div><p className="landing-kicker"><span /> PERTANYAAN UMUM</p><h2>Yang perlu diketahui sebelum mulai.</h2><p>Informasi ringkas untuk memastikan Loka Accounting sesuai dengan cara tim Anda bekerja.</p></div>
         <div>{faqs.map(([question, answer], index) => <details key={question} open={index === 0}><summary>{question}<span>+</span></summary><p>{answer}</p></details>)}</div>
-      </section>
+      </motion.section>
 
-      <section className="landing-cta">
+      <motion.section {...reveal} className="landing-cta">
         <p className="landing-kicker light"><span /> MULAI SEKARANG</p>
         <h2>Rapikan pembukuan.<br />Pahami bisnis lebih cepat.</h2>
         <p>Buat organisasi Loka Accounting dan ikuti panduan penyiapan langsung dari aplikasi.</p>
         <div><button className="landing-button inverse" type="button" onClick={onSubscribe}>Berlangganan Rp300.000 <span>→</span></button><button className="landing-link-button inverse" type="button" onClick={onLogin}>Sudah punya akun? Masuk</button></div>
-      </section>
+      </motion.section>
 
       <footer className="landing-footer">
         <a className="landing-brand" href="#top"><img src="/loka-icon.svg" alt="" /><span><strong>Loka</strong> Accounting</span></a>
         <p>Pembukuan bisnis yang rapi, terhubung, dan mudah ditelusuri.</p>
         <span>© {new Date().getFullYear()} Kreativita Sinergi</span>
       </footer>
-    </main>
+    </main></MotionConfig>
   )
 }

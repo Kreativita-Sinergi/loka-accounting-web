@@ -1,5 +1,11 @@
 # Loka Accounting Admin
 
+Production frontend: https://loka-accounting-admin.vercel.app (Vercel project `kreativita/loka-accounting-admin`).
+
+Deploy pertama menggunakan source di `/private/tmp/loka-accounting-admin-vercel`. Environment production `VITE_APP_MODE=admin` dan `VITE_ACCOUNTING_API_BASE_URL=https://api.lokatech.id/api/v1/accounting` sudah tersimpan di Vercel.
+
+Pemeriksaan setelah deploy: frontend HTTP 200; API admin login masih HTTP 503 (credential belum dikonfigurasi); preflight dari domain admin HTTP 403 (origin admin belum diizinkan). Login memerlukan konfigurasi backend di bawah.
+
 Portal tersedia di `/admin` pada aplikasi ini. Untuk domain admin tersendiri, buat proyek Vercel baru dari repository yang sama, lalu set `VITE_APP_MODE=admin`. Seluruh URL proyek tersebut akan membuka portal admin.
 
 ## Vercel

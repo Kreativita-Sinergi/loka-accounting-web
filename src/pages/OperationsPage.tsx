@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   allocateOpenItem, createContact, createExpense, createOpenItem, deleteContact,
-  getAging, listContacts, listPayables, listReceivables, setContactActive, updateContact,
+  getAging, listBankAccounts, listContacts, listPayables, listReceivables, setContactActive, updateContact,
 } from '../api/accounting'
-import type { Account, AgingReport, Contact, OpenItem } from '../types/accounting'
+import type { Account, AgingReport, BankAccount, Contact, OpenItem } from '../types/accounting'
 import { Badge, Button, PageHeader } from '../components/ui'
 import { AddButton, DataTable, SearchInput, StatusPill, TablePanel, type Column } from '../components/DataTable'
 import { ConfirmDialog, FormModal, messageOf, useConfirm } from '../components/Modal'
@@ -14,6 +14,9 @@ const today = () => new Date().toISOString().slice(0, 10)
 const rupiah = (value: number) => value.toLocaleString('id-ID')
 
 export function OperationsPage({ accounts, onNotice }: { accounts: Account[]; onNotice: (value: string) => void }) {
+  const [banks, setBanks] = useState<BankAccount[]>([])
+  const [paymentMethod, setPaymentMethod] = useState('CASH')
+  const [paymentRequestId, setPaymentRequestId] = useState('')
   const [contacts, setContacts] = useState<Contact[]>([])
   const [receivables, setReceivables] = useState<OpenItem[]>([])
   const [payables, setPayables] = useState<OpenItem[]>([])
@@ -33,9 +36,10 @@ export function OperationsPage({ accounts, onNotice }: { accounts: Account[]; on
   const contactRemoval = useConfirm<Contact>()
 
   async function refresh() {
-    const [contactRows, receivableRows, payableRows, agingReport] = await Promise.all([
-      listContacts(), listReceivables(), listPayables(), getAging(today()),
+    const [contactRows, receivableRows, payableRows, agingReport, bankRows] = await Promise.all([
+      listContacts(), listReceivables(), listPayables(), getAging(today()), listBankAccounts(),
     ])
+    setBanks(bankRows.filter((bank) => bank.is_active));
     setContacts(contactRows); setReceivables(receivableRows); setPayables(payableRows); setAging(agingReport)
     setLoading(false)
   }
@@ -90,12 +94,12 @@ export function OperationsPage({ accounts, onNotice }: { accounts: Account[]; on
 
   const openItemColumns: Array<Column<OpenItemRow>> = [
     { header: 'Nomor', className: 'mono', cell: (row) => <>{row.number}{row.currency_code && <small className="block">{row.currency_code} {rupiah(row.foreign_outstanding_minor ?? 0)}</small>}</> },
-    { header: 'Jenis', cell: (row) => <Badge tone={row.kind === 'receivables' ? 'info' : 'warning'}>{row.kind === 'receivables' ? 'Piutang' : 'Utang'}</Badge> },
+    { header: 'Jenis', cell: (row) => <Badge tone={row.kind === 'receivables' ? 'info' : 'warning'}>{row.original_minor < 0 ? 'Kredit retur' : row.kind === 'receivables' ? 'Piutang' : 'Utang'}</Badge> },
     { header: 'Kontak', cell: (row) => contactName(row.contact_id) },
     { header: 'Deskripsi', cell: (row) => <>{row.description}<small className="block">Terbit {row.issue_date.slice(0, 10)}{row.due_date && ` · jatuh tempo ${row.due_date.slice(0, 10)}`}</small></> },
     { header: 'Nilai', align: 'right', className: 'mono', cell: (row) => rupiah(row.original_minor) },
     { header: 'Sisa', align: 'right', className: 'mono', cell: (row) => rupiah(row.outstanding_minor) },
-    { header: 'Status', cell: (row) => <Badge tone={row.status === 'PAID' ? 'success' : row.status === 'PARTIAL' ? 'warning' : 'neutral'}>{row.status}</Badge> },
+    { header: 'Status', cell: (row) => <Badge tone={row.status === 'PAID' ? 'success' : row.status === 'PARTIALLY_PAID' ? 'warning' : 'neutral'}>{row.status}</Badge> },
   ]
 
   return (
@@ -127,9 +131,16 @@ export function OperationsPage({ accounts, onNotice }: { accounts: Account[]; on
         </div>
       )}
 
+      <div className="aging-grid">
+        {([['Piutang', receivables], ['Utang', payables]] as const).map(([label, records]) => {
+          const gross = records.reduce((sum, row) => sum + Math.max(0, row.outstanding_minor), 0)
+          const credit = records.reduce((sum, row) => sum + Math.min(0, row.outstanding_minor), 0)
+          return <div key={label}><span>{label} · bruto {rupiah(gross)} · kredit {rupiah(-credit)}</span><strong>Neto {rupiah(gross + credit)}</strong></div>
+        })}
+      </div>
       <TablePanel
         title="Piutang dan utang"
-        description="Open item beserta sisa tagihan yang belum dialokasikan."
+        description="Tagihan bruto dan kredit retur ditampilkan terpisah. Kredit mengurangi saldo neto, tanpa membuat jurnal kedua."
         badge={`${openItems.length} item`}
         badgeTone="info"
         className="!mt-0"
@@ -152,8 +163,8 @@ export function OperationsPage({ accounts, onNotice }: { accounts: Account[]; on
             {
               label: 'Catat pembayaran',
               icon: 'check',
-              onSelect: (row) => { setSettling(row); setFormError(null) },
-              disabled: (row) => row.status === 'PAID' && 'Open item sudah lunas',
+              onSelect: (row) => { setSettling(row); setPaymentMethod('CASH'); setPaymentRequestId(crypto.randomUUID()); setFormError(null) },
+              disabled: (row) => row.outstanding_minor <= 0 && 'Tidak ada saldo tagihan yang dapat dibayar',
             },
           ]}
         />
@@ -325,6 +336,8 @@ export function OperationsPage({ accounts, onNotice }: { accounts: Account[]; on
               transaction_date: String(values.get('transaction_date')),
               amount: String(values.get('amount')),
               payment_method: String(values.get('payment_method')),
+              request_id: paymentRequestId,
+              bank_account_id: paymentMethod === 'BANK' ? String(values.get('bank_account_id') || '') || undefined : undefined,
               description: String(values.get('description') || `Pembayaran ${settling.number}`),
               ...(foreign ? {
                 exchange_rate_numerator: Number(values.get('exchange_rate_numerator')),
@@ -344,9 +357,10 @@ export function OperationsPage({ accounts, onNotice }: { accounts: Account[]; on
               defaultValue={settling?.currency_code ? String(settling.foreign_outstanding_minor ?? '') : String(settling?.outstanding_minor ?? '')} />
           </label>
           <label>{settling?.kind === 'payables' ? 'Dibayar dari' : 'Diterima di'}
-            <select name="payment_method"><option value="CASH">Kas</option><option value="BANK">Bank</option><option value="QRIS">QRIS</option><option value="TRANSFER">Transfer</option></select>
+            <select name="payment_method" value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)}><option value="CASH">Kas</option><option value="BANK">Bank</option><option value="QRIS">QRIS</option></select>
           </label>
         </div>
+        {paymentMethod === 'BANK' && <label>Rekening bank<select name="bank_account_id" required defaultValue=""><option value="">Pilih rekening bank aktif</option>{banks.map((bank) => <option key={bank.id} value={bank.id}>{bank.name} · {bank.account_number ?? 'tanpa nomor'}</option>)}</select>{banks.length === 0 && <small>Tambahkan rekening dan akun COA pada Bank register.</small>}</label>}
         {settling?.currency_code && (
           <>
             <div className="callout">

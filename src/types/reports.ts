@@ -109,6 +109,9 @@ export type AssetDepreciationReport = { rows: AssetDepreciationRow[]; total: str
 
 export type CashFlowLine = { account_id: string; account_code: string; account_name: string; amount: string }
 export type CashFlowIndirectReport = {
+  exchange_effect?: string
+  unclassified?: CashFlowLine[]
+  unclassified_total?: string
   start_date: string
   end_date: string
   net_profit: string

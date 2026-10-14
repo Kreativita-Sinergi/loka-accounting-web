@@ -158,6 +158,9 @@ export function DocumentForm({
     setLines(sourceLines.map((line) => ({
       ...emptyLine(),
       item_id: line.item_id ?? '',
+      source_line_id: line.id,
+      source_unit_id: line.unit_id ?? undefined,
+      discount: String(Number(line.quantity) * line.unit_price_minor > 0 ? line.discount_minor / (Number(line.quantity) * line.unit_price_minor) * 100 : 0),
       description: line.description,
       quantity: line.quantity,
       unit_price: String(fromMinor(line.unit_price_minor, scale)),
@@ -203,7 +206,8 @@ export function DocumentForm({
           const net = round(lineTotal(line) * (1 - decimal(documentDiscount) / 100))
           return {
             item_id: item?.id ?? null,
-            unit_id: item?.base_unit_id ?? null,
+            unit_id: line.source_unit_id ?? item?.base_unit_id ?? null,
+            source_line_id: line.source_line_id ?? null,
             warehouse_id: line.warehouse_id || warehouseId || null,
             description: line.description || line.note,
             quantity: line.quantity,

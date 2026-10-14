@@ -23,6 +23,7 @@ export type BusinessDocument = {
   lines?: BusinessDocumentLine[]
 }
 export type BusinessDocumentLine = {
+  source_line_id?: string | null
   id: string
   sequence: number
   item_id: string | null

@@ -1,8 +1,11 @@
 import { api } from './client'
+import { notifyLedgerChanged } from '../lib/refresh'
 import type { ApiEnvelope } from '../types/accounting'
 import type { AssetDisposal, AssetRevaluation, FixedAsset } from '../types/reports'
 
 const data = async <T>(request: Promise<{ data: ApiEnvelope<T> }>) => (await request).data.data
+
+const posted = async <T>(request: Promise<{ data: ApiEnvelope<T> }>) => { const result = await data<T>(request); notifyLedgerChanged(); return result }
 
 export type FixedAssetInput = {
   code: string
@@ -19,9 +22,9 @@ export type FixedAssetInput = {
 }
 
 export const listFixedAssets = (status = '') => data<FixedAsset[]>(api.get('/fixed-assets', { params: status ? { status } : undefined }))
-export const createFixedAsset = (input: FixedAssetInput) => data<FixedAsset>(api.post('/fixed-assets', input))
-export const depreciateAsset = (id: string, periodDate: string) => data(api.post(`/fixed-assets/${id}/depreciations`, { period_date: periodDate }))
-export const revalueAsset = (id: string, input: Record<string, unknown>) => data<AssetRevaluation>(api.post(`/fixed-assets/${id}/revaluations`, input))
+export const createFixedAsset = (input: FixedAssetInput) => posted<FixedAsset>(api.post('/fixed-assets', input))
+export const depreciateAsset = (id: string, periodDate: string) => posted(api.post(`/fixed-assets/${id}/depreciations`, { period_date: periodDate }))
+export const revalueAsset = (id: string, input: Record<string, unknown>) => posted<AssetRevaluation>(api.post(`/fixed-assets/${id}/revaluations`, input))
 export const listRevaluations = (id: string) => data<AssetRevaluation[]>(api.get(`/fixed-assets/${id}/revaluations`))
-export const disposeAsset = (id: string, input: Record<string, unknown>) => data<AssetDisposal>(api.post(`/fixed-assets/${id}/disposal`, input))
+export const disposeAsset = (id: string, input: Record<string, unknown>) => posted<AssetDisposal>(api.post(`/fixed-assets/${id}/disposal`, input))
 export const listDisposals = () => data<AssetDisposal[]>(api.get('/asset-disposals'))

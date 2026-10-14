@@ -4,6 +4,8 @@ import {
   listPayrollRuns, listTaxPeriods, postPayroll, remeasureFX, saveForeignBalance, saveFXRate, saveLocalization,
 } from '../api/accounting'
 import type { Account, FXRate, LocalizationProfile, ManufacturingOrder, PayrollRun, StatutoryTaxPeriod } from '../types/accounting'
+import { listItems, listWarehouses } from '../api/operations'
+import type { Item, Warehouse } from '../types/operations'
 import { Badge, Button, PageHeader } from '../components/ui'
 import { AddButton, DataTable, TablePanel, type Column } from '../components/DataTable'
 import { FormModal, messageOf } from '../components/Modal'
@@ -300,6 +302,15 @@ function Payroll({ accounts, onNotice }: { accounts: Account[]; onNotice: (value
 }
 
 function Manufacturing({ accounts, onNotice }: { accounts: Account[]; onNotice: (value: string) => void }) {
+  const [items, setItems] = useState<Item[]>([])
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([])
+  const [materials, setMaterials] = useState([{ item_id: '', warehouse_id: '', quantity: '' }])
+  useEffect(() => {
+    void Promise.all([listItems(), listWarehouses()]).then(([products, locations]) => {
+      setItems(products.filter((item) => item.is_active && item.item_type === 'INVENTORY'))
+      setWarehouses(locations.filter((warehouse) => warehouse.is_active))
+    }).catch((error) => onNotice(messageOf(error)))
+  }, [onNotice])
   const [rows, setRows] = useState<ManufacturingOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState(false)
@@ -350,10 +361,13 @@ function Manufacturing({ accounts, onNotice }: { accounts: Account[]; onNotice: 
         onSubmit={(values) => form.save(
           () => completeManufacturing({
             order_number: value(values, 'order'),
-            product_reference: value(values, 'product'),
+            product_id: value(values, 'product'),
+            warehouse_id: value(values, 'warehouse'),
+            materials,
+            product_reference: items.find((item) => item.id === value(values, 'product'))?.sku ?? '',
             completion_date: value(values, 'date'),
             quantity: Number(value(values, 'qty')),
-            raw_material: value(values, 'raw'),
+            raw_material: '',
             direct_labor: value(values, 'labor'),
             overhead: value(values, 'overhead'),
             finished_goods_account_id: value(values, 'fg_account'),
@@ -367,14 +381,24 @@ function Manufacturing({ accounts, onNotice }: { accounts: Account[]; onNotice: 
       >
         <div className="form-row">
           <label>Nomor order<input name="order" required placeholder="MO-2026-001" /></label>
-          <label>Produk<input name="product" required placeholder="SKU-FG-001" /></label>
+          <label>Barang jadi<select name="product" required defaultValue=""><option value="">Pilih barang jadi</option>{items.map((item) => <option key={item.id} value={item.id}>{item.sku} · {item.name}</option>)}</select></label>
+          <label>Gudang barang jadi<select name="warehouse" required defaultValue=""><option value="">Pilih gudang</option>{warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.code} · {warehouse.name}</option>)}</select></label>
           <label>Tanggal selesai<input name="date" type="date" defaultValue={today} required /></label>
           <label>Qty<input name="qty" type="number" min="1" required /></label>
         </div>
         <fieldset>
-          <legend>Komponen biaya</legend>
+          <legend>Rincian bahan yang dipakai</legend>
+          {materials.map((material, index) => <div className="form-row" key={index}>
+            <label>Bahan<select required value={material.item_id} onChange={(event) => setMaterials((rows) => rows.map((row, i) => i === index ? { ...row, item_id: event.target.value } : row))}><option value="">Pilih bahan</option>{items.map((item) => <option key={item.id} value={item.id}>{item.sku} · {item.name}</option>)}</select></label>
+            <label>Gudang bahan<select required value={material.warehouse_id} onChange={(event) => setMaterials((rows) => rows.map((row, i) => i === index ? { ...row, warehouse_id: event.target.value } : row))}><option value="">Pilih gudang</option>{warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.code} · {warehouse.name}</option>)}</select></label>
+            <label>Kuantitas<input required type="number" min="0.000001" step="0.000001" value={material.quantity} onChange={(event) => setMaterials((rows) => rows.map((row, i) => i === index ? { ...row, quantity: event.target.value } : row))} /></label>
+            <Button type="button" variant="ghost" disabled={materials.length === 1} onClick={() => setMaterials((rows) => rows.filter((_, i) => i !== index))}>Hapus bahan</Button>
+          </div>)}
+          <Button type="button" variant="secondary" onClick={() => setMaterials((rows) => [...rows, { item_id: '', warehouse_id: '', quantity: '' }])}>Tambah bahan</Button>
+        </fieldset>
+        <fieldset><legend>Komponen biaya</legend>
           <div className="form-row">
-            <label>Material<input name="raw" defaultValue="0" inputMode="numeric" /></label>
+            <p className="modal-note">Nilai bahan dihitung dari stok dan metode biaya barang. Kuantitas bahan menggunakan satuan dasar.</p>
             <label>Tenaga kerja<input name="labor" defaultValue="0" inputMode="numeric" /></label>
             <label>Overhead<input name="overhead" defaultValue="0" inputMode="numeric" /></label>
           </div>

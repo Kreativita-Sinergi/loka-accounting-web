@@ -8,7 +8,7 @@ import { AddButton, DataTable, TablePanel, type Column } from '../components/Dat
 import { ConfirmDialog, FormModal, messageOf, useConfirm } from '../components/Modal'
 import { amount } from './ReportsPage'
 
-const paymentMethods = ['CASH', 'QRIS', 'DEBIT_CARD', 'CREDIT_CARD', 'E_WALLET']
+const paymentMethods = ['CASH', 'BANK', 'QRIS', 'DEBIT_CARD', 'CREDIT_CARD', 'E_WALLET']
 
 type RegisterRow = FixedAssetRegisterReport['rows'][number]
 
@@ -39,7 +39,8 @@ export function AssetsPage({ accounts, onNotice }: { accounts: Account[]; onNoti
 
   useEffect(() => { void refresh() }, [refresh])
 
-  const assetAccounts = accounts.filter((account) => account.type === 'ASSET')
+  const assetAccounts = accounts.filter((account) => account.type === 'ASSET' && account.normal_balance === 'DEBIT' && !['CASH', 'BANK'].includes(account.system_key ?? '') && account.cash_flow_category !== 'CASH')
+  const accumulatedAccounts = accounts.filter((account) => account.type === 'ASSET' && account.normal_balance === 'CREDIT')
   const expenseAccounts = accounts.filter((account) => account.type === 'EXPENSE' || account.type === 'OTHER_EXPENSE')
   const equityAccounts = accounts.filter((account) => account.type === 'EQUITY')
   const resultAccounts = accounts.filter((account) => ['OTHER_INCOME', 'OTHER_EXPENSE', 'EXPENSE', 'REVENUE'].includes(account.type))
@@ -65,7 +66,7 @@ export function AssetsPage({ accounts, onNotice }: { accounts: Account[]; onNoti
     { header: 'Kode', className: 'mono', width: '120px', cell: (row) => row.code },
     { header: 'Aset', cell: (row) => <><strong>{row.name}</strong><small className="block">{row.acquisition_date}{row.last_depreciation_period && ` · penyusutan terakhir ${row.last_depreciation_period}`}</small></> },
     { header: 'Metode', cell: (row) => <span className="type-tag">{row.depreciation_method}</span> },
-    { header: 'Status', cell: (row) => <Badge tone={row.status === 'ACTIVE' ? 'success' : 'neutral'}>{row.status}</Badge> },
+    { header: 'Status', cell: (row) => <><Badge tone={row.status === 'ACTIVE' ? 'success' : 'neutral'}>{row.status}</Badge>{row.status === 'DISPOSED' && <small className="block">Nilai historis sebelum pelepasan</small>}</> },
     { header: 'Perolehan', align: 'right', className: 'mono', cell: (row) => amount(row.acquisition) },
     { header: 'Akumulasi', align: 'right', className: 'mono', cell: (row) => amount(row.accumulated_depreciation) },
     { header: 'Nilai buku', align: 'right', className: 'mono', cell: (row) => amount(row.book_value) },
@@ -90,7 +91,7 @@ export function AssetsPage({ accounts, onNotice }: { accounts: Account[]; onNoti
     },
   ]
 
-  const missingAccounts = assetAccounts.length === 0 || expenseAccounts.length === 0
+  const missingAccounts = assetAccounts.length === 0 || accumulatedAccounts.length === 0 || expenseAccounts.length === 0
 
   return (
     <section>
@@ -123,7 +124,7 @@ export function AssetsPage({ accounts, onNotice }: { accounts: Account[]; onNoti
           ]}
           footer={register && (
             <tfoot><tr>
-              <th colSpan={4}>Total</th>
+              <th colSpan={4}>Total aset yang masih diakui</th>
               <th className="number">{amount(register.total_acquisition)}</th>
               <th className="number">{amount(register.total_accumulated_depreciation)}</th>
               <th className="number">{amount(register.total_book_value)}</th>
@@ -146,7 +147,7 @@ export function AssetsPage({ accounts, onNotice }: { accounts: Account[]; onNoti
         size="lg"
         eyebrow="PEROLEHAN"
         title="Catat aset baru"
-        description="Perolehan langsung membentuk jurnal dengan metode pembayaran yang dipilih."
+        description="Pilih metode dan akun jurnal. Penyusutan bulanan menggunakan bulan penuh dan belum memakai prorata harian."
         submitLabel="Catat aset"
         busy={saving}
         error={formError}
@@ -186,9 +187,9 @@ export function AssetsPage({ accounts, onNotice }: { accounts: Account[]; onNoti
         <fieldset>
           <legend>Akun jurnal</legend>
           <div className="form-row">
-            <label>Akun aset<select name="asset_account_id" required>{assetAccounts.map((account) => <option key={account.id} value={account.id}>{account.code} · {account.name}</option>)}</select></label>
-            <label>Akumulasi penyusutan<select name="accumulated_depreciation_account_id" required>{assetAccounts.map((account) => <option key={account.id} value={account.id}>{account.code} · {account.name}</option>)}</select></label>
-            <label>Beban penyusutan<select name="depreciation_expense_account_id" required>{expenseAccounts.map((account) => <option key={account.id} value={account.id}>{account.code} · {account.name}</option>)}</select></label>
+            <label>Akun aset<select name="asset_account_id" defaultValue="" required><option value="">Pilih akun aset tetap</option>{assetAccounts.map((account) => <option key={account.id} value={account.id}>{account.code} · {account.name}</option>)}</select></label>
+            <label>Akumulasi penyusutan<select name="accumulated_depreciation_account_id" defaultValue="" required><option value="">Pilih akun akumulasi penyusutan</option>{accumulatedAccounts.map((account) => <option key={account.id} value={account.id}>{account.code} · {account.name}</option>)}</select></label>
+            <label>Beban penyusutan<select name="depreciation_expense_account_id" defaultValue="" required><option value="">Pilih akun beban penyusutan</option>{expenseAccounts.map((account) => <option key={account.id} value={account.id}>{account.code} · {account.name}</option>)}</select></label>
           </div>
         </fieldset>
       </FormModal>

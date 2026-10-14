@@ -4,6 +4,8 @@ import { cx, MoneyInput } from './ui'
 import { formatMoney, lineTotal } from '../lib/money'
 
 export type DocumentLine = {
+  source_line_id?: string
+  source_unit_id?: string
   id: string
   item_id: string
   description: string

@@ -31,7 +31,7 @@ const accountTypes: Array<{ value: AccountType; label: string }> = [
   { value: 'OTHER_EXPENSE', label: 'Beban lain-lain' },
 ]
 
-type AccountInput = { code: string; name: string; type: AccountType; normal_balance?: Account['normal_balance']; parent_id: string | null }
+type AccountInput = { cash_flow_category?: string; code: string; name: string; type: AccountType; normal_balance?: Account['normal_balance']; parent_id: string | null }
 
 export function AccountsPage({ accounts, scale, onCreate, onUpdate, onStatusChange, onDelete }: {
   accounts: Account[]
@@ -102,6 +102,7 @@ export function AccountsPage({ accounts, scale, onCreate, onUpdate, onStatusChan
 
   async function submit(values: FormData) {
     const input: AccountInput = {
+      cash_flow_category: String(values.get('cash_flow_category') ?? ''),
       code: String(values.get('code')),
       name: String(values.get('name')),
       type,
@@ -236,6 +237,16 @@ export function AccountsPage({ accounts, scale, onCreate, onUpdate, onStatusChan
           <label>Tipe akun
             <select value={type} disabled={editing?.is_system} onChange={(event) => setType(event.target.value as AccountType)}>
               {accountTypes.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </label>
+          <label>Kategori arus kas
+            <select name="cash_flow_category" defaultValue={editing?.cash_flow_category ?? ''}>
+              <option value="">Otomatis berdasarkan fungsi transaksi</option>
+              {type === 'ASSET' && <option value="CASH">Kas dan setara kas</option>}
+              <option value="OPERATING">Operasi / modal kerja</option>
+              <option value="INVESTING">Investasi</option>
+              <option value="FINANCING">Pendanaan</option>
+              <option value="NON_CASH">Nonkas</option>
             </select>
           </label>
           <label>Akun induk (opsional)

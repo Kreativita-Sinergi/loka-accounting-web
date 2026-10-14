@@ -37,7 +37,7 @@ export async function createTaxPeriod(input: Record<string, unknown>) { const { 
 export async function listPayrollRuns() { const { data } = await api.get<ApiEnvelope<PayrollRun[]>>('/payroll/runs'); return data.data }
 export async function postPayroll(input: Record<string, unknown>) { const { data } = await api.post<ApiEnvelope<PayrollRun>>('/payroll/runs', input); return data.data }
 export async function listManufacturingOrders() { const { data } = await api.get<ApiEnvelope<ManufacturingOrder[]>>('/manufacturing/orders'); return data.data }
-export async function completeManufacturing(input: Record<string, unknown>) { const { data } = await api.post<ApiEnvelope<ManufacturingOrder>>('/manufacturing/orders/complete', input); return data.data }
+export async function completeManufacturing(input: Record<string, unknown>) { const { data } = await api.post<ApiEnvelope<ManufacturingOrder>>('/manufacturing/orders/complete', input); notifyLedgerChanged(); return data.data }
 export async function listFXRates() { const { data } = await api.get<ApiEnvelope<FXRate[]>>('/fx/rates'); return data.data }
 export async function saveFXRate(input: Record<string, unknown>) { const { data } = await api.post<ApiEnvelope<FXRate>>('/fx/rates', input); return data.data }
 export async function saveForeignBalance(input: Record<string, unknown>) { const { data } = await api.put<ApiEnvelope<unknown>>('/fx/balances', input); return data.data }

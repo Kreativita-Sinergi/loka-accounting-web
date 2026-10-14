@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getReport } from '../api/accounting'
 import {
   exportReport,
@@ -81,6 +81,7 @@ export function ReportsPage() {
   const [items, setItems] = useState<Item[]>([])
   const [warehouses, setWarehouses] = useState<Warehouse[]>([])
   const [payload, setPayload] = useState<{ key: ReportKey; data: unknown } | null>(null)
+  const requestVersion = useRef(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -100,16 +101,18 @@ export function ReportsPage() {
   }), [report, startDate, endDate, itemId, warehouseId, showCancelled])
 
   const load = useCallback(async () => {
+    const version = ++requestVersion.current
     setLoading(true)
     setError(null)
     try {
       const data = await fetchReport(report, filters)
-      setPayload({ key: report, data })
+      if (version === requestVersion.current) setPayload({ key: report, data })
     } catch (caught) {
+      if (version !== requestVersion.current) return
       setPayload(null)
       setError(messageOf(caught))
     } finally {
-      setLoading(false)
+      if (version === requestVersion.current) setLoading(false)
     }
   }, [report, filters])
 
@@ -270,6 +273,9 @@ function CashFlowView({ report }: { report: CashFlowIndirectReport }) {
     <Row label="Arus kas dari investasi" value={report.investing_total} strong />
     {report.financing.map((line) => <Row key={line.account_id} label={line.account_name} value={line.amount} />)}
     <Row label="Arus kas dari pendanaan" value={report.financing_total} strong />
+    {(report.unclassified ?? []).map((line) => <Row key={line.account_id} label={`Belum dipetakan · ${line.account_code} ${line.account_name}`} value={line.amount} />)}
+    {(report.unclassified?.length ?? 0) > 0 && <p className="balance-error">Lengkapi kategori arus kas akun terkait di Daftar Akun.</p>}
+    {report.exchange_effect && Number(report.exchange_effect) !== 0 && <Row label="Dampak kurs pada kas dan bank" value={report.exchange_effect} />}
     <Row label="Kenaikan/penurunan kas" value={report.net_change} total />
     <Row label="Kas awal" value={report.opening_cash} />
     <Row label="Kas akhir" value={report.closing_cash} strong />
@@ -313,7 +319,7 @@ function PartnerView({ report, label }: { report: PartnerTurnoverReport; label: 
         <td className="number mono">{amount(row.subtotal)}</td><td className="number mono">{amount(row.discount)}</td>
         <td className="number mono">{amount(row.tax)}</td><td className="number mono">{amount(row.total)}</td></tr>
     ))}</tbody>
-    <tfoot><tr><th colSpan={5}>Total</th><th className="number">{amount(report.total)}</th></tr></tfoot>
+    <tfoot><tr><th colSpan={5}>Total aset yang masih diakui</th><th className="number">{amount(report.total)}</th></tr></tfoot>
   </table></div>
 }
 
@@ -326,7 +332,7 @@ function ItemView({ report }: { report: ItemTurnoverReport }) {
         <td className="number mono">{quantity(row.quantity)}</td><td className="number mono">{amount(row.subtotal)}</td>
         <td className="number mono">{amount(row.tax)}</td><td className="number mono">{amount(row.total)}</td></tr>
     ))}</tbody>
-    <tfoot><tr><th colSpan={5}>Total</th><th className="number">{amount(report.total)}</th></tr></tfoot>
+    <tfoot><tr><th colSpan={5}>Total aset yang masih diakui</th><th className="number">{amount(report.total)}</th></tr></tfoot>
   </table></div>
 }
 
@@ -339,7 +345,7 @@ function ValuationView({ report }: { report: InventoryValuationReport }) {
         <td className="number mono">{quantity(row.quantity)}</td><td className="number mono">{amount(row.average_cost)}</td>
         <td className="number mono">{amount(row.value)}</td></tr>
     ))}</tbody>
-    <tfoot><tr><th colSpan={5}>Total</th><th className="number">{amount(report.total)}</th></tr></tfoot>
+    <tfoot><tr><th colSpan={5}>Total aset yang masih diakui</th><th className="number">{amount(report.total)}</th></tr></tfoot>
   </table></div>
 }
 
@@ -372,11 +378,11 @@ function AssetRegisterView({ report }: { report: FixedAssetRegisterReport }) {
     <tbody>{report.rows.map((row) => (
       <tr key={row.asset_id}><td className="mono">{row.code}</td><td>{row.name}</td><td>{row.acquisition_date}</td>
         <td><span className="type-tag">{row.depreciation_method}</span></td>
-        <td><Badge tone={row.status === 'ACTIVE' ? 'success' : 'neutral'}>{row.status}</Badge></td>
+        <td><Badge tone={row.status === 'ACTIVE' ? 'success' : 'neutral'}>{row.status}</Badge>{row.status === 'DISPOSED' && <small className="block">Nilai historis sebelum pelepasan</small>}</td>
         <td className="number mono">{amount(row.acquisition)}</td><td className="number mono">{amount(row.accumulated_depreciation)}</td>
         <td className="number mono">{amount(row.book_value)}</td></tr>
     ))}</tbody>
-    <tfoot><tr><th colSpan={5}>Total</th><th className="number">{amount(report.total_acquisition)}</th>
+    <tfoot><tr><th colSpan={5}>Total aset yang masih diakui</th><th className="number">{amount(report.total_acquisition)}</th>
       <th className="number">{amount(report.total_accumulated_depreciation)}</th><th className="number">{amount(report.total_book_value)}</th></tr></tfoot>
   </table></div>
 }

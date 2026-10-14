@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import PublicApp from './PublicApp'
 import './styles.css'
+import PublicApp from './PublicApp'
 import AdminApp from './admin/AdminApp'
 
 const isAdmin = import.meta.env.VITE_APP_MODE === 'admin' || /^\/admin(?:\/|$)/.test(window.location.pathname)
