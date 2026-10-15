@@ -108,7 +108,7 @@ export default function App() {
 
   // The account handlers let failures propagate so the calling modal can show
   // the reason inline; only successes raise a toast.
-  async function accountCreate(input: { code: string; name: string; type: Account['type']; parent_id: string | null }) {
+  async function accountCreate(input: { code: string; name: string; type: Account['type']; normal_balance?: Account['normal_balance']; parent_id: string | null }) {
     const account = await createAccount(input)
     setAccounts((current) => [...current, account].sort((left, right) => left.code.localeCompare(right.code, 'id-ID', { numeric: true })))
     setNotice('Akun berhasil dibuat.')
@@ -170,20 +170,20 @@ export default function App() {
       case 'gl.ledger': case 'reports.ledger': return <LedgerPage />
       case 'sales.receipt': case 'purchase.payment': case 'sales.customer': case 'purchase.vendor': case 'reports.aging':
         return <OperationsPage accounts={activeAccounts} onNotice={setNotice} />
-      case 'sales.quote': return <DocumentsPage documentType="SALES_QUOTE" scale={scale} onNotice={setNotice} />
-      case 'sales.order': return <DocumentsPage documentType="SALES_ORDER" scale={scale} onNotice={setNotice} />
-      case 'sales.delivery': return <DocumentsPage documentType="DELIVERY" scale={scale} onNotice={setNotice} />
-      case 'sales.invoice': return <DocumentsPage documentType="SALES_INVOICE" scale={scale} onNotice={setNotice} />
-      case 'sales.return': return <DocumentsPage documentType="SALES_RETURN" scale={scale} onNotice={setNotice} />
-      case 'purchase.requisition': return <DocumentsPage documentType="PURCHASE_REQUISITION" scale={scale} onNotice={setNotice} />
-      case 'purchase.order': return <DocumentsPage documentType="PURCHASE_ORDER" scale={scale} onNotice={setNotice} />
-      case 'purchase.receipt': return <DocumentsPage documentType="GOODS_RECEIPT" scale={scale} onNotice={setNotice} />
-      case 'purchase.invoice': return <DocumentsPage documentType="PURCHASE_INVOICE" scale={scale} onNotice={setNotice} />
-      case 'purchase.return': return <DocumentsPage documentType="PURCHASE_RETURN" scale={scale} onNotice={setNotice} />
-      case 'inventory.opening': return <DocumentsPage initialAction="opening" scale={scale} onNotice={setNotice} />
-      case 'inventory.adjustment': return <DocumentsPage initialAction="adjust" scale={scale} onNotice={setNotice} />
+      case 'sales.quote': return <DocumentsPage accounts={activeAccounts} documentType="SALES_QUOTE" scale={scale} onNotice={setNotice} />
+      case 'sales.order': return <DocumentsPage accounts={activeAccounts} documentType="SALES_ORDER" scale={scale} onNotice={setNotice} />
+      case 'sales.delivery': return <DocumentsPage accounts={activeAccounts} documentType="DELIVERY" scale={scale} onNotice={setNotice} />
+      case 'sales.invoice': return <DocumentsPage accounts={activeAccounts} documentType="SALES_INVOICE" scale={scale} onNotice={setNotice} />
+      case 'sales.return': return <DocumentsPage accounts={activeAccounts} documentType="SALES_RETURN" scale={scale} onNotice={setNotice} />
+      case 'purchase.requisition': return <DocumentsPage accounts={activeAccounts} documentType="PURCHASE_REQUISITION" scale={scale} onNotice={setNotice} />
+      case 'purchase.order': return <DocumentsPage accounts={activeAccounts} documentType="PURCHASE_ORDER" scale={scale} onNotice={setNotice} />
+      case 'purchase.receipt': return <DocumentsPage accounts={activeAccounts} documentType="GOODS_RECEIPT" scale={scale} onNotice={setNotice} />
+      case 'purchase.invoice': return <DocumentsPage accounts={activeAccounts} documentType="PURCHASE_INVOICE" scale={scale} onNotice={setNotice} />
+      case 'purchase.return': return <DocumentsPage accounts={activeAccounts} documentType="PURCHASE_RETURN" scale={scale} onNotice={setNotice} />
+      case 'inventory.opening': return <DocumentsPage accounts={activeAccounts} initialAction="opening" scale={scale} onNotice={setNotice} />
+      case 'inventory.adjustment': return <DocumentsPage accounts={activeAccounts} initialAction="adjust" scale={scale} onNotice={setNotice} />
       case 'inventory.transfer': case 'inventory.opnameresult': case 'inventory.stockbywarehouse':
-        return <DocumentsPage scale={scale} onNotice={setNotice} />
+        return <DocumentsPage accounts={activeAccounts} scale={scale} onNotice={setNotice} />
       case 'inventory.category': return <ItemMasterPage kind="category" accounts={activeAccounts} onNotice={setNotice} />
       case 'inventory.brand': return <ItemMasterPage kind="brand" accounts={activeAccounts} onNotice={setNotice} />
       case 'inventory.item': case 'inventory.warehouse': case 'inventory.unit':

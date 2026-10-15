@@ -8,7 +8,7 @@ import { LineGrid, emptyLine, type DocumentLine } from '../components/LineGrid'
 import { decimal, formatMoney, fromMinor, lineTotal } from '../lib/money'
 import { messageOf } from '../components/Modal'
 import { useTabHandle } from '../store/tabs'
-import type { Contact } from '../types/accounting'
+import type { Account, Contact } from '../types/accounting'
 import type { BusinessDocument, Item, Unit, Warehouse } from '../types/operations'
 import type { Project } from '../types/reports'
 
@@ -53,12 +53,14 @@ const today = () => new Date().toISOString().slice(0, 10)
  * footer total berjenjang, dan rail aksi kanan yang selalu terlihat.
  */
 export function DocumentForm({
-  prefill, scale, items, units, warehouses, contacts, projects, onCancel, onSaved, onNotice, onProcess,
+  prefill, scale, accounts = [], items, units, warehouses, contacts, projects, onCancel, onSaved, onNotice, onProcess,
 }: {
   /** Isian awal ketika form dibuka lewat tombol "Proses" dokumen hulu. */
   prefill?: { documentType: string; sourceId: string } | null
   /** Skala mata uang perusahaan; nilai minor unit dibagi 10^scale. */
   scale: number
+  /** Akun aktif; faktur pembelian memakai akun aset tetap untuk baris aset. */
+  accounts?: Account[]
   items: Item[]
   units: Unit[]
   warehouses: Warehouse[]
@@ -106,6 +108,11 @@ export function DocumentForm({
   const itemOptions = items.filter((item) => item.is_active).map((item) => ({
     value: item.id, label: item.name, code: item.sku, unit: unitLabel(item.base_unit_id),
   }))
+  // Sama dengan aturan server: akun aset buatan pengguna, bukan kas/bank/piutang/persediaan.
+  const assetAccountOptions = documentType === 'PURCHASE_INVOICE'
+    ? accounts.filter((account) => account.type === 'ASSET' && account.normal_balance === 'DEBIT' && !account.system_key && account.cash_flow_category !== 'CASH')
+      .map((account) => ({ value: account.id, label: `${account.code} · ${account.name}` }))
+    : null
   const warehouseOptions = warehouses.filter((warehouse) => warehouse.is_active).map((warehouse) => ({ value: warehouse.id, label: `${warehouse.code} · ${warehouse.name}` }))
   const contactOptions = contacts.filter((contact) => contact.is_active)
     .filter((contact) => contact.type === 'BOTH' || contact.type === (isSales ? 'CUSTOMER' : 'SUPPLIER'))
@@ -206,6 +213,7 @@ export function DocumentForm({
           const net = round(lineTotal(line) * (1 - decimal(documentDiscount) / 100))
           return {
             item_id: item?.id ?? null,
+            asset_account_id: documentType === 'PURCHASE_INVOICE' && line.asset_account_id ? line.asset_account_id : null,
             unit_id: line.source_unit_id ?? item?.base_unit_id ?? null,
             source_line_id: line.source_line_id ?? null,
             warehouse_id: line.warehouse_id || warehouseId || null,
@@ -329,6 +337,7 @@ export function DocumentForm({
               warehouses={warehouseOptions}
               showWarehouse={warehouseOptions.length > 0}
               showNote
+              assetAccounts={assetAccountOptions}
             />
           )}
           {panel === 'info' && (

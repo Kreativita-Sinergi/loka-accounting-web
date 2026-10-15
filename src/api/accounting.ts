@@ -187,7 +187,7 @@ export async function listAccounts() {
   return data.data
 }
 
-export async function createAccount(input: { code: string; name: string; type: Account['type']; parent_id: string | null }) {
+export async function createAccount(input: { code: string; name: string; type: Account['type']; normal_balance?: Account['normal_balance']; parent_id: string | null }) {
   const { data } = await api.post<ApiEnvelope<Account>>('/accounts', input)
   return data.data
 }

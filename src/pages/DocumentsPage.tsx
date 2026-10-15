@@ -17,7 +17,7 @@ import { useServerList } from '../lib/serverList'
 import { downloadCsv, fetchAllPages } from '../lib/csv'
 import { formatDate, formatMinor, fromMinor } from '../lib/money'
 import { ConfirmDialog, FormModal, messageOf, useConfirm } from '../components/Modal'
-import type { Contact } from '../types/accounting'
+import type { Account, Contact } from '../types/accounting'
 import type { BusinessDocument, InventoryBalance, InventoryReservation, Item, Unit, Warehouse } from '../types/operations'
 
 const documentTypes = ['SALES_QUOTE', 'SALES_ORDER', 'DELIVERY', 'SALES_INVOICE', 'SALES_RETURN', 'PURCHASE_REQUISITION', 'PURCHASE_ORDER', 'GOODS_RECEIPT', 'PURCHASE_INVOICE', 'PURCHASE_RETURN']
@@ -48,7 +48,7 @@ function advanceLabel(status: string) {
 
 type InventoryAction = 'opening' | 'adjust' | 'transfer' | 'opname' | 'reserve'
 
-export function DocumentsPage({ documentType, initialAction, scale, onNotice }: { documentType?: string; initialAction?: InventoryAction; scale: number; onNotice: (value: string) => void }) {
+export function DocumentsPage({ accounts = [], documentType, initialAction, scale, onNotice }: { accounts?: Account[]; documentType?: string; initialAction?: InventoryAction; scale: number; onNotice: (value: string) => void }) {
   const [documents, setDocuments] = useState<BusinessDocument[]>([])
   const [items, setItems] = useState<Item[]>([])
   const [warehouses, setWarehouses] = useState<Warehouse[]>([])
@@ -191,6 +191,7 @@ export function DocumentsPage({ documentType, initialAction, scale, onNotice }: 
           key={formKey}
           prefill={prefill ?? (documentType ? { documentType, sourceId: '' } : null)}
           scale={scale}
+          accounts={accounts}
           items={items}
           units={units}
           warehouses={warehouses}

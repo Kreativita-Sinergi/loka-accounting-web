@@ -108,7 +108,11 @@ export function AccountsPage({ accounts, scale, onCreate, onUpdate, onStatusChan
       type,
       parent_id: editing?.is_system ? editing.parent_id : String(values.get('parent_id') || '') || null,
     }
-    if (editing && editing.type === type) input.normal_balance = editing.normal_balance
+    // Kosong = ikuti tipe akun; akun lawan seperti akumulasi penyusutan
+    // (Aset bersaldo Kredit) memilih saldo normalnya sendiri.
+    const normal = String(values.get('normal_balance') ?? '')
+    if (normal === 'DEBIT' || normal === 'CREDIT') input.normal_balance = normal
+    else if (editing && editing.type === type) input.normal_balance = editing.normal_balance
     setSaving(true)
     setFormError(null)
     try {
@@ -222,7 +226,7 @@ export function AccountsPage({ accounts, scale, onCreate, onUpdate, onStatusChan
         title={editing ? `Ubah akun ${editing.code}` : 'Tambah akun baru'}
         description={editing?.is_system
           ? 'Akun sistem dipakai otomatis oleh modul lain, jadi hanya namanya yang dapat diubah.'
-          : 'Saldo normal ditentukan otomatis dari tipe akun yang dipilih.'}
+          : 'Saldo normal mengikuti tipe akun, kecuali untuk akun lawan seperti akumulasi penyusutan (Aset, saldo normal Kredit).'}
         submitLabel={editing ? 'Simpan perubahan' : 'Tambah akun'}
         busy={saving}
         error={formError}
@@ -237,6 +241,13 @@ export function AccountsPage({ accounts, scale, onCreate, onUpdate, onStatusChan
           <label>Tipe akun
             <select value={type} disabled={editing?.is_system} onChange={(event) => setType(event.target.value as AccountType)}>
               {accountTypes.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </label>
+          <label>Saldo normal
+            <select name="normal_balance" defaultValue={editing?.normal_balance ?? ''} disabled={editing?.is_system}>
+              <option value="">Sesuai tipe akun</option>
+              <option value="DEBIT">Debit</option>
+              <option value="CREDIT">Kredit{type === 'ASSET' ? ' — mis. akumulasi penyusutan' : ''}</option>
             </select>
           </label>
           <label>Kategori arus kas

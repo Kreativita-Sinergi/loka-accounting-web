@@ -80,6 +80,8 @@ export type FixedAssetRegisterRow = {
   code: string
   name: string
   acquisition_date: string
+  in_service_date: string
+  acquisition_source: FixedAssetSourceKind
   acquisition: string
   residual: string
   carrying_adjustment: string
@@ -95,6 +97,41 @@ export type FixedAssetRegisterReport = {
   total_acquisition: string
   total_accumulated_depreciation: string
   total_book_value: string
+  /** Saldo buku besar tiap akun aset dibanding nilai register. */
+  reconciliation?: Array<{ account_id: string; account_code: string; account_name: string; ledger: string; register: string; difference: string }>
+}
+
+/** DIRECT: kartu memposting jurnal sendiri; lainnya menunjuk jurnal yang sudah ada. */
+export type FixedAssetSourceKind = 'DIRECT' | 'PURCHASE_INVOICE' | 'JOURNAL'
+
+export type FixedAssetInvoiceSource = {
+  document_id: string
+  document_number: string
+  document_date: string
+  contact_name: string | null
+  line_id: string
+  description: string
+  amount: string
+  asset_account_id: string
+  asset_account_code: string
+  asset_account_name: string
+  journal_entry_id: string
+  payment_status: string | null
+  outstanding: string | null
+  fixed_asset_id: string | null
+  fixed_asset_code: string | null
+}
+
+export type FixedAssetJournalSource = {
+  journal_entry_id: string
+  journal_number: string
+  transaction_date: string
+  description: string
+  source_type: string
+  asset_account_id: string
+  asset_account_code: string
+  asset_account_name: string
+  available: string
 }
 
 export type AssetDepreciationRow = {
@@ -169,6 +206,8 @@ export type FixedAsset = {
   code: string
   name: string
   acquisition_date: string
+  in_service_date: string
+  acquisition_source: FixedAssetSourceKind
   acquisition_minor: number
   residual_minor: number
   useful_life_months: number

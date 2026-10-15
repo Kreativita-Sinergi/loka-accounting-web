@@ -14,6 +14,8 @@ export type DocumentLine = {
   discount: string
   warehouse_id: string
   note: string
+  /** Diisi = baris aset tetap: faktur mendebit akun ini, bukan beban. */
+  asset_account_id?: string
 }
 
 export type LineOption = { value: string; label: string; code: string; unit: string }
@@ -34,6 +36,7 @@ export function LineGrid({
   warehouses,
   showWarehouse,
   showNote,
+  assetAccounts,
 }: {
   lines: DocumentLine[]
   onChange: (lines: DocumentLine[]) => void
@@ -41,6 +44,8 @@ export function LineGrid({
   warehouses: Array<{ value: string; label: string }>
   showWarehouse: boolean
   showNote: boolean
+  /** Hanya faktur pembelian: pilihan akun aset tetap per baris; null menyembunyikan kolom. */
+  assetAccounts?: Array<{ value: string; label: string }> | null
 }) {
   const [picker, setPicker] = useState('')
   const dragged = useRef<number | null>(null)
@@ -104,6 +109,7 @@ export function LineGrid({
               <th className="number" style={{ width: '130px' }}>@Harga</th>
               <th className="number" style={{ width: '90px' }}>Diskon %</th>
               {showWarehouse && <th style={{ width: '150px' }}>Gudang</th>}
+              {assetAccounts && <th style={{ width: '190px' }} title="Pilih akun aset agar baris ini dicatat sebagai aset tetap, bukan beban">Aset Tetap</th>}
               {showNote && <th style={{ width: '170px' }}>Keterangan</th>}
               <th className="number" style={{ width: '140px' }}>Total Harga</th>
               <th style={{ width: '34px' }}><span className="sr-only">Hapus</span></th>
@@ -141,6 +147,14 @@ export function LineGrid({
                       <select value={line.warehouse_id} onChange={(event) => update(index, { warehouse_id: event.target.value })}>
                         <option value="">— gudang dokumen —</option>
                         {warehouses.map((warehouse) => <option key={warehouse.value} value={warehouse.value}>{warehouse.label}</option>)}
+                      </select>
+                    </td>
+                  )}
+                  {assetAccounts && (
+                    <td>
+                      <select value={line.asset_account_id ?? ''} onChange={(event) => update(index, { asset_account_id: event.target.value })} aria-label="Akun aset tetap">
+                        <option value="">— bukan aset —</option>
+                        {assetAccounts.map((account) => <option key={account.value} value={account.value}>{account.label}</option>)}
                       </select>
                     </td>
                   )}
