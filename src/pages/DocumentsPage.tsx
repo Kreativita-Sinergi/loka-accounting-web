@@ -23,6 +23,8 @@ import { amount, quantity } from './ReportsPage'
 
 const documentTypes = ['SALES_QUOTE', 'SALES_ORDER', 'DELIVERY', 'SALES_INVOICE', 'SALES_RETURN', 'PURCHASE_REQUISITION', 'PURCHASE_ORDER', 'GOODS_RECEIPT', 'PURCHASE_INVOICE', 'PURCHASE_RETURN']
 const advanceable = ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'OPEN', 'PARTIAL']
+// Hanya dokumen yang belum mem-post jurnal yang boleh dibatalkan.
+const cancellable = ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'OPEN']
 /** Dokumen hilir utama untuk aksi cepat "Proses" dari daftar. */
 const downstreamPrimary: Record<string, string> = {
   SALES_QUOTE: 'SALES_ORDER', SALES_ORDER: 'DELIVERY', DELIVERY: 'SALES_INVOICE', SALES_INVOICE: 'SALES_RETURN',
@@ -72,6 +74,7 @@ export function DocumentsPage({ accounts = [], documentType, initialAction, scal
 
   const advance = useConfirm<BusinessDocument>()
   const release = useConfirm<InventoryReservation>()
+  const cancel = useConfirm<BusinessDocument>()
 
   async function refresh() {
     const results = await Promise.allSettled([
@@ -274,6 +277,7 @@ export function DocumentsPage({ accounts = [], documentType, initialAction, scal
           },
           { label: 'Cetak PDF', icon: 'printer', onSelect: (document) => void openDocumentPrint(document.id, 'pdf') },
           { label: 'Pratinjau', icon: 'reports', onSelect: (document) => void openDocumentPrint(document.id, 'html') },
+          { label: 'Batalkan dokumen', icon: 'power', danger: true, onSelect: cancel.open, when: (document) => cancellable.includes(document.status) },
         ]}
         onRowOpen={setJournalTarget}
       />
@@ -448,6 +452,22 @@ export function DocumentsPage({ accounts = [], documentType, initialAction, scal
         description={advance.target?.status === 'OPEN' || advance.target?.status === 'PARTIAL'
           ? <>Menyelesaikan <strong>{advance.target.number}</strong> akan mem-post jurnal, open item, dan pergerakan stok secara atomik. Tindakan ini tidak dapat dibatalkan.</>
           : <>Status dokumen <strong>{advance.target?.number}</strong> akan berubah dari {advance.target?.status} menjadi {advance.target ? nextStatus(advance.target.status) : ''}.</>}
+      />
+
+      <ConfirmDialog
+        open={cancel.target !== null}
+        tone="danger"
+        title="Batalkan dokumen?"
+        confirmLabel="Batalkan dokumen"
+        busy={cancel.busy}
+        error={cancel.error}
+        onClose={cancel.close}
+        onConfirm={() => cancel.run((document) => transitionDocument(document.id, 'CANCELLED').then(async () => {
+          await refresh()
+          void documentList.reload()
+          onNotice(`Dokumen ${document.number} dibatalkan.`)
+        }))}
+        description={<>Dokumen <strong>{cancel.target?.number}</strong> akan berstatus CANCELLED dan tidak bisa diproses lagi. Jurnal belum terbentuk, jadi laporan tidak terpengaruh.</>}
       />
 
       <JournalPeek
