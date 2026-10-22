@@ -284,7 +284,7 @@ export function DashboardPage({ scale }: { scale: number }) {
               rows={snapshot.items.rows.slice(0, 5).map((row) => ({
                 key: row.item_id ?? row.sku ?? row.item_name,
                 title: row.item_name,
-                note: `${row.sku} · ${row.quantity}`,
+                note: `${row.sku} · ${decimal(row.quantity).toLocaleString('id-ID')}`,
                 value: decimal(row.total),
               }))}
               format={money}

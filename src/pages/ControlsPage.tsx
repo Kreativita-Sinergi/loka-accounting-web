@@ -6,7 +6,7 @@ import {
   saveSecurity, saveSequence, setMemberActive, setMemberRole, setWebhookActive, setupMFA, updateWebhook,
 } from '../api/operations'
 import type { IdentityProfile } from '../api/auth'
-import { Badge, Button, PageHeader } from '../components/ui'
+import { Badge, Button, PageHeader, MoneyInput } from '../components/ui'
 import { AddButton, DataTable, StatusPill, TablePanel, type Column } from '../components/DataTable'
 import { ConfirmDialog, FormModal, messageOf, useConfirm } from '../components/Modal'
 import { useAccess } from '../lib/rbac'
@@ -531,7 +531,7 @@ export function ControlsPage({ profile, onNotice }: { profile: IdentityProfile; 
           <label>Logika<select name="condition_mode" defaultValue={editingPolicy?.condition_mode ?? 'OR'}><option>OR</option><option>AND</option></select></label>
         </div>
         <div className="form-row">
-          <label>Nilai minimum<input name="minimum_amount" inputMode="numeric" defaultValue={editingPolicy?.minimum_amount_minor ?? 0} required /></label>
+          <label>Nilai minimum<MoneyInput name="minimum_amount" defaultValue={String(editingPolicy?.minimum_amount_minor ?? 0)} required /></label>
           <label>Diskon minimum (basis point)<input type="number" min="0" max="10000" name="discount_bp" defaultValue={editingPolicy?.minimum_discount_basis_points ?? 0} /></label>
           <label>Penyetuju<select name="approver_role" defaultValue={editingPolicy?.approver_role ?? 'OWNER'}><option>OWNER</option><option>FINANCE</option><option>ACCOUNTANT</option></select></label>
         </div>

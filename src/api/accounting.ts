@@ -43,8 +43,8 @@ export async function saveFXRate(input: Record<string, unknown>) { const { data 
 export async function saveForeignBalance(input: Record<string, unknown>) { const { data } = await api.put<ApiEnvelope<unknown>>('/fx/balances', input); return data.data }
 export async function remeasureFX(input: Record<string, unknown>) { const { data } = await api.post<ApiEnvelope<unknown>>('/fx/remeasurements', input); return data.data }
 
-export async function getLedger(startDate: string, endDate: string, hideCancelled = false) {
-  const { data } = await api.get<ApiEnvelope<LedgerRow[]>>('/ledger', { params: { start_date: startDate, end_date: endDate, hide_cancelled: hideCancelled } })
+export async function getLedger(startDate: string, endDate: string, hideCancelled = false, accountId?: string) {
+  const { data } = await api.get<ApiEnvelope<LedgerRow[]>>('/ledger', { params: { start_date: startDate, end_date: endDate, hide_cancelled: hideCancelled, account_id: accountId || undefined } })
   return data.data
 }
 

@@ -19,6 +19,7 @@ import { formatDate, formatMinor, fromMinor } from '../lib/money'
 import { ConfirmDialog, FormModal, messageOf, useConfirm } from '../components/Modal'
 import type { Account, Contact } from '../types/accounting'
 import type { BusinessDocument, InventoryBalance, InventoryReservation, Item, Unit, Warehouse } from '../types/operations'
+import { amount, quantity } from './ReportsPage'
 
 const documentTypes = ['SALES_QUOTE', 'SALES_ORDER', 'DELIVERY', 'SALES_INVOICE', 'SALES_RETURN', 'PURCHASE_REQUISITION', 'PURCHASE_ORDER', 'GOODS_RECEIPT', 'PURCHASE_INVOICE', 'PURCHASE_RETURN']
 const advanceable = ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'OPEN', 'PARTIAL']
@@ -165,14 +166,14 @@ export function DocumentsPage({ accounts = [], documentType, initialAction, scal
   const balanceColumns: Array<Column<InventoryBalance>> = [
     { header: 'Produk', cell: (balance) => <><strong>{balance.item_name}</strong><small className="block mono">{balance.sku}</small></> },
     { header: 'Gudang', cell: (balance) => <>{balance.warehouse_name}<small className="block mono">{balance.warehouse_code}</small></> },
-    { header: 'Kuantitas', align: 'right', className: 'mono', cell: (balance) => balance.quantity },
+    { header: 'Kuantitas', align: 'right', className: 'mono', cell: (balance) => amount(quantity(balance.quantity)) },
     { header: 'Nilai', align: 'right', className: 'mono', cell: (balance) => formatMinor(balance.value_minor, scale) },
   ]
 
   const reservationColumns: Array<Column<InventoryReservation>> = [
     { header: 'Dokumen', className: 'mono', cell: (reservation) => documentNumber(reservation.document_id) },
     { header: 'Produk', cell: (reservation) => itemLabel(reservation.item_id) },
-    { header: 'Kuantitas', align: 'right', className: 'mono', cell: (reservation) => reservation.quantity },
+    { header: 'Kuantitas', align: 'right', className: 'mono', cell: (reservation) => amount(quantity(reservation.quantity)) },
     { header: 'Status', cell: (reservation) => <Badge tone={reservation.status === 'ACTIVE' ? 'warning' : 'neutral'}>{reservation.status}</Badge> },
   ]
 

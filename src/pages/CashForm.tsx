@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { ActionRail, DocumentShell, IconTabs, LookupField, type IconTab } from '../components/FormShell'
 import { messageOf } from '../components/Modal'
 import { Icon } from '../components/Icon'
-import { decimal, formatMoney } from '../lib/money'
+import { decimal, formatMoney, fromMinor } from '../lib/money'
 import { useTabHandle } from '../store/tabs'
 import type { Account, Contact } from '../types/accounting'
 import type { CashTransaction } from '../types/operations'
@@ -11,7 +11,8 @@ import type { CashTransactionInput } from '../api/operations'
 
 type Line = { id: string; account_id: string; description: string; amount: string }
 
-const emptyLine = (): Line => ({ id: Math.random().toString(36).slice(2, 10), account_id: '', description: '', amount: '0' })
+const lineId = () => Math.random().toString(36).slice(2, 10)
+const emptyLine = (): Line => ({ id: lineId(), account_id: '', description: '', amount: '0' })
 const today = () => new Date().toISOString().slice(0, 10)
 
 const titles = { RECEIPT: 'Kas Masuk', PAYMENT: 'Kas Keluar', TRANSFER: 'Transfer Kas & Bank' } as const
@@ -20,9 +21,11 @@ const titles = { RECEIPT: 'Kas Masuk', PAYMENT: 'Kas Keluar', TRANSFER: 'Transfe
  * Form Kas Masuk / Kas Keluar / Transfer Kas & Bank mengikuti pola FORM
  * TRANSAKSI (§4.3): header, ikon tab vertikal, grid rincian, dan rail aksi.
  */
-export function CashForm({ kind, scale, cashAccounts, accounts, contacts, onCancel, onSave, onSaved, onNotice }: {
+export function CashForm({ kind, scale, initial, cashAccounts, accounts, contacts, onCancel, onSave, onSaved, onNotice }: {
   kind: 'RECEIPT' | 'PAYMENT' | 'TRANSFER'
   scale: number
+  /** Transaksi terposting yang sedang diubah; tanpa ini form mencatat transaksi baru. */
+  initial?: CashTransaction
   cashAccounts: Account[]
   accounts: Account[]
   contacts: Contact[]
@@ -32,21 +35,25 @@ export function CashForm({ kind, scale, cashAccounts, accounts, contacts, onCanc
   onNotice: (message: string) => void
 }) {
   const [panel, setPanel] = useState('lines')
-  const [accountId, setAccountId] = useState(cashAccounts[0]?.id ?? '')
-  const [destinationId, setDestinationId] = useState('')
-  const [contactId, setContactId] = useState('')
-  const [transactionDate, setTransactionDate] = useState(today())
-  const [memo, setMemo] = useState('')
-  const [amount, setAmount] = useState('0')
-  const [fee, setFee] = useState('0')
-  const [feeAccountId, setFeeAccountId] = useState('')
-  const [lines, setLines] = useState<Line[]>([emptyLine()])
+  const minor = (value: number) => String(fromMinor(value, scale))
+  const [accountId, setAccountId] = useState(initial?.account_id ?? cashAccounts[0]?.id ?? '')
+  const [destinationId, setDestinationId] = useState(initial?.destination_account_id ?? '')
+  const [contactId, setContactId] = useState(initial?.contact_id ?? '')
+  const [transactionDate, setTransactionDate] = useState(initial?.transaction_date.slice(0, 10) ?? today())
+  const [memo, setMemo] = useState(initial?.memo ?? '')
+  const [amount, setAmount] = useState(initial && kind === 'TRANSFER' ? minor(initial.total_minor) : '0')
+  const [fee, setFee] = useState(initial ? minor(initial.fee_minor) : '0')
+  const [feeAccountId, setFeeAccountId] = useState(initial?.fee_account_id ?? '')
+  const [lines, setLines] = useState<Line[]>(() => initial?.lines?.length
+    ? initial.lines.map((line) => ({ id: lineId(), account_id: line.account_id, description: line.description, amount: minor(line.amount_minor) }))
+    : [emptyLine()])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [dirty, setDirty] = useState(false)
   const [saved, setSaved] = useState<CashTransaction | null>(null)
 
-  useTabHandle(dirty, saved ? saved.number : 'Data Baru')
+  const label = saved?.number ?? (initial ? `Ubah ${initial.number}` : 'Data Baru')
+  useTabHandle(dirty, label)
 
   const isTransfer = kind === 'TRANSFER'
   const total = isTransfer ? decimal(amount) : lines.reduce((sum, line) => sum + decimal(line.amount), 0)
@@ -107,14 +114,14 @@ export function CashForm({ kind, scale, cashAccounts, accounts, contacts, onCanc
 
   return (
     <DocumentShell
-      label={saved?.number ?? 'Data Baru'}
+      label={label}
       dirty={dirty}
       onBack={onCancel}
       rail={<ActionRail actions={[
         {
           icon: 'check', label: 'Simpan', primary: true, items: [
             { label: 'Simpan', onSelect: () => void save(false), disabled: (saving && 'Sedang menyimpan…') || (Boolean(saved) && 'Transaksi ini sudah tersimpan') },
-            { label: 'Simpan & Baru', onSelect: () => void save(true), disabled: (saving && 'Sedang menyimpan…') || (Boolean(saved) && 'Transaksi ini sudah tersimpan') },
+            ...(initial ? [] : [{ label: 'Simpan & Baru', onSelect: () => void save(true), disabled: (saving && 'Sedang menyimpan…') || (Boolean(saved) && 'Transaksi ini sudah tersimpan') }]),
           ],
         },
         {
@@ -126,6 +133,12 @@ export function CashForm({ kind, scale, cashAccounts, accounts, contacts, onCanc
       ]} />}
     >
       {error && <p className="modal-error">{error}</p>}
+      {initial && !saved && (
+        <p className="modal-note">
+          Menyimpan perubahan akan membatalkan <strong>{initial.number}</strong> lewat jurnal pembalik bertanggal sama
+          dan mencatat transaksi pengganti dengan nomor baru. Riwayat aslinya tetap tersimpan.
+        </p>
+      )}
 
       <div className="doc-header">
         <div className="doc-header-row">

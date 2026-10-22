@@ -198,7 +198,7 @@ function fromInventory(items: Item[], balances: InventoryBalance[]): Notificatio
       result.push({
         id: `inv-negative:${balance.item_id}:${balance.warehouse_id}`, tone: 'critical', category: 'inventory',
         title: `Stok minus: ${balance.item_name}`,
-        body: `${balance.quantity} di gudang ${balance.warehouse_name}. Periksa penerimaan atau penyesuaian yang terlewat.`,
+        body: `${quantity.toLocaleString('id-ID')} di gudang ${balance.warehouse_name}. Periksa penerimaan atau penyesuaian yang terlewat.`,
         target: 'inventory.stockbywarehouse', persistent: true,
       })
     }

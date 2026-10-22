@@ -3,7 +3,7 @@ import { createProject, getProjectProfitability, listProjects, updateProject } f
 import { listContacts } from '../api/accounting'
 import type { Contact } from '../types/accounting'
 import type { Project, ProjectProfitabilityReport } from '../types/reports'
-import { Badge, PageHeader } from '../components/ui'
+import { Badge, PageHeader, MoneyInput } from '../components/ui'
 import { AddButton, DataTable, TablePanel, type Column } from '../components/DataTable'
 import { FormModal, messageOf } from '../components/Modal'
 import { amount } from './ReportsPage'
@@ -168,8 +168,8 @@ export function ProjectsPage({ onNotice }: { onNotice: (message: string) => void
           <label>Status<select name="status" defaultValue={editing?.status ?? 'ACTIVE'}>{statuses.map((status) => <option key={status}>{status}</option>)}</select></label>
         </div>
         <div className="form-row">
-          <label>Nilai kontrak<input name="contract_value" inputMode="numeric" defaultValue={editing?.contract_value_minor ?? 0} /></label>
-          <label>Anggaran biaya<input name="budget_cost" inputMode="numeric" defaultValue={editing?.budget_cost_minor ?? 0} /></label>
+          <label>Nilai kontrak<MoneyInput name="contract_value" defaultValue={String(editing?.contract_value_minor ?? 0)} /></label>
+          <label>Anggaran biaya<MoneyInput name="budget_cost" defaultValue={String(editing?.budget_cost_minor ?? 0)} /></label>
         </div>
         <label>Pelanggan
           <select name="contact_id" defaultValue={editing?.contact_id ?? ''}>

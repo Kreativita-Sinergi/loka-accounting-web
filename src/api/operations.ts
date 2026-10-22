@@ -150,6 +150,7 @@ export type CashTransactionInput = {
 export const createCashTransaction = (input: CashTransactionInput) => posted<CashTransaction>(api.post('/cash-transactions', input))
 export const listCashTransactionsPaged = (request: PageRequest) => getPaged<CashTransaction>('/cash-transactions', request)
 export const getCashTransaction = (id: string) => data<CashTransaction>(api.get(`/cash-transactions/${id}`))
+export const amendCashTransaction = (id: string, input: CashTransactionInput) => posted<CashTransaction>(api.put(`/cash-transactions/${id}`, input))
 export const voidCashTransaction = (id: string, reason: string) => posted<CashTransaction>(api.post(`/cash-transactions/${id}/void`, { reason }))
 export const cashAccountHistory = (accountId: string, startDate: string, endDate: string) =>
   data<CashHistoryRow[]>(api.get(`/cash-accounts/${accountId}/history`, { params: { start_date: startDate, end_date: endDate } }))

@@ -4,7 +4,7 @@ import {
   getAging, listBankAccounts, listContacts, listPayables, listReceivables, setContactActive, updateContact,
 } from '../api/accounting'
 import type { Account, AgingReport, BankAccount, Contact, OpenItem } from '../types/accounting'
-import { Badge, Button, PageHeader } from '../components/ui'
+import { Badge, Button, PageHeader, MoneyInput } from '../components/ui'
 import { AddButton, DataTable, SearchInput, StatusPill, TablePanel, type Column } from '../components/DataTable'
 import { ConfirmDialog, FormModal, messageOf, useConfirm } from '../components/Modal'
 
@@ -259,7 +259,7 @@ export function OperationsPage({ accounts, onNotice }: { accounts: Account[]; on
       >
         <div className="form-row">
           <label>Tanggal<input name="date" type="date" defaultValue={today()} required /></label>
-          <label>Nominal<input name="amount" inputMode="numeric" required /></label>
+          <label>Nominal<MoneyInput name="amount" required /></label>
         </div>
         <label>Deskripsi<input name="description" required /></label>
         <label>Akun beban
@@ -306,7 +306,7 @@ export function OperationsPage({ accounts, onNotice }: { accounts: Account[]; on
         <div className="form-row">
           <label>Tanggal terbit<input type="date" name="issue_date" defaultValue={today()} required /></label>
           <label>Jatuh tempo<input type="date" name="due_date" defaultValue={today()} required /></label>
-          <label>Nominal<input name="amount" inputMode="numeric" required /></label>
+          <label>Nominal<MoneyInput name="amount" required /></label>
         </div>
         <label>Deskripsi<input name="description" required /></label>
         <label>Akun lawan
@@ -353,7 +353,7 @@ export function OperationsPage({ accounts, onNotice }: { accounts: Account[]; on
         <div className="form-row">
           <label>Tanggal<input type="date" name="transaction_date" defaultValue={today()} required /></label>
           <label>Nominal{settling?.currency_code ? ` (${settling.currency_code})` : ''}
-            <input name="amount" inputMode="numeric" required
+            <MoneyInput name="amount" required
               defaultValue={settling?.currency_code ? String(settling.foreign_outstanding_minor ?? '') : String(settling?.outstanding_minor ?? '')} />
           </label>
           <label>{settling?.kind === 'payables' ? 'Dibayar dari' : 'Diterima di'}

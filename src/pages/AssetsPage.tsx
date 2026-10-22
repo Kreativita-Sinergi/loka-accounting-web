@@ -3,7 +3,7 @@ import { createFixedAsset, depreciateAsset, disposeAsset, listAssetInvoiceSource
 import { getFixedAssetRegister } from '../api/analytics'
 import type { Account } from '../types/accounting'
 import type { AssetDisposal, FixedAsset, FixedAssetInvoiceSource, FixedAssetJournalSource, FixedAssetRegisterReport, FixedAssetSourceKind } from '../types/reports'
-import { Badge, PageHeader } from '../components/ui'
+import { Badge, PageHeader, MoneyInput } from '../components/ui'
 import { AddButton, DataTable, TablePanel, type Column } from '../components/DataTable'
 import { ConfirmDialog, FormModal, messageOf, useConfirm } from '../components/Modal'
 import { amount } from './ReportsPage'
@@ -182,7 +182,7 @@ export function AssetsPage({ accounts, onNotice }: { accounts: Account[]; onNoti
         <label>Tanggal siap digunakan<input type="date" name="in_service_date" defaultValue={inServiceDefault} required /></label>
       </div>
       <div className="form-row">
-        <label>Nilai residu<input name="residual_amount" inputMode="numeric" defaultValue="0" /></label>
+        <label>Nilai residu<MoneyInput name="residual_amount" defaultValue="0" /></label>
         <label>Umur manfaat (bulan)<input name="useful_life_months" type="number" min={1} defaultValue={60} required /></label>
         <label>Metode<select name="depreciation_method"><option value="STRAIGHT_LINE">Garis lurus</option><option value="DOUBLE_DECLINING">Saldo menurun berganda</option></select></label>
       </div>
@@ -331,7 +331,7 @@ export function AssetsPage({ accounts, onNotice }: { accounts: Account[]; onNoti
       >
         <div className="form-row">
           <label>Tanggal perolehan<input type="date" name="acquisition_date" defaultValue={today} required /></label>
-          <label>Harga perolehan<input name="acquisition_amount" inputMode="numeric" required /></label>
+          <label>Harga perolehan<MoneyInput name="acquisition_amount" required /></label>
           <label>Dibayar dari<select name="payment_method">{paymentMethods.map((method) => <option key={method}>{method}</option>)}</select></label>
         </div>
         {cardFields('', today)}
@@ -382,7 +382,7 @@ export function AssetsPage({ accounts, onNotice }: { accounts: Account[]; onNoti
         {linking?.kind === 'journal' && (
           <div className="form-row">
             <label>Tanggal perolehan<input type="date" name="acquisition_date" defaultValue={linkDate} required /></label>
-            <label>Harga perolehan<input name="amount" inputMode="numeric" defaultValue={linkAmount} required /></label>
+            <label>Harga perolehan<MoneyInput name="amount" defaultValue={String(linkAmount)} required /></label>
           </div>
         )}
         {linking && cardFields(linking.source.description, linkDate ?? today)}
@@ -426,7 +426,7 @@ export function AssetsPage({ accounts, onNotice }: { accounts: Account[]; onNoti
             </select>
           </label>
           <label>Tanggal<input type="date" name="effective_date" defaultValue={today} required /></label>
-          <label>Jumlah<input name="amount" inputMode="numeric" required /></label>
+          <label>Jumlah<MoneyInput name="amount" required /></label>
         </div>
         <label>{revaluationType === 'REVALUATION' ? 'Akun surplus revaluasi (ekuitas)' : 'Akun beban penurunan nilai'}
           <select name="counterpart_account_id" required>{counterpartAccounts.map((account) => <option key={account.id} value={account.id}>{account.code} · {account.name}</option>)}</select>
@@ -462,7 +462,7 @@ export function AssetsPage({ accounts, onNotice }: { accounts: Account[]; onNoti
       >
         <div className="form-row">
           <label>Tanggal<input type="date" name="disposal_date" defaultValue={today} required /></label>
-          <label>Hasil penjualan<input name="proceeds_amount" inputMode="numeric" defaultValue="0" /></label>
+          <label>Hasil penjualan<MoneyInput name="proceeds_amount" defaultValue="0" /></label>
           <label>Diterima di<select name="payment_method">{paymentMethods.map((method) => <option key={method}>{method}</option>)}</select></label>
         </div>
         <label>Akun laba/rugi pelepasan

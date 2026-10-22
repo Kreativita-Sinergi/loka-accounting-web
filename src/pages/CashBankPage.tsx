@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { cashAccountHistory, createCashTransaction, getCashTransaction, listCashTransactionsPaged, voidCashTransaction } from '../api/operations'
+import { amendCashTransaction, cashAccountHistory, createCashTransaction, getCashTransaction, listCashTransactionsPaged, voidCashTransaction } from '../api/operations'
 import { listBankAccounts, listContacts } from '../api/accounting'
 import { Badge, PageHeader } from '../components/ui'
 import { ListView, type ListColumn } from '../components/ListView'
@@ -37,6 +37,7 @@ export function CashBankPage({ kind, scale, accounts, onNotice }: {
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [detail, setDetail] = useState<CashTransaction | null>(null)
+  const [editing, setEditing] = useState<CashTransaction | null>(null)
   const [statusFilter, setStatusFilter] = usePersisted(`filter.cash.${kind}.status`, 'ALL')
   const cancellation = useConfirm<CashTransaction>()
 
@@ -74,22 +75,37 @@ export function CashBankPage({ kind, scale, accounts, onNotice }: {
     return (
       <section>
         <CashForm
+          key={editing?.id ?? 'new'}
           kind={kind}
           scale={scale}
+          initial={editing ?? undefined}
           cashAccounts={cashAccounts}
           accounts={accounts.filter((account) => account.is_active)}
           contacts={contacts.filter((contact) => contact.is_active)}
-          onCancel={() => setView('list')}
+          onCancel={() => { setEditing(null); setView('list') }}
           onNotice={onNotice}
-          onSave={createCashTransaction}
+          onSave={editing ? (input) => amendCashTransaction(editing.id, input) : createCashTransaction}
           onSaved={(saved, again) => {
             void list.reload()
-            onNotice(`${label} ${saved.number} tersimpan dan jurnalnya sudah diposting.`)
-            if (!again) setView('list')
+            onNotice(editing
+              ? `${editing.number} dibatalkan dan diganti ${saved.number}; jurnal koreksinya sudah diposting.`
+              : `${label} ${saved.number} tersimpan dan jurnalnya sudah diposting.`)
+            if (!again) { setEditing(null); setView('list') }
           }}
         />
       </section>
     )
+  }
+
+  // Baris daftar tidak membawa rincian akun, jadi transaksi lengkap diambil
+  // dulu sebelum form ubah dibuka.
+  async function openEditor(row: CashTransaction) {
+    try {
+      setEditing(await getCashTransaction(row.id))
+      setView('form')
+    } catch (cause) {
+      onNotice(messageOf(cause, `Gagal membuka ${row.number}.`))
+    }
   }
 
   const columns: Array<ListColumn<CashTransaction>> = [
@@ -122,7 +138,7 @@ export function CashBankPage({ kind, scale, accounts, onNotice }: {
         search={list.search}
         onSearch={list.setSearch}
         searchPlaceholder="Cari nomor atau keterangan"
-        onCreate={() => setView('form')}
+        onCreate={() => { setEditing(null); setView('form') }}
         createLabel="Data Baru"
         createDisabled={cashAccounts.length === 0}
         createTitle={cashAccounts.length === 0 ? 'Buat akun kas/bank lebih dulu' : 'Data Baru'}
@@ -138,6 +154,12 @@ export function CashBankPage({ kind, scale, accounts, onNotice }: {
         }]}
         rowActions={[
           { label: 'Lihat rincian & jurnal', icon: 'journal', readOnly: true, onSelect: setDetail },
+          {
+            label: 'Ubah transaksi',
+            icon: 'edit',
+            onSelect: (row) => void openEditor(row),
+            disabled: (row) => row.status === 'VOID' && 'Transaksi yang dibatalkan tidak dapat diubah',
+          },
           {
             label: 'Batalkan transaksi',
             icon: 'trash',
