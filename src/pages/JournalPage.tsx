@@ -128,13 +128,16 @@ export function JournalPage({ accounts, scale, onSubmit }: {
     setView('form')
   }
 
+  const totalDebit = visible.reduce((sum, journal) => sum + journal.debit, 0)
+  const totalCredit = visible.reduce((sum, journal) => sum + journal.credit, 0)
+
   const columns: Array<ListColumn<PostedJournal>> = [
     { key: 'number', header: 'No. jurnal', className: 'mono', width: '190px', sortValue: (journal) => journal.number, cell: (journal) => journal.number },
     { key: 'date', header: 'Tanggal', width: '130px', sortValue: (journal) => journal.transaction_date, cell: (journal) => formatDate(journal.transaction_date) },
     { key: 'description', header: 'Keterangan', cell: (journal) => journal.description || '—' },
     { key: 'lines', header: 'Baris', align: 'right', width: '90px', cell: (journal) => journal.lines.length },
-    { key: 'debit', header: 'Debit', align: 'right', className: 'mono', width: '150px', sortValue: (journal) => journal.debit, cell: (journal) => formatMoney(journal.debit, scale) },
-    { key: 'credit', header: 'Kredit', align: 'right', className: 'mono', width: '150px', sortValue: (journal) => journal.credit, cell: (journal) => formatMoney(journal.credit, scale) },
+    { key: 'debit', header: 'Debit', align: 'right', className: 'mono', width: '150px', sortValue: (journal) => journal.debit, cell: (journal) => formatMoney(journal.debit, scale), footer: formatMoney(totalDebit, scale) },
+    { key: 'credit', header: 'Kredit', align: 'right', className: 'mono', width: '150px', sortValue: (journal) => journal.credit, cell: (journal) => formatMoney(journal.credit, scale), footer: formatMoney(totalCredit, scale) },
   ]
 
   return (

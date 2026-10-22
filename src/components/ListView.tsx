@@ -19,6 +19,8 @@ export type ListColumn<T> = {
   optional?: boolean
   /** Dapat diurutkan server-side; nama kunci dikirim sebagai parameter `sort`. */
   sortable?: boolean
+  /** Isi baris total di bawah tabel, dihitung dari seluruh baris (bukan hanya halaman ini). */
+  footer?: ReactNode
 }
 
 export type FilterChip = {
@@ -274,6 +276,16 @@ export function ListView<T>({
                   </tr>
                 ))}
               </tbody>
+              {visibleRows.length > 0 && visibleColumns.some((column) => column.footer !== undefined) && (
+                <tfoot>
+                  <tr>
+                    {visibleColumns.map((column, index) => (
+                      <th key={column.key} className={cx(column.align === 'right' && 'number', column.className)}>{column.footer ?? (index === 0 ? 'Total' : null)}</th>
+                    ))}
+                    {writeActions.length > 0 && <th />}
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
 
