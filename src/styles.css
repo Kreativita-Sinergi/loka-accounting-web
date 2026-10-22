@@ -136,7 +136,8 @@
   .tile-setting { background: var(--tile-setting); }
   .tile-report { background: var(--tile-report); }
 
-  .tab-stage { @apply min-w-0 overflow-y-auto; background: var(--bg); }
+  /* Ruang bawah agar baris terakhir bisa digulir keluar dari tombol langganan yang melayang. */
+  .tab-stage { @apply min-w-0 overflow-y-auto; padding-bottom: 84px; background: var(--bg); }
   .tab-panel { @apply px-5 pt-5 pb-10 max-sm:px-3; }
   .tab-panel[hidden] { display: none; }
   .tab-panel > section { animation: page-in .2s ease-out; }
