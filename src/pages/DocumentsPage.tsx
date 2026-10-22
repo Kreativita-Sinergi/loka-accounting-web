@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   adjustInventory, listDocuments, listDocumentsPaged, listInventoryBalances, listItems, listReservations, listUnits,
-  listWarehouses, releaseReservation, reserveInventory, stockOpname, transferInventory, transitionDocument,
+  listWarehouses, releaseReservation, reserveInventory, stockOpname, transferInventory, transitionDocument, deleteDocument,
 } from '../api/operations'
 import { listContacts } from '../api/accounting'
 import { listProjects } from '../api/projects'
@@ -25,6 +25,8 @@ const documentTypes = ['SALES_QUOTE', 'SALES_ORDER', 'DELIVERY', 'SALES_INVOICE'
 const advanceable = ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'OPEN', 'PARTIAL']
 // Hanya dokumen yang belum mem-post jurnal yang boleh dibatalkan.
 const cancellable = ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'OPEN']
+// Dokumen yang dibatalkan atau masih draft bisa dihapus dari daftar.
+const deletable = ['DRAFT', 'CANCELLED']
 /** Dokumen hilir utama untuk aksi cepat "Proses" dari daftar. */
 const downstreamPrimary: Record<string, string> = {
   SALES_QUOTE: 'SALES_ORDER', SALES_ORDER: 'DELIVERY', DELIVERY: 'SALES_INVOICE', SALES_INVOICE: 'SALES_RETURN',
@@ -75,6 +77,7 @@ export function DocumentsPage({ accounts = [], documentType, initialAction, scal
   const advance = useConfirm<BusinessDocument>()
   const release = useConfirm<InventoryReservation>()
   const cancel = useConfirm<BusinessDocument>()
+  const remove = useConfirm<BusinessDocument>()
 
   async function refresh() {
     const results = await Promise.allSettled([
@@ -278,6 +281,7 @@ export function DocumentsPage({ accounts = [], documentType, initialAction, scal
           { label: 'Cetak PDF', icon: 'printer', onSelect: (document) => void openDocumentPrint(document.id, 'pdf') },
           { label: 'Pratinjau', icon: 'reports', onSelect: (document) => void openDocumentPrint(document.id, 'html') },
           { label: 'Batalkan dokumen', icon: 'power', danger: true, onSelect: cancel.open, when: (document) => cancellable.includes(document.status) },
+          { label: 'Hapus dokumen', icon: 'trash', danger: true, onSelect: remove.open, when: (document) => deletable.includes(document.status) },
         ]}
         onRowOpen={setJournalTarget}
       />
@@ -468,6 +472,22 @@ export function DocumentsPage({ accounts = [], documentType, initialAction, scal
           onNotice(`Dokumen ${document.number} dibatalkan.`)
         }))}
         description={<>Dokumen <strong>{cancel.target?.number}</strong> akan berstatus CANCELLED dan tidak bisa diproses lagi. Jurnal belum terbentuk, jadi laporan tidak terpengaruh.</>}
+      />
+
+      <ConfirmDialog
+        open={remove.target !== null}
+        tone="danger"
+        title="Hapus dokumen?"
+        confirmLabel="Hapus dokumen"
+        busy={remove.busy}
+        error={remove.error}
+        onClose={remove.close}
+        onConfirm={() => remove.run((document) => deleteDocument(document.id).then(async () => {
+          await refresh()
+          void documentList.reload()
+          onNotice(`Dokumen ${document.number} dihapus.`)
+        }))}
+        description={<>Dokumen <strong>{remove.target?.number}</strong> akan dihapus dari daftar. Riwayat perubahan statusnya tetap tersimpan di log audit.</>}
       />
 
       <JournalPeek

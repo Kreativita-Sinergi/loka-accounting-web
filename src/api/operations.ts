@@ -36,6 +36,7 @@ export const setWarehouseActive = (id: string, isActive: boolean) => data<Wareho
 export const deleteWarehouse = (id: string) => data<Warehouse>(api.delete(`/warehouses/${id}`))
 export const listDocuments = (type = '') => data<BusinessDocument[]>(api.get('/documents', { params: type ? { type } : undefined }))
 export const createDocument = (input: Record<string, unknown>) => data<BusinessDocument>(api.post('/documents', input))
+export const deleteDocument = (id: string) => data<null>(api.delete(`/documents/${id}`))
 export const transitionDocument = (id: string, status: string) => posted<BusinessDocument>(api.post(`/documents/${id}/transition`, { status }))
 export const listInventoryBalances = () => data<InventoryBalance[]>(api.get('/inventory/balances'))
 export const adjustInventory = (input: Record<string, unknown>) => posted(api.post('/inventory/adjustments', input))
